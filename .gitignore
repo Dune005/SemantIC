@@ -1,0 +1,60 @@
+# --- Secrets / Umgebungsvariablen ---
+.env
+.env.*
+!.env.example
+
+# --- Dependencies ---
+node_modules/
+web/node_modules/
+
+# --- Build-Artefakte (Pipeline / TypeScript) ---
+dist/
+*.tsbuildinfo
+
+# --- Nuxt-Frontend (web/) ---
+web/.nuxt/
+web/.output/
+web/.nitro/
+web/.cache/
+web/.data/
+web/dist/
+
+# --- Spike-Tests (gross / reproduzierbar / evtl. nicht öffentlich) ---
+/spike-test
+
+# --- Logs ---
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- OS-Krümel ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# --- IDE / Editor ---
+.vscode/
+.idea/
+.fleet/
+*.swp
+*.swo
+
+# --- Lokale Claude-/Agent-Konfiguration ---
+.claude
+CLAUDE.md
+AGENTS.md
+
+# --- Lokale macOS-Skripte (persönlich, nicht teilen) ---
+*.command
+
+
+# --- Sonstiges ---
+gemini-Flash-Analyse-Strategie.md
+/Neues
+/Daily-Wrap-Ups

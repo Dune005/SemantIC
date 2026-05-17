@@ -1,0 +1,28 @@
+{
+  "name": "semantic",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "spike": "tsx src/cli.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@playwright/cli": "^0.1.9",
+    "@types/node": "^25.6.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.76",
+    "@ai-sdk/google": "^3.0.67",
+    "@ai-sdk/openai": "^3.0.63",
+    "ai": "^6.0.175",
+    "dotenv": "^17.4.2",
+    "zod": "^4.4.3"
+  }
+}
