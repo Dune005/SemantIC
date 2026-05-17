@@ -9,6 +9,7 @@ import { ANALYSIS_PROMPT_EN } from './prompts/analysis.en.js'
 import { AESTHETIC_PROMPT } from './prompts/aesthetic.js'
 import { computeIntegrityScore, computeMaskingScore, deriveMaskingVerdict, type MaskingVerdict } from './scoring.js'
 import { deriveContextReviewHints, type ContextReviewHint } from './context-hints.js'
+import { runModalAesthetic, type ModalAestheticResult } from './aesthetic-modal.js'
 import type { CodebookEvidence, MaskingEvidence } from './schemas/analysis.js'
 
 const EVIDENCE_MIN_OBSERVATION_LEN = 10
@@ -401,6 +402,8 @@ export interface SemanticAnalysisResult {
     duration_ms: number
     evidence_filter?: EvidenceFilterReport
     masking_filter?: MaskingFilterReport
+    laion_aesthetic?: ModalAestheticResult
+    laion_aesthetic_error?: string
     test_config?: {
       temperature?: number
       thinkingLevel?: ThinkingLevel
@@ -514,7 +517,18 @@ export async function runSemanticAnalysis(
   }
 
   const start = Date.now()
-  const [analysis, aesthetic] = await Promise.all([analysisCall(), aestheticCall()])
+  const [analysis, aesthetic, laionResult] = await Promise.all([
+    analysisCall(),
+    aestheticCall(),
+    runModalAesthetic(imageBase64).then(
+      r => ({ ok: true as const, value: r }),
+      err => {
+        const msg = err instanceof Error ? err.message : String(err)
+        console.warn(`[R4.7.2] Modal-Aesthetic fehlgeschlagen: ${msg}`)
+        return { ok: false as const, error: msg }
+      },
+    ),
+  ])
 
   const evidenceReport = applyEvidenceFilter(analysis)
   if (evidenceReport.downgraded_flags.length > 0) {
@@ -587,6 +601,7 @@ export async function runSemanticAnalysis(
       duration_ms,
       evidence_filter: evidenceReport,
       masking_filter: maskingReport,
+      ...(laionResult.ok ? { laion_aesthetic: laionResult.value } : { laion_aesthetic_error: laionResult.error }),
       ...(typeof options?.temperature === 'number' || options?.thinkingLevel || options?.mediaResolution
         ? {
             test_config: {

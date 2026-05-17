@@ -25,12 +25,19 @@ export function formatResult(result: SemanticAnalysisResult): string {
   lines.push('')
 
   lines.push('Scores')
-  lines.push(`  Integrity:  ${computed.integrity_score_local}/100  (lokal berechnet)`)
-  lines.push(`  Ästhetik:   ${aesthetic.aesthetic_score}/100`)
+  lines.push(`  Integrity:       ${computed.integrity_score_local}/100  (lokal berechnet)`)
+  lines.push(`  Ästhetik Sonnet: ${aesthetic.aesthetic_score}/100`)
+  if (meta.laion_aesthetic) {
+    const l = meta.laion_aesthetic
+    const oor = l.out_of_range ? ' [out_of_range]' : ''
+    lines.push(`  Ästhetik V2.5:   ${l.normalized}/100  (raw ${l.raw_score.toFixed(2)}/10 via ${l.model}${oor}, ${l.duration_ms}ms)`)
+  } else if (meta.laion_aesthetic_error) {
+    lines.push(`  Ästhetik V2.5:   – (Fehler: ${meta.laion_aesthetic_error})`)
+  }
   lines.push(`  Maskierungs-Verdict: ${verdictLabel(computed.masking_verdict)}`)
   lines.push(`  Maskierungs-Diff (roh, Diagnose): ${maskingLabel(computed.masking_score)}`)
   if (aesthetic.aesthetic_reasoning) {
-    lines.push(`  Begründung Ästhetik: ${aesthetic.aesthetic_reasoning}`)
+    lines.push(`  Begründung Ästhetik (Sonnet): ${aesthetic.aesthetic_reasoning}`)
   }
   lines.push('')
 
