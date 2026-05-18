@@ -1,4 +1,29 @@
 <script setup lang="ts">
+import { computed, onMounted, ref } from 'vue'
+import {
+  AlertTriangle,
+  Bug,
+  CheckCircle2,
+  CircleAlert,
+  CircleDashed,
+  Info,
+  XCircle,
+} from 'lucide-vue-next'
+import type { SemanticAnalysisResult } from '@pipeline/analyze'
+import type { ContextReviewHint } from '@pipeline/context-hints'
+import {
+  buildAnalysisViewModel,
+  type DimensionStatus,
+  type MaskingVerdict,
+  type RiskLevel,
+} from '~/composables/useAnalysisView'
+import { Badge } from '~/components/ui/badge'
+import { Button } from '~/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '~/components/ui/card'
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '~/components/ui/accordion'
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '~/components/ui/tooltip'
+import { Separator } from '~/components/ui/separator'
+
 interface Sample {
   src: string
   label: string
@@ -33,17 +58,41 @@ const samples: Sample[] = [
   },
 ]
 
-const imageBase64 = ref<string>('')
-const imagePreview = ref<string>('')
-const mediaType = ref<string>('image/jpeg')
-const promptInput = ref<string>('')
-const contextInput = ref<string>('')
-const fileName = ref<string>('')
+const imageBase64 = ref('')
+const imagePreview = ref('')
+const mediaType = ref('image/jpeg')
+const promptInput = ref('')
+const contextInput = ref('')
+const fileName = ref('')
 
 const loading = ref(false)
-const errorMessage = ref<string>('')
-const result = ref<any>(null)
+const errorMessage = ref('')
+const result = ref<SemanticAnalysisResult | null>(null)
 
+const view = computed(() => result.value ? buildAnalysisViewModel(result.value) : null)
+const contextEmpty = computed(() => !contextInput.value.trim())
+
+// --- Debug-Modus ---
+const debugMode = ref(false)
+onMounted(() => {
+  if (typeof window === 'undefined') return
+  const url = new URL(window.location.href)
+  if (url.searchParams.get('debug') === '1') {
+    debugMode.value = true
+  } else {
+    const stored = window.localStorage.getItem('semantic.debug')
+    if (stored === '1') debugMode.value = true
+  }
+})
+
+function toggleDebug() {
+  debugMode.value = !debugMode.value
+  if (typeof window !== 'undefined') {
+    window.localStorage.setItem('semantic.debug', debugMode.value ? '1' : '0')
+  }
+}
+
+// --- File-Handling ---
 function stripBase64Prefix(dataUrl: string): { base64: string; mediaType: string } {
   const match = dataUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/)
   if (!match) return { base64: dataUrl, mediaType: 'image/jpeg' }
@@ -100,7 +149,7 @@ async function submit() {
   errorMessage.value = ''
   result.value = null
   try {
-    const data = await $fetch('/api/analyze', {
+    const data = await $fetch<SemanticAnalysisResult>('/api/analyze', {
       method: 'POST',
       body: {
         imageBase64: imageBase64.value,
@@ -117,135 +166,444 @@ async function submit() {
   }
 }
 
-const contextEmpty = computed(() => !contextInput.value.trim())
+// --- Label-Helpers ---
+const dimensionLabels: Record<'physics' | 'semantics' | 'bias', string> = {
+  physics: 'Physik',
+  semantics: 'Semantik',
+  bias: 'Bias',
+}
+
+const dimensionDescriptions: Record<'physics' | 'semantics' | 'bias', string> = {
+  physics: 'Licht, Schatten, Anatomie, Materialien',
+  semantics: 'Szenenlogik, Prompt-Passung, Kontext',
+  bias: 'Stereotype, Rollenbesetzung, Repräsentation',
+}
+
+const verdictLabels: Record<MaskingVerdict, string> = {
+  none: 'keine Maskierung erkannt',
+  low: 'geringe Tendenz',
+  medium: 'mittlere Tendenz',
+  high: 'starke Tendenz',
+}
+
+const readingModeDescriptions: Record<string, string> = {
+  WA: 'Werbe-Ästhetik — maskiert über Normativität und Idealwelt.',
+  DA: 'Dokumentarisch-Authentisch — maskiert über scheinbare Objektivität.',
+  CI: 'Cinematisch — maskiert affektiv über Filmstimmung.',
+  AA: 'Amateur-Authentisch — maskiert über Vertrautheit und Spontaneität.',
+  MI: 'Magazin/Inszeniert — maskiert über Professionalität und Status.',
+}
+
+const dominantErrorLabels: Record<string, string> = {
+  physics: 'Physik-Befund dominiert',
+  anatomy: 'Anatomie-Befund dominiert',
+  context: 'Kontext-Befund dominiert',
+  mixed: 'mehrere Befunde gemischt',
+  none: 'kein dominanter Befund',
+}
+
+const inputCompletenessLabels: Record<string, string> = {
+  full: 'Prompt und Nutzungskontext vorhanden',
+  image_context: 'Nutzungskontext vorhanden, ohne Prompt',
+  image_prompt: 'Prompt vorhanden, ohne Nutzungskontext',
+  image_only: 'Nur Bild — Bewertung wird generisch',
+}
+
+function statusToBadgeVariant(status: DimensionStatus) {
+  return status === 'green' ? 'success' : status === 'yellow' ? 'warning' : 'danger'
+}
+
+function statusLabel(status: DimensionStatus) {
+  return status === 'green' ? 'unauffällig' : status === 'yellow' ? 'auffällig' : 'kritisch'
+}
+
+function severityVariant(severity: ContextReviewHint['severity']) {
+  return severity === 'high' ? 'danger' : severity === 'medium' ? 'warning' : 'secondary'
+}
+
+function severityLabel(severity: ContextReviewHint['severity']) {
+  return severity === 'high' ? 'hoch' : severity === 'medium' ? 'mittel' : 'niedrig'
+}
+
+function riskBadgeVariant(risk: RiskLevel | 'none') {
+  return risk === 'high' ? 'danger' : risk === 'medium' ? 'warning' : risk === 'low' ? 'success' : 'secondary'
+}
+
+function verdictBadgeVariant(verdict: MaskingVerdict) {
+  return verdict === 'high' ? 'danger' : verdict === 'medium' ? 'warning' : verdict === 'low' ? 'secondary' : 'success'
+}
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-50 text-slate-900">
-    <header class="border-b border-slate-200 bg-white">
-      <div class="mx-auto max-w-6xl px-6 py-5">
-        <h1 class="text-2xl font-semibold tracking-tight">SemantIC – Minimal Frontend</h1>
-        <p class="mt-1 text-sm text-slate-600">
-          Erster End-to-End-Test der Analyse-Pipeline. Bild + Prompt + Kontext → JSON-Resultat.
-        </p>
-      </div>
-    </header>
-
-    <main class="mx-auto max-w-6xl px-6 py-8 space-y-8">
-      <!-- Sample-Buttons -->
-      <section>
-        <h2 class="text-sm font-medium text-slate-700 mb-2">Beispielbilder</h2>
-        <div class="flex flex-wrap gap-2">
-          <button
-            v-for="sample in samples"
-            :key="sample.src"
-            type="button"
-            class="rounded border border-slate-300 bg-white px-3 py-1.5 text-sm hover:bg-slate-100"
-            @click="loadSample(sample)"
-          >
-            {{ sample.label }}
-          </button>
+  <TooltipProvider>
+    <div class="min-h-screen bg-slate-50 text-slate-900">
+      <header class="border-b border-slate-200 bg-white">
+        <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
+          <div>
+            <h1 class="text-2xl font-semibold tracking-tight">SemantIC</h1>
+            <p class="mt-1 text-sm text-slate-600">
+              AI Visual Integrity Validator — Bild + Prompt + Kontext → redaktionelle Einschätzung.
+            </p>
+          </div>
+          <Button :variant="debugMode ? 'default' : 'outline'" size="sm" :aria-pressed="debugMode" @click="toggleDebug">
+            <Bug class="mr-1.5 h-3.5 w-3.5" aria-hidden="true" /> Debug {{ debugMode ? 'an' : 'aus' }}
+          </Button>
         </div>
-      </section>
+      </header>
 
-      <!-- Upload + Form -->
-      <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Bild</label>
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              class="block w-full text-sm file:mr-3 file:rounded file:border-0 file:bg-slate-900 file:px-3 file:py-1.5 file:text-white hover:file:bg-slate-700"
-              @change="onFileChange"
-            />
-            <p v-if="fileName" class="mt-1 text-xs text-slate-500">{{ fileName }}</p>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">
-              Original-Prompt <span class="font-normal text-slate-500">(optional)</span>
-            </label>
-            <textarea
-              v-model="promptInput"
-              rows="2"
-              class="block w-full rounded border border-slate-300 px-3 py-2 text-sm"
-              placeholder="z.B. 'Nurse in hospital corridor'"
-            />
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">
-              Nutzungskontext <span class="font-normal text-slate-500">(optional, aber empfohlen)</span>
-            </label>
-            <textarea
-              v-model="contextInput"
-              rows="3"
-              class="block w-full rounded border border-slate-300 px-3 py-2 text-sm"
-              placeholder="z.B. 'Headerbild für Editorial-Beitrag in einem Gesundheitsmagazin'"
-            />
-            <p
-              v-if="contextEmpty"
-              class="mt-1 rounded bg-amber-50 border border-amber-200 px-2 py-1 text-xs text-amber-900"
+      <main class="mx-auto max-w-6xl space-y-8 px-6 py-8">
+        <!-- Sample-Buttons (nur im Debug-Modus) -->
+        <section v-if="debugMode">
+          <h2 class="mb-2 text-sm font-medium text-slate-700">Beispielbilder (Debug)</h2>
+          <div class="flex flex-wrap gap-2">
+            <Button
+              v-for="sample in samples"
+              :key="sample.src"
+              variant="outline"
+              size="sm"
+              @click="loadSample(sample)"
             >
-              Ohne Nutzungskontext wird die Bias-Bewertung generisch. Empfohlen ausfüllen.
+              {{ sample.label }}
+            </Button>
+          </div>
+        </section>
+
+        <!-- Upload + Form -->
+        <section class="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div class="space-y-4">
+            <div>
+              <label for="image-input" class="mb-1 block text-sm font-medium text-slate-700">Bild</label>
+              <input
+                id="image-input"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                class="block w-full text-sm file:mr-3 file:rounded file:border-0 file:bg-slate-900 file:px-3 file:py-1.5 file:text-white hover:file:bg-slate-700"
+                @change="onFileChange"
+              />
+              <p v-if="fileName" class="mt-1 text-xs text-slate-500">{{ fileName }}</p>
+            </div>
+
+            <div>
+              <label for="prompt-input" class="mb-1 block text-sm font-medium text-slate-700">
+                Original-Prompt <span class="font-normal text-slate-500">(optional)</span>
+              </label>
+              <textarea
+                id="prompt-input"
+                v-model="promptInput"
+                rows="2"
+                class="block w-full rounded border border-slate-300 px-3 py-2 text-sm"
+                placeholder="z.B. 'Nurse in hospital corridor'"
+              />
+            </div>
+
+            <div>
+              <label for="context-input" class="mb-1 block text-sm font-medium text-slate-700">
+                Nutzungskontext <span class="font-normal text-slate-500">(optional, aber empfohlen)</span>
+              </label>
+              <textarea
+                id="context-input"
+                v-model="contextInput"
+                rows="3"
+                class="block w-full rounded border border-slate-300 px-3 py-2 text-sm"
+                placeholder="z.B. 'Headerbild für Editorial-Beitrag in einem Gesundheitsmagazin'"
+              />
+              <p
+                v-if="contextEmpty"
+                class="mt-1 flex items-start gap-1.5 rounded border border-amber-200 bg-amber-50 px-2 py-1 text-xs text-amber-900"
+              >
+                <AlertTriangle class="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                <span>Ohne Nutzungskontext bleibt die Bias-Einschätzung generisch. Empfohlen ausfüllen.</span>
+              </p>
+            </div>
+
+            <Button :disabled="loading || !imageBase64" @click="submit">
+              {{ loading ? 'Analysiere … (15–30 s)' : 'Analyse starten' }}
+            </Button>
+
+            <p v-if="errorMessage" role="alert" class="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+              {{ errorMessage }}
             </p>
           </div>
 
-          <button
-            type="button"
-            class="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="loading || !imageBase64"
-            @click="submit"
-          >
-            {{ loading ? 'Analysiere … (10–25 s)' : 'Analyse starten' }}
-          </button>
-
-          <p v-if="errorMessage" class="rounded bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-800">
-            {{ errorMessage }}
-          </p>
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Vorschau</label>
-          <div class="aspect-video rounded border border-slate-200 bg-white flex items-center justify-center overflow-hidden">
-            <img
-              v-if="imagePreview"
-              :src="imagePreview"
-              alt="Bildvorschau"
-              class="max-h-full max-w-full object-contain"
-            />
-            <span v-else class="text-sm text-slate-400">Noch kein Bild geladen</span>
+          <div>
+            <label class="mb-1 block text-sm font-medium text-slate-700">Vorschau</label>
+            <div class="flex aspect-video items-center justify-center overflow-hidden rounded border border-slate-200 bg-white">
+              <img
+                v-if="imagePreview"
+                :src="imagePreview"
+                alt="Bildvorschau"
+                class="max-h-full max-w-full object-contain"
+              />
+              <span v-else class="text-sm text-slate-400">Noch kein Bild geladen</span>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Resultat -->
-      <section v-if="result">
-        <h2 class="text-sm font-medium text-slate-700 mb-2">Resultat</h2>
+        <!-- Resultat -->
+        <section v-if="view" class="space-y-6">
+          <Separator />
 
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-          <div class="rounded border border-slate-200 bg-white px-3 py-2">
-            <div class="text-xs text-slate-500">Integrität (lokal)</div>
-            <div class="text-xl font-semibold">{{ result.computed?.integrity_score_local ?? '–' }}</div>
-          </div>
-          <div class="rounded border border-slate-200 bg-white px-3 py-2">
-            <div class="text-xs text-slate-500">Ästhetik</div>
-            <div class="text-xl font-semibold">{{ result.aesthetic?.aesthetic_score ?? '–' }}</div>
-          </div>
-          <div class="rounded border border-slate-200 bg-white px-3 py-2">
-            <div class="text-xs text-slate-500">Maskierung (Tendenz)</div>
-            <div class="text-xl font-semibold">{{ result.computed?.masking_score ?? '–' }}</div>
-          </div>
-        </div>
+          <!-- Dimensions-Ampeln + Aesthetic + Maskierung -->
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <Card v-for="(dim, key) in view.dimensions" :key="key">
+              <CardHeader class="pb-2">
+                <CardTitle class="flex items-center justify-between">
+                  <span>{{ dimensionLabels[key] }}</span>
+                  <CheckCircle2 v-if="dim.status === 'green'" class="h-4 w-4 text-emerald-600" aria-hidden="true" />
+                  <CircleAlert v-else-if="dim.status === 'yellow'" class="h-4 w-4 text-amber-600" aria-hidden="true" />
+                  <XCircle v-else class="h-4 w-4 text-red-600" aria-hidden="true" />
+                </CardTitle>
+                <CardDescription>{{ dimensionDescriptions[key] }}</CardDescription>
+              </CardHeader>
+              <CardContent class="flex items-end justify-between">
+                <Badge :variant="statusToBadgeVariant(dim.status)">{{ statusLabel(dim.status) }}</Badge>
+                <span class="text-sm tabular-nums text-slate-500">{{ dim.score }}/100</span>
+              </CardContent>
+            </Card>
 
-        <details open class="rounded border border-slate-200 bg-white">
-          <summary class="cursor-pointer px-3 py-2 text-sm font-medium select-none">
-            Roh-JSON (Pipeline-Output)
-          </summary>
-          <pre class="overflow-auto border-t border-slate-200 bg-slate-900 text-slate-100 text-xs p-3 max-h-[60vh]">{{ JSON.stringify(result, null, 2) }}</pre>
-        </details>
-      </section>
-    </main>
-  </div>
+            <!-- Aesthetic-Karte -->
+            <Card>
+              <CardHeader class="pb-2">
+                <CardTitle class="flex items-center justify-between">
+                  <Tooltip>
+                    <TooltipTrigger as-child>
+                      <button type="button" class="cursor-help underline decoration-dotted underline-offset-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded">Ästhetik</button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Mittel aus Sonnet (LLM) und LAION-V2.5 (deterministischer Predictor).
+                      Bei grosser Abweichung wird eine Divergenz angezeigt.
+                    </TooltipContent>
+                  </Tooltip>
+                  <Info class="h-4 w-4 text-slate-400" aria-hidden="true" />
+                </CardTitle>
+                <CardDescription>visuelle Oberfläche, kombiniert</CardDescription>
+              </CardHeader>
+              <CardContent class="space-y-1.5">
+                <div class="flex items-end justify-between">
+                  <span class="text-2xl font-semibold tabular-nums">{{ view.aestheticCombined }}</span>
+                  <span class="text-xs text-slate-500">/100</span>
+                </div>
+                <p v-if="view.aestheticDivergent" class="flex items-start gap-1.5 rounded bg-amber-50 px-1.5 py-1 text-xs text-amber-900">
+                  <AlertTriangle class="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+                  <span>Ästhetik-Modelle weichen stark ab (Δ {{ view.aestheticDelta }}).</span>
+                </p>
+                <p v-else-if="view.aestheticFallbackOnly" class="flex items-start gap-1.5 rounded bg-slate-100 px-1.5 py-1 text-xs text-slate-600">
+                  <CircleDashed class="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+                  <span>Nur Sonnet — V2.5 nicht verfügbar.</span>
+                </p>
+              </CardContent>
+            </Card>
+
+            <!-- Maskierungs-Karte -->
+            <Card>
+              <CardHeader class="pb-2">
+                <CardTitle class="flex items-center justify-between">
+                  <Tooltip>
+                    <TooltipTrigger as-child>
+                      <button type="button" class="cursor-help underline decoration-dotted underline-offset-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded">Maskierung</button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Tendenzhinweis: deckt die Ästhetik mögliche Probleme zu?
+                      Aus Codebook-Evidenz und kombinierter Ästhetik abgeleitet — keine zuverlässige Messung.
+                    </TooltipContent>
+                  </Tooltip>
+                  <Info class="h-4 w-4 text-slate-400" aria-hidden="true" />
+                </CardTitle>
+                <CardDescription>Tendenz, kein Nachweis</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Badge :variant="verdictBadgeVariant(view.maskingVerdict)">
+                  {{ verdictLabels[view.maskingVerdict] }}
+                </Badge>
+              </CardContent>
+            </Card>
+          </div>
+
+          <!-- Leseart + Visuelle Treiber -->
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  <Tooltip>
+                    <TooltipTrigger as-child>
+                      <button type="button" class="cursor-help underline decoration-dotted underline-offset-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded">Leseart</button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Lesearten sind subjektiv und überlappen oft. Eine Einstufung ist eine Tendenz, keine Wahrheit.
+                    </TooltipContent>
+                  </Tooltip>
+                </CardTitle>
+              </CardHeader>
+              <CardContent class="space-y-2">
+                <div class="flex flex-wrap items-center gap-2">
+                  <Badge variant="default">{{ view.readingMode.code }}</Badge>
+                  <span class="text-sm text-slate-700">{{ view.readingMode.label }}</span>
+                </div>
+                <p class="text-xs text-slate-500">{{ readingModeDescriptions[view.readingMode.code] }}</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Visuelle Treiber</CardTitle>
+                <CardDescription>was den visuellen Eindruck prägt</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div v-if="view.visualDrivers.length > 0" class="flex flex-wrap gap-1.5">
+                  <Badge
+                    v-for="(driver, i) in view.visualDrivers"
+                    :key="`${driver.code}-${i}`"
+                    variant="secondary"
+                  >
+                    <span class="mr-1 font-mono text-[10px] opacity-70">{{ driver.code }}</span>
+                    {{ driver.label }}
+                  </Badge>
+                </div>
+                <p v-else class="text-xs text-slate-500">Keine spezifischen Treiber identifiziert.</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <!-- Bias-Achsen-Summary + Dominant-Error + Input-Completeness -->
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <Card>
+              <CardHeader class="pb-2">
+                <CardTitle>Bias-Achsen</CardTitle>
+                <CardDescription>identifizierte Bias-Dimensionen</CardDescription>
+              </CardHeader>
+              <CardContent class="flex items-center justify-between">
+                <span class="text-2xl font-semibold tabular-nums">{{ view.biasAxesSummary.count }}</span>
+                <Badge :variant="riskBadgeVariant(view.biasAxesSummary.maxRisk)">
+                  max. Risiko: {{ view.biasAxesSummary.maxRisk === 'none' ? '–' : view.biasAxesSummary.maxRisk }}
+                </Badge>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader class="pb-2">
+                <CardTitle>Dominanter Befund</CardTitle>
+                <CardDescription>was die Analyse hervorhebt</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Badge variant="outline">{{ dominantErrorLabels[view.dominantErrorType] }}</Badge>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader class="pb-2">
+                <CardTitle>Input-Vollständigkeit</CardTitle>
+                <CardDescription>was die Pipeline gesehen hat</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Badge
+                  :variant="view.inputCompleteness === 'full' ? 'success' : view.inputCompleteness === 'image_only' ? 'warning' : 'secondary'"
+                >
+                  {{ inputCompletenessLabels[view.inputCompleteness] }}
+                </Badge>
+              </CardContent>
+            </Card>
+          </div>
+
+          <!-- Hints-Akkordeon -->
+          <Card>
+            <CardHeader>
+              <CardTitle class="flex items-center gap-2">
+                Prüfhinweise (Hinweis, kein Nachweis)
+                <Badge variant="outline" class="text-[10px]">
+                  {{ view.hintsCountBySeverity.high }} hoch · {{ view.hintsCountBySeverity.medium }} mittel · {{ view.hintsCountBySeverity.low }} niedrig
+                </Badge>
+              </CardTitle>
+              <CardDescription>
+                {{ view.hintsSortedBySeverity.length }} Hinweis(e) für die redaktionelle Prüfung
+              </CardDescription>
+            </CardHeader>
+            <CardContent class="pt-0">
+              <p v-if="view.hintsSortedBySeverity.length === 0" class="text-sm text-slate-500">
+                Keine Hinweise ausgelöst.
+              </p>
+              <Accordion
+                v-else
+                type="multiple"
+                class="w-full"
+                :default-value="view.hintsSortedBySeverity.filter(h => h.severity === 'high').map(h => h.id)"
+              >
+                <AccordionItem
+                  v-for="hint in view.hintsSortedBySeverity"
+                  :key="hint.id"
+                  :value="hint.id"
+                >
+                  <AccordionTrigger>
+                    <span class="flex items-center gap-2 text-left">
+                      <Badge :variant="severityVariant(hint.severity)" class="shrink-0">
+                        {{ severityLabel(hint.severity) }}
+                      </Badge>
+                      <span class="font-mono text-[10px] text-slate-500">{{ hint.id }}</span>
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent class="space-y-2">
+                    <p class="text-sm text-slate-700">{{ hint.hint }}</p>
+                    <p class="rounded bg-slate-100 px-2 py-1 text-xs text-slate-600">
+                      <strong class="font-semibold">Prüffrage:</strong> {{ hint.reviewQuestion }}
+                    </p>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </CardContent>
+          </Card>
+
+          <!-- Debug-Layer -->
+          <section v-if="debugMode" class="space-y-4">
+            <Separator />
+            <h2 class="flex items-center gap-2 text-sm font-medium text-slate-700">
+              <Bug class="h-4 w-4" /> Debug-Layer
+            </h2>
+
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-4">
+              <Card>
+                <CardHeader class="pb-2"><CardTitle>Sonnet</CardTitle></CardHeader>
+                <CardContent>
+                  <span class="text-xl font-semibold tabular-nums">{{ view.debug.sonnetAesthetic }}</span>
+                  <span class="ml-1 text-xs text-slate-500">/100</span>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader class="pb-2"><CardTitle>V2.5</CardTitle></CardHeader>
+                <CardContent>
+                  <template v-if="view.debug.v25Aesthetic !== null">
+                    <span class="text-xl font-semibold tabular-nums">{{ view.debug.v25Aesthetic }}</span>
+                    <span class="ml-1 text-xs text-slate-500">/100 (raw {{ view.debug.v25Raw?.toFixed(2) }}/10)</span>
+                  </template>
+                  <Badge v-else variant="danger" class="text-[10px]">
+                    Fehler: {{ view.debug.laionError ?? 'unbekannt' }}
+                  </Badge>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader class="pb-2"><CardTitle>Integrity (lokal)</CardTitle></CardHeader>
+                <CardContent>
+                  <span class="text-xl font-semibold tabular-nums">{{ view.debug.integrityScore }}</span>
+                  <span class="ml-1 text-xs text-slate-500">/100</span>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader class="pb-2"><CardTitle>Pipeline-Meta</CardTitle></CardHeader>
+                <CardContent class="text-xs text-slate-600">
+                  <p><strong>Analyse:</strong> {{ view.debug.modelLabel }}</p>
+                  <p v-if="view.debug.aestheticModelLabel"><strong>Aesthetic:</strong> {{ view.debug.aestheticModelLabel }}</p>
+                  <p><strong>Laufzeit:</strong> {{ (view.debug.durationMs / 1000).toFixed(1) }} s</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <details class="rounded border border-slate-200 bg-white">
+              <summary class="cursor-pointer select-none px-3 py-2 text-sm font-medium">
+                Roh-JSON (Pipeline-Output)
+              </summary>
+              <pre class="max-h-[60vh] overflow-auto border-t border-slate-200 bg-slate-900 p-3 text-xs text-slate-100">{{ JSON.stringify(view.debug.rawJson, null, 2) }}</pre>
+            </details>
+          </section>
+        </section>
+      </main>
+    </div>
+  </TooltipProvider>
 </template>

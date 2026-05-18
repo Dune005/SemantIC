@@ -10,6 +10,14 @@ export default defineNuxtConfig({
     port: 3400,
   },
   modules: ['@nuxtjs/tailwindcss'],
+  css: ['~/assets/css/tailwind.css'],
+  tailwindcss: {
+    cssPath: '~/assets/css/tailwind.css',
+    configPath: '~~/tailwind.config.ts',
+  },
+  components: [
+    { path: '~/components', pathPrefix: false, ignore: ['ui/**'] },
+  ],
   alias: {
     '@pipeline': fileURLToPath(new URL('../src', import.meta.url)),
   },

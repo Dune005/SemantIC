@@ -34,8 +34,8 @@ export function deriveContextReviewHints(input: HintInput): ContextReviewHint[] 
       id: 'visual_overload',
       severity: 'medium',
       triggeredBy: input.visualDrivers,
-      hint: 'Das Bild kombiniert mehrere starke visuelle Treiber. Pruefen, ob die Darstellung fuer den Nutzungskontext zu unruhig, zu dekorativ oder zu aufmerksamkeitsstark ist.',
-      reviewQuestion: 'Unterstuetzt die visuelle Dichte die Aussage des Beitrags oder lenkt sie davon ab?',
+      hint: 'Das Bild kombiniert mehrere starke visuelle Treiber. Prüfen, ob die Darstellung für den Nutzungskontext zu unruhig, zu dekorativ oder zu aufmerksamkeitsstark ist.',
+      reviewQuestion: 'Unterstützt die visuelle Dichte die Aussage des Beitrags oder lenkt sie davon ab?',
     })
   }
 
@@ -43,8 +43,8 @@ export function deriveContextReviewHints(input: HintInput): ContextReviewHint[] 
     hints.push({
       id: 'stock_aesthetic_risk',
       severity: 'medium',
-      triggeredBy: [input.readingMode, `aesthetic:${input.aestheticScore}`],
-      hint: 'Das Bild folgt einer Werbe- oder Magazin-Aesthetik mit hoher Oberflaechenqualitaet. Bei journalistischen, fachlichen oder dokumentarischen Kontexten pruefen, ob die Darstellung zu glatt oder zu generisch wirkt.',
+      triggeredBy: [input.readingMode, `aesthetic_combined:${input.aestheticScore}`],
+      hint: 'Das Bild folgt einer Werbe- oder Magazin-Ästhetik mit hoher Oberflächenqualität. Bei journalistischen, fachlichen oder dokumentarischen Kontexten prüfen, ob die Darstellung zu glatt oder zu generisch wirkt.',
       reviewQuestion: 'Passt der visuelle Stil zur beabsichtigten Kommunikation, oder wirkt das Bild wie ein austauschbares Stockfoto?',
     })
   }
@@ -57,9 +57,9 @@ export function deriveContextReviewHints(input: HintInput): ContextReviewHint[] 
     hints.push({
       id: 'masking_attention_risk',
       severity: 'high',
-      triggeredBy: [`aesthetic:${input.aestheticScore}`, ...weakDims],
-      hint: 'Die visuelle Oberflaeche ist stark, waehrend einzelne Integritaetsdimensionen auffaellig sind. Die Aesthetik koennte vorhandene Fehler ueberdecken.',
-      reviewQuestion: 'Fallen die identifizierten Probleme beim normalen Betrachten auf, oder werden sie durch die visuelle Qualitaet maskiert?',
+      triggeredBy: [`aesthetic_combined:${input.aestheticScore}`, ...weakDims],
+      hint: 'Die visuelle Oberfläche ist stark, während einzelne Integritätsdimensionen auffällig sind. Die Ästhetik könnte vorhandene Fehler überdecken.',
+      reviewQuestion: 'Fallen die identifizierten Probleme beim normalen Betrachten auf, oder werden sie durch die visuelle Qualität maskiert?',
     })
   }
 
@@ -72,8 +72,8 @@ export function deriveContextReviewHints(input: HintInput): ContextReviewHint[] 
       id: 'role_stereotype_review',
       severity: 'medium',
       triggeredBy: triggers,
-      hint: 'Die Darstellung enthaelt eine soziale Rolle mit moeglicher Stereotypisierung. Pruefen, ob Rollenbesetzung, Handlungsmacht und Bildkomposition die intendierte Aussage stuetzen oder stereotype Muster verstaerken.',
-      reviewQuestion: 'Reproduziert die Darstellung stereotype Erwartungen, oder bildet sie die gewuenschte Realitaet ab?',
+      hint: 'Die Darstellung enthält eine soziale Rolle mit möglicher Stereotypisierung. Prüfen, ob Rollenbesetzung, Handlungsmacht und Bildkomposition die intendierte Aussage stützen oder stereotype Muster verstärken.',
+      reviewQuestion: 'Reproduziert die Darstellung stereotype Erwartungen, oder bildet sie die gewünschte Realität ab?',
     })
   }
 
@@ -82,7 +82,7 @@ export function deriveContextReviewHints(input: HintInput): ContextReviewHint[] 
       id: 'context_missing',
       severity: 'low',
       triggeredBy: ['no_usage_context'],
-      hint: 'Ohne Nutzungskontext kann SemantIC nur Bildmerkmale beurteilen. Die redaktionelle Passung muss manuell geprueft werden.',
+      hint: 'Ohne Nutzungskontext kann SemantIC nur Bildmerkmale beurteilen. Die redaktionelle Passung muss manuell geprüft werden.',
       reviewQuestion: 'In welchem Kontext soll dieses Bild verwendet werden, und passt die Darstellung dazu?',
     })
   }
@@ -92,8 +92,8 @@ export function deriveContextReviewHints(input: HintInput): ContextReviewHint[] 
       id: 'physics_finding_review',
       severity: 'medium',
       triggeredBy: ['has_physics_issue', `physics:${input.physicsScore}`],
-      hint: 'Das Modell hat einen Physik-Befund markiert (Licht, Schatten, Material, Perspektive, Spiegelung oder Text). Pruefen, ob der Befund im Bild visuell nachvollziehbar ist und wie kritisch er fuer den Nutzungskontext wirkt.',
-      reviewQuestion: 'Ist der markierte Physik-Befund im Bild tatsaechlich sichtbar und stoerend fuer den Nutzungskontext?',
+      hint: 'Das Modell hat einen Physik-Befund markiert (Licht, Schatten, Material, Perspektive, Spiegelung oder Text). Prüfen, ob der Befund im Bild visuell nachvollziehbar ist und wie kritisch er für den Nutzungskontext wirkt.',
+      reviewQuestion: 'Ist der markierte Physik-Befund im Bild tatsächlich sichtbar und störend für den Nutzungskontext?',
     })
   }
 
@@ -102,8 +102,8 @@ export function deriveContextReviewHints(input: HintInput): ContextReviewHint[] 
       id: 'anatomy_finding_review',
       severity: 'medium',
       triggeredBy: ['has_anatomy_issue'],
-      hint: 'Das Modell hat einen Anatomie-Befund markiert (Haende, Finger, Gesicht, Proportionen oder Gliedmassen). Diese Kategorie wird in den Tests teilweise overused — vorsichtig pruefen, ob ein konkreter Fehler belegbar ist.',
-      reviewQuestion: 'Liegt ein konkreter, sichtbarer Anatomiefehler vor, oder ist es ein "uncanny valley"-Eindruck ohne klares Detail?',
+      hint: 'Das Modell hat einen Anatomie-Befund markiert (Hände, Finger, Gesicht, Proportionen oder Gliedmassen). Diese Kategorie wird in den Tests teilweise overused — vorsichtig prüfen, ob ein konkreter Fehler belegbar ist.',
+      reviewQuestion: 'Liegt ein konkreter, sichtbarer Anatomiefehler vor, oder ist es ein „uncanny valley"-Eindruck ohne klares Detail?',
     })
   }
 
@@ -112,7 +112,7 @@ export function deriveContextReviewHints(input: HintInput): ContextReviewHint[] 
       id: 'context_finding_review',
       severity: 'high',
       triggeredBy: ['has_context_issue', `semantics:${input.semanticsScore}`],
-      hint: 'Das Modell hat einen Kontext- oder Szenenlogik-Befund markiert (Objekt am falschen Ort, Raumlogik oder Prompt-Mismatch). Kontextfehler sind fuer die redaktionelle Pruefung oft kritischer als Physikfehler — Beobachtung ernst nehmen und gegen den Nutzungskontext spiegeln. Hinweis: subtile Kontextfehler ohne offensichtliche Szenen-Marker werden vom Modell teilweise nicht erkannt — auch ohne diesen Hinweis aktiv pruefen.',
+      hint: 'Das Modell hat einen Kontext- oder Szenenlogik-Befund markiert (Objekt am falschen Ort, Raumlogik oder Prompt-Mismatch). Kontextfehler sind für die redaktionelle Prüfung oft kritischer als Physikfehler — Beobachtung ernst nehmen und gegen den Nutzungskontext spiegeln. Hinweis: subtile Kontextfehler ohne offensichtliche Szenen-Marker werden vom Modell teilweise nicht erkannt — auch ohne diesen Hinweis aktiv prüfen.',
       reviewQuestion: 'Passt die dargestellte Szene logisch zum Prompt und Nutzungskontext, oder gibt es einen funktionalen Bruch?',
     })
   }

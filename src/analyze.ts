@@ -392,6 +392,8 @@ export interface SemanticAnalysisResult {
   aesthetic: AestheticOutput
   computed: {
     integrity_score_local: number
+    aesthetic_combined: number
+    aesthetic_combined_source: 'sonnet+v25' | 'sonnet_only'
     masking_score: number
     masking_verdict: MaskingVerdict
   }
@@ -548,23 +550,34 @@ export async function runSemanticAnalysis(
 
   const duration_ms = Date.now() - start
   const localIntegrity = computeIntegrityScore(analysis.dimension_analysis)
-  const maskingScore = computeMaskingScore(aesthetic.aesthetic_score, localIntegrity)
+  const sonnetAesthetic = aesthetic.aesthetic_score
+  const v25Normalized = laionResult.ok ? laionResult.value.normalized : null
+  const aestheticCombined = v25Normalized !== null
+    ? Math.round((sonnetAesthetic + v25Normalized) / 2)
+    : sonnetAesthetic
+  const aestheticCombinedSource: 'sonnet+v25' | 'sonnet_only' = v25Normalized !== null
+    ? 'sonnet+v25'
+    : 'sonnet_only'
+  const maskingScore = computeMaskingScore(aestheticCombined, localIntegrity)
   const verdictBeforeReconcile = analysis.research_layer.masking_verdict
   const maskingVerdict = deriveMaskingVerdict(
     analysis.research_layer.masking_evidence,
-    aesthetic.aesthetic_score,
+    aestheticCombined,
   )
   if (maskingVerdict !== verdictBeforeReconcile) {
     analysis.research_layer.masking_verdict = maskingVerdict
+    const sourceLabel = aestheticCombinedSource === 'sonnet+v25'
+      ? `Mittel aus Sonnet ${sonnetAesthetic} und V2.5 ${v25Normalized}`
+      : `Sonnet ${sonnetAesthetic} (V2.5 nicht verfügbar)`
     analysis.research_layer.masking_reasoning =
       `Verdict per Reconcile auf "${maskingVerdict}" gesetzt (Vorher: "${verdictBeforeReconcile}"). ` +
-      `Deterministische Ableitung aus Evidenz (${analysis.research_layer.masking_evidence.length} Einträge) und Ästhetik-Score (${aesthetic.aesthetic_score}/100; Floor <75 deckelt auf 'low').`
+      `Deterministische Ableitung aus Evidenz (${analysis.research_layer.masking_evidence.length} Einträge) und kombiniertem Ästhetik-Score (${aestheticCombined}/100; ${sourceLabel}; Floor <75 deckelt auf 'low').`
     if (!maskingReport.verdict_downgraded) {
       maskingReport.verdict_downgraded = true
       maskingReport.verdict_before = verdictBeforeReconcile
     }
     maskingReport.verdict_after = maskingVerdict
-    console.warn(`[R4.2 Masking-Filter] masking_verdict via aesthetic+evidence reconcile: ${verdictBeforeReconcile} → ${maskingVerdict}`)
+    console.warn(`[R4.2 Masking-Filter] masking_verdict via aesthetic_combined+evidence reconcile: ${verdictBeforeReconcile} → ${maskingVerdict} (combined=${aestheticCombined}, source=${aestheticCombinedSource})`)
   }
   const hints = deriveContextReviewHints({
     readingMode: analysis.research_layer.reading_mode,
@@ -572,7 +585,7 @@ export async function runSemanticAnalysis(
     physicsScore: analysis.dimension_analysis.physics.score,
     semanticsScore: analysis.dimension_analysis.semantics.score,
     biasScore: analysis.dimension_analysis.bias.score,
-    aestheticScore: aesthetic.aesthetic_score,
+    aestheticScore: aestheticCombined,
     hasUsageContext: Boolean(options?.context?.trim()),
     biasFlags: {
       hasGenderBias: analysis.research_layer.codebook.has_gender_bias,
@@ -591,6 +604,8 @@ export async function runSemanticAnalysis(
     aesthetic,
     computed: {
       integrity_score_local: localIntegrity,
+      aesthetic_combined: aestheticCombined,
+      aesthetic_combined_source: aestheticCombinedSource,
       masking_score: maskingScore,
       masking_verdict: maskingVerdict,
     },
