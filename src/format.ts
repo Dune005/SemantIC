@@ -1,9 +1,9 @@
 import type { SemanticAnalysisResult } from './analyze.js'
 
 function maskingLabel(score: number): string {
-  if (score > 0) return `+${score} (Maskierungsrisiko)`
-  if (score < 0) return `${score} (Integrity überwiegt)`
-  return '0 (ausgeglichen)'
+  if (score > 0) return `+${score} (Maskierungsrisiko, kombiniertes Aesthetic − Integrity)`
+  if (score < 0) return `${score} (Integrity überwiegt, kombiniertes Aesthetic − Integrity)`
+  return '0 (ausgeglichen, kombiniertes Aesthetic − Integrity)'
 }
 
 function verdictLabel(verdict: 'none' | 'low' | 'medium' | 'high'): string {
@@ -34,8 +34,12 @@ export function formatResult(result: SemanticAnalysisResult): string {
   } else if (meta.laion_aesthetic_error) {
     lines.push(`  Ästhetik V2.5:   – (Fehler: ${meta.laion_aesthetic_error})`)
   }
+  const combinedNote = computed.aesthetic_combined_source === 'sonnet+v25'
+    ? '(Mittel aus Sonnet + V2.5)'
+    : '(nur Sonnet — V2.5 nicht verfügbar)'
+  lines.push(`  Ästhetik kombiniert: ${computed.aesthetic_combined}/100  ${combinedNote}`)
   lines.push(`  Maskierungs-Verdict: ${verdictLabel(computed.masking_verdict)}`)
-  lines.push(`  Maskierungs-Diff (roh, Diagnose): ${maskingLabel(computed.masking_score)}`)
+  lines.push(`  Maskierungs-Diff (Diagnose): ${maskingLabel(computed.masking_score)}`)
   if (aesthetic.aesthetic_reasoning) {
     lines.push(`  Begründung Ästhetik (Sonnet): ${aesthetic.aesthetic_reasoning}`)
   }
