@@ -70,6 +70,19 @@ export interface ConsistencyReconcileReport {
   }>
   integrity_before: number
   integrity_after: number
+  // Phase B (R6): Aggregate-Cap nach computeIntegrityScore. Stellt die
+  // interne Konsistenz zwischen Codebook-Flag-Evidence und Score wieder her,
+  // wenn die R2/R3/R4-Dimension-Caps den Score nicht weit genug gedrückt
+  // haben (z.B. weil nur eine von drei Dimensionen gecappt wurde, aber das
+  // arithmetische Mittel >80 bleibt).
+  aggregate_cap?: {
+    applied: boolean
+    score_before: number
+    score_after: number
+    cap: number
+    reason: string
+    triggering_rules: string[]
+  }
 }
 
 // Reconcile zwischen Codebook-Flags und Dimensions-Scores. Der LLM-Output ist
@@ -77,6 +90,26 @@ export interface ConsistencyReconcileReport {
 // Dieser Layer überschreibt Score/Status NICHT, sondern setzt einen Cap auf 74,
 // damit View-Model und integrity_score_local den Codebook-Befund respektieren.
 // Plus: Anatomie-Reklassifizierung wenn physics-Findings Anatomy-Keywords nennen.
+//
+// Phase B-light (R6.1): nur _strong-Pfade, evidence_only entfernt nach B7-FP-Welle.
+//   R2 physics:  Flag + Evidence + ≥moderate Finding → Cap 74
+//   R3 anatomy:  Flag + (Evidence ODER anatomie-relevantes ≥moderate Finding) → Cap 74
+//                 R3 darf weiterhin ohne Evidence triggern, weil R1
+//                 has_anatomy_issue aus einem ≥moderate-Finding setzen kann.
+//   R4 context:  Flag + Evidence + ≥moderate Finding → Cap 74
+//   R5 bias:     (has_body || has_role || has_gender) + ≥moderate bias-Finding
+//                 → Bias-Cap 74 (neuer Pfad, B-light, gegen CEO-Underrating)
+// Begründung evidence_only-Wegfall: B7-Test (5 Bilder × 2 Modelle, 2026-05-19)
+// zeigte FP-Welle auf clean Bildern (NB_kindergarden, NB_female_worker) —
+// evidence_only-Pfad cappte clean Hartfälle auf 80, weil das LLM unter dem
+// schärferen Severity-Prompt vereinzelt Codebook-Flags ohne moderate Finding
+// setzte. _strong-Pfade bleiben aktiv, weil sie auf coffeeshop substanziell
+// liefern (Phase-B-Hauptgewinn). 3.5-Flash-Severity-Kompression ist damit
+// nicht vollständig adressiert (3.5 + B-light auf coffeeshop bleibt grün) —
+// dokumentierte Restschwäche.
+// Audit-Trail in `applied_rules` zeigt welcher Pfad getriggert hat (auch
+// wenn der Score bereits durch eine andere Regel gecappt war); `score_caps`
+// listet nur die effektiven Score-Änderungen.
 const ANATOMY_KEYWORDS = /\b(finger|hand|hände|gesicht|antlitz|face|proport|gliedmass|extremit|limb|arm|fuss|fuß|leg)/i
 const PLACEHOLDER_FINDING_PATTERNS = [
   /^\s*(noch\s+zu\s+pr[üu]fen|noch\s+unklar|needs?\s+(review|checking)|unclear\s+issue|tbd|to\s+be\s+(determined|reviewed)|no\s+(specific|concrete)\s+finding)\s*\.?\s*$/i,
@@ -139,7 +172,11 @@ function applyConsistencyReconcile(analysis: AnalysisOutput): ConsistencyReconci
     }
   }
 
-  // Helper für Score-Cap
+  // Helper für Score-Cap.
+  // applied_rules wird IMMER gepusht (Audit-Trail: welche Regel hat getriggert),
+  // score_caps nur bei tatsächlicher Score-Änderung. Damit zeigt der Audit
+  // beide Regeln, wenn z.B. R2_physics_cap_strong und R3_anatomy_cap_strong
+  // beide auf physics getriggert haben, obwohl nur der erste Cap effektiv ist.
   const capDim = (
     key: 'physics' | 'semantics' | 'bias',
     cap: number,
@@ -147,12 +184,12 @@ function applyConsistencyReconcile(analysis: AnalysisOutput): ConsistencyReconci
     ruleLabel: string,
   ) => {
     const d = dims[key]
+    report.applied_rules.push(ruleLabel)
     if (d.score <= cap) return
     const statusBefore = d.status
     const scoreBefore = d.score
     d.score = cap
     d.status = cap >= 75 ? 'green' : cap >= 55 ? 'yellow' : 'red'
-    report.applied_rules.push(ruleLabel)
     report.score_caps.push({
       dimension: key,
       score_before: scoreBefore,
@@ -163,38 +200,109 @@ function applyConsistencyReconcile(analysis: AnalysisOutput): ConsistencyReconci
     })
   }
 
-  // R2: Physik-Cap — wenn has_physics_issue=true, valide Evidence vorhanden und
-  // mind. ein Finding mit severity ≥ moderate. Minor-only Findings reichen NICHT,
-  // weil die Pipeline minor-Codebook-Flags häufig auch bei sauberen Bildern setzt.
+  // R2: Physik-Cap — Flag + Evidence + ≥moderate Finding.
   if (
     cb.has_physics_issue &&
     (cb.physics_evidence ?? []).length >= 1 &&
     hasModerateOrSevere(dims.physics.findings)
   ) {
-    capDim('physics', 74, 'has_physics_issue=true mit valider Evidence und ≥moderate Finding', 'R2_physics_cap')
+    capDim('physics', 74, 'has_physics_issue=true mit valider Evidence und ≥moderate Finding', 'R2_physics_cap_strong')
   }
 
-  // R3: Anatomy-Cap (lebt im physics-Block laut Schema) — analog R2, plus
-  // Keyword-Match auf Anatomie-Begriffe.
-  if (
-    cb.has_anatomy_issue &&
-    ((cb.anatomy_evidence ?? []).length >= 1 || hasModerateOrSevere(dims.physics.findings, ANATOMY_KEYWORDS))
-  ) {
-    capDim('physics', 74, 'has_anatomy_issue=true mit anatomie-relevantem ≥moderate Finding oder Evidence', 'R3_anatomy_cap')
+  // R3: Anatomy-Cap (lebt im physics-Block laut Schema). Trigger: Flag plus
+  // (Evidence ODER anatomie-relevantes ≥moderate Finding). R3 darf weiterhin
+  // ohne Evidence triggern, weil R1 has_anatomy_issue aus einem ≥moderate
+  // Anatomie-Finding setzen kann.
+  if (cb.has_anatomy_issue) {
+    const anatomyStrong = hasModerateOrSevere(dims.physics.findings, ANATOMY_KEYWORDS)
+    const hasAnatomyEvidence = (cb.anatomy_evidence ?? []).length >= 1
+    if (anatomyStrong) {
+      const reason = hasAnatomyEvidence
+        ? 'has_anatomy_issue=true mit valider anatomy_evidence und anatomie-relevantem ≥moderate Finding'
+        : 'has_anatomy_issue=true mit anatomie-relevantem ≥moderate Finding (R1-Reklassifizierung möglich, ohne Evidence)'
+      capDim('physics', 74, reason, 'R3_anatomy_cap_strong')
+    }
   }
 
-  // R4: Context-Cap — semantics.score auf ≤74 deckeln, nur bei ≥moderate Finding.
+  // R4: Context-Cap — analog R2.
   if (
     cb.has_context_issue &&
     (cb.context_evidence ?? []).length >= 1 &&
     hasModerateOrSevere(dims.semantics.findings)
   ) {
-    capDim('semantics', 74, 'has_context_issue=true mit valider Evidence und ≥moderate Finding', 'R4_context_cap')
+    capDim('semantics', 74, 'has_context_issue=true mit valider Evidence und ≥moderate Finding', 'R4_context_cap_strong')
+  }
+
+  // R5: Bias-Cap (B-light, gegen CEO-Underrating). Trigger: ein Stereotyp-
+  // Flag aktiv UND mind. ein ≥moderate bias-Finding. Cap auf bias-Dimension,
+  // nicht auf physics/semantics. Begründung: V25-Counter-Stereotyp-Erfahrung
+  // hat reine Codebook-Flag-Trigger (ohne moderate-Finding) als instabil
+  // belegt. Hier verlangen wir BEIDES (Flag UND moderate Finding), das
+  // schützt vor V25-FPs und cappt CEO-typische Body-Stereotyp-Bilder.
+  const hasStereotypeFlag = cb.has_body_stereotype || cb.has_role_stereotype || cb.has_gender_bias
+  if (hasStereotypeFlag && hasModerateOrSevere(dims.bias.findings)) {
+    const activeFlags: string[] = []
+    if (cb.has_body_stereotype) activeFlags.push('has_body_stereotype')
+    if (cb.has_role_stereotype) activeFlags.push('has_role_stereotype')
+    if (cb.has_gender_bias) activeFlags.push('has_gender_bias')
+    capDim('bias', 74, `Stereotyp-Flag aktiv (${activeFlags.join(', ')}) und ≥moderate bias-Finding`, 'R5_bias_cap_strong')
   }
 
   report.integrity_after = Math.round((dims.physics.score + dims.semantics.score + dims.bias.score) / 3)
 
   return report
+}
+
+// Phase B-light (R6.1): Aggregate-Cap nach computeIntegrityScore. Trigger ist
+// ausschliesslich, dass der Reconcile-Layer einen R2/R3/R4/R5-Strong-Trigger
+// gefeuert hat (RECONCILE_DIM_CAP_RULES). Ein reiner Codebook-Flag mit
+// Evidence ohne R*-Trigger reicht NICHT — das war der versteckte
+// evidence_only-Restpfad, der in B7 die Kindergarden-FP-Welle ausgelöst hat.
+// UND der aggregierte integrity_score > AGGREGATE_CAP_THRESHOLD (strict >)
+// → deckeln auf AGGREGATE_CAP. Bias wird über R5 ebenfalls aggregiert
+// (gegen CEO-Underrating), aber nur sofern R5_bias_cap_strong getriggert
+// hat — die V25-Schutzklausel verlangt Flag UND moderate Finding.
+//
+// Score-Hygiene: hat KEINE direkte UI-Verdict-Wirkung (overallVerdict im
+// View-Model leitet sich aus Dimension-Status + Hints ab). Die UI-Ampel
+// wird durch R2/R3/R4/R5-Dimension-Caps auf yellow geschoben. B5 reduziert
+// die intern erkennbare Inkonsistenz zwischen Codebook-Flag-Evidence und
+// integrity_score_local.
+//
+// Hinweis: `reconcileReport.integrity_after` bleibt der Wert NACH
+// Dimension-Reconcile (R1-R5), nicht nach Aggregate-Cap. Der finale
+// `integrity_score_local` ist immer der Return-Wert dieser Funktion;
+// `aggregate_cap.score_after` macht die Differenz nachvollziehbar.
+const AGGREGATE_CAP_THRESHOLD = 80
+const AGGREGATE_CAP = 80
+const RECONCILE_DIM_CAP_RULES = new Set([
+  'R2_physics_cap_strong',
+  'R3_anatomy_cap_strong',
+  'R4_context_cap_strong',
+  'R5_bias_cap_strong',
+])
+
+function applyAggregateCap(
+  rawIntegrity: number,
+  _analysis: AnalysisOutput,
+  report: ConsistencyReconcileReport,
+): number {
+  const triggeringRules = report.applied_rules.filter(r => RECONCILE_DIM_CAP_RULES.has(r))
+
+  if (triggeringRules.length === 0 || rawIntegrity <= AGGREGATE_CAP_THRESHOLD) {
+    return rawIntegrity
+  }
+
+  const capped = AGGREGATE_CAP
+  report.aggregate_cap = {
+    applied: true,
+    score_before: rawIntegrity,
+    score_after: capped,
+    cap: AGGREGATE_CAP,
+    reason: `Reconcile-Dimension-Cap aktiv (${triggeringRules.join(', ')}), aber integrity_score > ${AGGREGATE_CAP_THRESHOLD}. Aggregate-Cap reduziert auf ${AGGREGATE_CAP} (Score-Hygiene, keine UI-Verdict-Wirkung).`,
+    triggering_rules: triggeringRules,
+  }
+  return capped
 }
 
 function applyEvidenceFilter(analysis: AnalysisOutput): EvidenceFilterReport {
@@ -747,7 +855,14 @@ export async function runSemanticAnalysis(
   }
 
   const duration_ms = Date.now() - start
-  const localIntegrity = computeIntegrityScore(analysis.dimension_analysis)
+  const rawLocalIntegrity = computeIntegrityScore(analysis.dimension_analysis)
+  const localIntegrity = applyAggregateCap(rawLocalIntegrity, analysis, reconcileReport)
+  if (reconcileReport.aggregate_cap?.applied) {
+    console.warn(
+      `[R6 Aggregate-Cap] integrity_score gedeckelt: ${reconcileReport.aggregate_cap.score_before} → ${reconcileReport.aggregate_cap.score_after} ` +
+      `(Trigger: ${reconcileReport.aggregate_cap.triggering_rules.join(', ')})`,
+    )
+  }
   const sonnetAesthetic = aesthetic.aesthetic_score
   const v25Normalized = laionResult.ok ? laionResult.value.normalized : null
   const aestheticCombined = v25Normalized !== null

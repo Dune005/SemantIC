@@ -1,8 +1,19 @@
 import { z } from 'zod'
 
 const FindingSchema = z.object({
-  finding: z.string(),
-  severity: z.enum(['minor', 'moderate', 'severe']),
+  finding: z.string().describe(
+    'Concrete problem finding (defect, error, issue) in German free text. ' +
+    'Findings are PROBLEMS ONLY — never include positive or neutral observations ' +
+    'like "no anomalies" or "physical consistency is excellent". For clean ' +
+    'dimensions return an empty findings[] array.',
+  ),
+  severity: z.enum(['minor', 'moderate', 'severe']).describe(
+    'severe = concrete visible problem that would prevent publishable use in ' +
+    'the named usage context. moderate = recognisable problem critical in ' +
+    'many editorial/journalistic contexts. minor = subtle anomaly tolerable ' +
+    'in most contexts. When uncertain between two levels, choose the higher ' +
+    'one if clear visual evidence supports it.',
+  ),
   category: z.string(),
 })
 

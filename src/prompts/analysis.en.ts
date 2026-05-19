@@ -66,6 +66,45 @@ PHASE 2 – IMAGE ANALYSIS ALONG THREE DIMENSIONS
 For each dimension, strictly separate descriptive observation from interpretive
 evaluation. Status thresholds: green ≥ 75, yellow ≥ 50, red < 50.
 
+SEVERITY SCALE (findings[].severity)
+Apply this scale strictly. When uncertain between two levels, prefer the
+higher one if clear visual evidence supports it.
+• severe   – concrete, visible problem with unambiguous visual evidence
+             that would prevent publishable use in the named usage context.
+             Examples: hand with wrong finger count, mirrored readable text,
+             person clearly merging with furniture, gross prompt-vs-image
+             mismatch.
+• moderate – recognisable problem with sufficient visual evidence that
+             would be critical in many editorial / journalistic contexts.
+             Examples: shadow direction inconsistent across a salient
+             object, a clear stereotyping pattern in role presentation,
+             one prominent scene-logic break.
+• minor    – subtle anomaly without clear context damage, tolerable in
+             most usage contexts. Examples: slight texture artefact in a
+             non-salient region, a minor pose oddity that does not change
+             the read of the scene.
+
+FINDINGS — PROBLEMS ONLY
+The findings[] array contains EXCLUSIVELY problem findings (defects,
+errors, issues an editor would need to address). Positive or neutral
+observations like "physical consistency is excellent", "no anomalies",
+or "composition is balanced" do NOT belong in findings[]. If a dimension
+has no problems, return an empty findings[] array. Empty findings[] is
+the correct signal for a clean dimension — do not pad with non-issues.
+
+SCORE / SEVERITY / FLAG CONSISTENCY
+Keep dim.score, findings[].severity, and codebook has_*_issue flags
+mutually consistent within each dimension:
+• Any severe finding present                       → dim.score ≤ 55  (red region)
+• Any moderate finding present (and no severe)     → dim.score ≤ 75  (yellow region)
+• has_*_issue=true with substantive evidence
+  but only minor findings                          → dim.score MUST be 76–80
+                                                     (scores >80 are invalid in this case)
+A dim.score above the applicable cap is invalid, even if the rest of the
+dimension looks coherent. Do not use high overall image quality to
+compensate for a concrete defect. When you set has_*_issue=true with
+substantive evidence, the corresponding dim.score MUST reflect the issue.
+
 PHYSICS (physics)
 Inspect: light consistency (sources, shadows, reflections), anatomical correctness
 (proportions, fingers, faces, limbs), physical plausibility (gravity, materials,
@@ -76,7 +115,8 @@ Pay special attention to:
 • Impossible reflections (objects reflecting wrongly or not at all)
 • Subtle errors that are not obvious at first glance (truncated cables,
   wrong gaze directions, objects floating mid-air)
-Even a single clear physics error must noticeably reduce the score (at least −10).
+Even a single clear physics error must noticeably reduce the score (at least −10,
+subject to the severity/flag caps above).
 
 SEMANTICS (semantics)
 Inspect: content fit with the usage context (if present), consistency between
@@ -116,9 +156,10 @@ Consistency with Phase 3 (has_context_issue):
   (clear context errors are typically ≤75; small detail breaks may stay above).
 • Do NOT set the flag based solely on a high score without a finding, and
   do NOT lower the score without a finding. Score and flag must mutually support.
-• If a score >75 alongside a true flag is defensible (e.g. only one detail
-  break in an otherwise coherent scene), name this discrepancy explicitly in
-  the findings.
+• If a score in the 76–80 range alongside a true flag is defensible (e.g.
+  only one detail break in an otherwise coherent scene), name this
+  discrepancy explicitly in the findings. Scores above 80 alongside a true
+  flag are invalid per the SCORE/SEVERITY/FLAG CONSISTENCY rule.
 
 BIAS (bias)
 Inspect the image along the axes identified in Phase 1.
