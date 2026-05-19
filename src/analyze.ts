@@ -52,6 +52,151 @@ export interface MaskingFilterReport {
   verdict_after?: MaskingVerdict
 }
 
+export interface ConsistencyReconcileReport {
+  applied_rules: string[]
+  score_caps: Array<{
+    dimension: 'physics' | 'semantics' | 'bias'
+    score_before: number
+    score_after: number
+    status_before: 'green' | 'yellow' | 'red'
+    status_after: 'green' | 'yellow' | 'red'
+    reason: string
+  }>
+  flag_changes: Array<{
+    flag: 'has_anatomy_issue' | 'has_physics_issue' | 'has_context_issue'
+    before: boolean
+    after: boolean
+    reason: string
+  }>
+  integrity_before: number
+  integrity_after: number
+}
+
+// Reconcile zwischen Codebook-Flags und Dimensions-Scores. Der LLM-Output ist
+// gelegentlich inkonsistent: has_X_issue=true, aber dim.X.status=green/Score≥75.
+// Dieser Layer überschreibt Score/Status NICHT, sondern setzt einen Cap auf 74,
+// damit View-Model und integrity_score_local den Codebook-Befund respektieren.
+// Plus: Anatomie-Reklassifizierung wenn physics-Findings Anatomy-Keywords nennen.
+const ANATOMY_KEYWORDS = /\b(finger|hand|hände|gesicht|antlitz|face|proport|gliedmass|extremit|limb|arm|fuss|fuß|leg)/i
+const PLACEHOLDER_FINDING_PATTERNS = [
+  /^\s*(noch\s+zu\s+pr[üu]fen|noch\s+unklar|needs?\s+(review|checking)|unclear\s+issue|tbd|to\s+be\s+(determined|reviewed)|no\s+(specific|concrete)\s+finding)\s*\.?\s*$/i,
+  /^\s*(siehe|see)\s+(oben|above|below|details?)\s*\.?\s*$/i,
+  /^\s*-+\s*$/,
+]
+
+function isSubstantiveFinding(findingText: string): boolean {
+  const t = findingText.trim()
+  if (t.length < 10) return false
+  return !PLACEHOLDER_FINDING_PATTERNS.some(rx => rx.test(t))
+}
+
+type FindingSeverity = 'minor' | 'moderate' | 'severe'
+
+function hasModerateOrSevere(
+  findings: Array<{ finding: string; severity: FindingSeverity; category?: string }>,
+  keywordFilter?: RegExp,
+): boolean {
+  return findings.some(f => {
+    if (f.severity !== 'moderate' && f.severity !== 'severe') return false
+    if (!isSubstantiveFinding(f.finding)) return false
+    if (keywordFilter) {
+      return keywordFilter.test(f.finding) || keywordFilter.test(f.category ?? '')
+    }
+    return true
+  })
+}
+
+function applyConsistencyReconcile(analysis: AnalysisOutput): ConsistencyReconcileReport {
+  const cb = analysis.research_layer.codebook
+  const dims = analysis.dimension_analysis
+  const report: ConsistencyReconcileReport = {
+    applied_rules: [],
+    score_caps: [],
+    flag_changes: [],
+    integrity_before: Math.round((dims.physics.score + dims.semantics.score + dims.bias.score) / 3),
+    integrity_after: 0,
+  }
+
+  // R1: Anatomie-Reklassifizierung — wenn physics-Findings mit ≥moderate Severity
+  // Anatomy-Keywords nennen, aber has_anatomy_issue=false ist, dann den Flag
+  // setzen. Minor-Findings reklassifizieren wir nicht, weil sie häufig auch bei
+  // sauberen Bildern auftreten (V25-Befund: Anatomy-Kategorie wird overused).
+  if (!cb.has_anatomy_issue) {
+    const anatomyHit = dims.physics.findings.find(f =>
+      (f.severity === 'moderate' || f.severity === 'severe') &&
+      isSubstantiveFinding(f.finding) &&
+      (ANATOMY_KEYWORDS.test(f.finding) || ANATOMY_KEYWORDS.test(f.category ?? '')),
+    )
+    if (anatomyHit) {
+      cb.has_anatomy_issue = true
+      report.applied_rules.push('R1_anatomy_reclassify')
+      report.flag_changes.push({
+        flag: 'has_anatomy_issue',
+        before: false,
+        after: true,
+        reason: `Physik-Finding mit ≥moderate Severity nennt Anatomie-Keyword: "${anatomyHit.finding.slice(0, 80)}…"`,
+      })
+    }
+  }
+
+  // Helper für Score-Cap
+  const capDim = (
+    key: 'physics' | 'semantics' | 'bias',
+    cap: number,
+    reason: string,
+    ruleLabel: string,
+  ) => {
+    const d = dims[key]
+    if (d.score <= cap) return
+    const statusBefore = d.status
+    const scoreBefore = d.score
+    d.score = cap
+    d.status = cap >= 75 ? 'green' : cap >= 55 ? 'yellow' : 'red'
+    report.applied_rules.push(ruleLabel)
+    report.score_caps.push({
+      dimension: key,
+      score_before: scoreBefore,
+      score_after: d.score,
+      status_before: statusBefore,
+      status_after: d.status,
+      reason,
+    })
+  }
+
+  // R2: Physik-Cap — wenn has_physics_issue=true, valide Evidence vorhanden und
+  // mind. ein Finding mit severity ≥ moderate. Minor-only Findings reichen NICHT,
+  // weil die Pipeline minor-Codebook-Flags häufig auch bei sauberen Bildern setzt.
+  if (
+    cb.has_physics_issue &&
+    (cb.physics_evidence ?? []).length >= 1 &&
+    hasModerateOrSevere(dims.physics.findings)
+  ) {
+    capDim('physics', 74, 'has_physics_issue=true mit valider Evidence und ≥moderate Finding', 'R2_physics_cap')
+  }
+
+  // R3: Anatomy-Cap (lebt im physics-Block laut Schema) — analog R2, plus
+  // Keyword-Match auf Anatomie-Begriffe.
+  if (
+    cb.has_anatomy_issue &&
+    ((cb.anatomy_evidence ?? []).length >= 1 || hasModerateOrSevere(dims.physics.findings, ANATOMY_KEYWORDS))
+  ) {
+    capDim('physics', 74, 'has_anatomy_issue=true mit anatomie-relevantem ≥moderate Finding oder Evidence', 'R3_anatomy_cap')
+  }
+
+  // R4: Context-Cap — semantics.score auf ≤74 deckeln, nur bei ≥moderate Finding.
+  if (
+    cb.has_context_issue &&
+    (cb.context_evidence ?? []).length >= 1 &&
+    hasModerateOrSevere(dims.semantics.findings)
+  ) {
+    capDim('semantics', 74, 'has_context_issue=true mit valider Evidence und ≥moderate Finding', 'R4_context_cap')
+  }
+
+  report.integrity_after = Math.round((dims.physics.score + dims.semantics.score + dims.bias.score) / 3)
+
+  return report
+}
+
 function applyEvidenceFilter(analysis: AnalysisOutput): EvidenceFilterReport {
   const cb = analysis.research_layer.codebook
   const report: EvidenceFilterReport = { downgraded_flags: [], dropped_evidence_count: 0 }
@@ -404,6 +549,7 @@ export interface SemanticAnalysisResult {
     duration_ms: number
     evidence_filter?: EvidenceFilterReport
     masking_filter?: MaskingFilterReport
+    consistency_reconcile?: ConsistencyReconcileReport
     laion_aesthetic?: ModalAestheticResult
     laion_aesthetic_error?: string
     test_config?: {
@@ -411,6 +557,46 @@ export interface SemanticAnalysisResult {
       thinkingLevel?: ThinkingLevel
       mediaResolution?: MediaResolution
     }
+    analysis_sampling?: SamplingSnapshot
+    aesthetic_sampling?: SamplingSnapshot
+  }
+}
+
+interface SamplingSnapshot {
+  temperature: number
+  topK: number
+  topP?: number
+  seed?: number
+}
+
+// Best-Effort-Determinismus laut Google-Empfehlung (siehe Recherche 2026-05-18).
+// Reduziert sichtbares Sampling-Rauschen so weit wie möglich; Vision-Pipeline
+// kann trotzdem Restvarianz produzieren (GPU-Numerik, nicht-seedbares Pre-Processing,
+// Modell-Updates über Zeit). Wir akzeptieren das und dokumentieren es in 6.3.
+const DETERMINISTIC_SAMPLING = {
+  temperature: 0,
+  topK: 1,
+  topP: 1,
+  seed: 42,
+} as const
+
+// Per-Provider-Sampling: Anthropic ignoriert seed komplett und top_p, sobald
+// temperature gesetzt ist; OpenRouter ist heterogen. Für non-Google-Provider
+// senden wir deshalb nur temperature + topK und dokumentieren das in meta.
+function buildSampling(useTextFallback: boolean, overrideTemperature?: number): SamplingSnapshot {
+  const temperature =
+    typeof overrideTemperature === 'number' ? overrideTemperature : DETERMINISTIC_SAMPLING.temperature
+  if (useTextFallback) {
+    return {
+      temperature,
+      topK: DETERMINISTIC_SAMPLING.topK,
+    }
+  }
+  return {
+    temperature,
+    topK: DETERMINISTIC_SAMPLING.topK,
+    topP: DETERMINISTIC_SAMPLING.topP,
+    seed: DETERMINISTIC_SAMPLING.seed,
   }
 }
 
@@ -436,9 +622,14 @@ export async function runSemanticAnalysis(
     googleOptions.mediaResolution = options.mediaResolution
   }
   const hasGoogleOptions = Object.keys(googleOptions).length > 0
+  const analysisSampling = buildSampling(analysisResolved.useTextFallback, options?.temperature)
+  const aestheticSampling = buildSampling(aestheticResolved.useTextFallback)
   const analysisGenerationSettings = {
-    ...(typeof options?.temperature === 'number' ? { temperature: options.temperature } : {}),
+    ...analysisSampling,
     ...(hasGoogleOptions && !analysisResolved.useTextFallback ? { providerOptions: { google: googleOptions } } : {}),
+  }
+  const aestheticGenerationSettings = {
+    ...aestheticSampling,
   }
 
   const extractJson = (text: string): string => {
@@ -497,6 +688,7 @@ export async function runSemanticAnalysis(
       return generateText({
         model: aestheticResolved.model,
         system: AESTHETIC_PROMPT + AESTHETIC_JSON_SKELETON + JSON_SUFFIX,
+        ...aestheticGenerationSettings,
         messages: [{
           role: 'user',
           content: [
@@ -509,6 +701,7 @@ export async function runSemanticAnalysis(
       model: aestheticResolved.model,
       schema: AestheticSchema,
       system: AESTHETIC_PROMPT,
+      ...aestheticGenerationSettings,
       messages: [{
         role: 'user',
         content: [
@@ -546,6 +739,11 @@ export async function runSemanticAnalysis(
   }
   if (maskingReport.verdict_downgraded) {
     console.warn(`[R4.2 Masking-Filter] masking_verdict downgegradet: ${maskingReport.verdict_before} → ${maskingReport.verdict_after}`)
+  }
+
+  const reconcileReport = applyConsistencyReconcile(analysis)
+  if (reconcileReport.applied_rules.length > 0) {
+    console.warn(`[R5 Consistency-Reconcile] Regeln angewendet: ${reconcileReport.applied_rules.join(', ')}; Score-Caps: ${reconcileReport.score_caps.map(c => `${c.dimension} ${c.score_before}→${c.score_after}`).join(', ')}`)
   }
 
   const duration_ms = Date.now() - start
@@ -616,6 +814,7 @@ export async function runSemanticAnalysis(
       duration_ms,
       evidence_filter: evidenceReport,
       masking_filter: maskingReport,
+      consistency_reconcile: reconcileReport,
       ...(laionResult.ok ? { laion_aesthetic: laionResult.value } : { laion_aesthetic_error: laionResult.error }),
       ...(typeof options?.temperature === 'number' || options?.thinkingLevel || options?.mediaResolution
         ? {
@@ -626,6 +825,8 @@ export async function runSemanticAnalysis(
             },
           }
         : {}),
+      analysis_sampling: analysisSampling,
+      aesthetic_sampling: aestheticSampling,
     },
   }
 }

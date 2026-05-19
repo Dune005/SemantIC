@@ -95,7 +95,9 @@ function toggleDebug() {
 // --- File-Handling ---
 function stripBase64Prefix(dataUrl: string): { base64: string; mediaType: string } {
   const match = dataUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/)
-  if (!match) return { base64: dataUrl, mediaType: 'image/jpeg' }
+  if (!match || match[1] === undefined || match[2] === undefined) {
+    return { base64: dataUrl, mediaType: 'image/jpeg' }
+  }
   return { base64: match[2], mediaType: match[1] }
 }
 
@@ -232,6 +234,42 @@ function riskBadgeVariant(risk: RiskLevel | 'none') {
 function verdictBadgeVariant(verdict: MaskingVerdict) {
   return verdict === 'high' ? 'danger' : verdict === 'medium' ? 'warning' : verdict === 'low' ? 'secondary' : 'success'
 }
+
+const VERDICT_RING_CLASS: Record<DimensionStatus, string> = {
+  green: 'bg-emerald-500',
+  yellow: 'bg-amber-500',
+  red: 'bg-red-500',
+}
+
+const VERDICT_TEXT_CLASS: Record<DimensionStatus, string> = {
+  green: 'text-emerald-700',
+  yellow: 'text-amber-700',
+  red: 'text-red-700',
+}
+
+const VERDICT_BG_CLASS: Record<DimensionStatus, string> = {
+  green: 'bg-emerald-50 border-emerald-200',
+  yellow: 'bg-amber-50 border-amber-200',
+  red: 'bg-red-50 border-red-200',
+}
+
+const DIM_DOT_CLASS: Record<DimensionStatus, string> = {
+  green: 'bg-emerald-500',
+  yellow: 'bg-amber-500',
+  red: 'bg-red-500',
+}
+
+const HINT_SEVERITY_LABEL: Record<'high' | 'medium' | 'low', string> = {
+  high: 'hoch',
+  medium: 'mittel',
+  low: 'niedrig',
+}
+
+const HINT_SEVERITY_TEXT_CLASS: Record<'high' | 'medium' | 'low', string> = {
+  high: 'text-red-600',
+  medium: 'text-amber-600',
+  low: 'text-slate-500',
+}
 </script>
 
 <template>
@@ -343,25 +381,91 @@ function verdictBadgeVariant(verdict: MaskingVerdict) {
         <section v-if="view" class="space-y-6">
           <Separator />
 
-          <!-- Dimensions-Ampeln + Aesthetic + Maskierung -->
-          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            <Card v-for="(dim, key) in view.dimensions" :key="key">
-              <CardHeader class="pb-2">
-                <CardTitle class="flex items-center justify-between">
-                  <span>{{ dimensionLabels[key] }}</span>
-                  <CheckCircle2 v-if="dim.status === 'green'" class="h-4 w-4 text-emerald-600" aria-hidden="true" />
-                  <CircleAlert v-else-if="dim.status === 'yellow'" class="h-4 w-4 text-amber-600" aria-hidden="true" />
-                  <XCircle v-else class="h-4 w-4 text-red-600" aria-hidden="true" />
-                </CardTitle>
-                <CardDescription>{{ dimensionDescriptions[key] }}</CardDescription>
-              </CardHeader>
-              <CardContent class="flex items-end justify-between">
-                <Badge :variant="statusToBadgeVariant(dim.status)">{{ statusLabel(dim.status) }}</Badge>
-                <span class="text-sm tabular-nums text-slate-500">{{ dim.score }}/100</span>
-              </CardContent>
-            </Card>
+          <!-- Kontext-Lücke-Banner -->
+          <p
+            v-if="view.hasContextWarning"
+            class="flex items-start gap-2 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+          >
+            <AlertTriangle class="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>Ohne vollständigen Kontext bleibt die Einschätzung generisch.</span>
+          </p>
 
-            <!-- Aesthetic-Karte -->
+          <!-- Verdict-Hero-Karte -->
+          <Card :class="['border', VERDICT_BG_CLASS[view.overallVerdict.status]]">
+            <CardContent class="flex gap-5 p-6">
+              <div
+                :class="['h-16 w-16 shrink-0 rounded-full', VERDICT_RING_CLASS[view.overallVerdict.status]]"
+                aria-hidden="true"
+              />
+              <div class="flex-1 space-y-3">
+                <div>
+                  <h2 :class="['text-2xl font-semibold tracking-tight', VERDICT_TEXT_CLASS[view.overallVerdict.status]]">
+                    {{ view.overallVerdict.headline }}
+                  </h2>
+                  <p class="mt-1 text-xs uppercase tracking-wider text-slate-500">Empfehlung — keine Detektion</p>
+                </div>
+                <p class="text-sm text-slate-700">{{ view.overallVerdict.recommendation }}</p>
+
+                <ol v-if="view.userHints.length > 0" class="space-y-1.5 pl-1">
+                  <li
+                    v-for="(hint, i) in view.userHints"
+                    :key="hint.topic"
+                    class="flex items-start gap-2 text-sm text-slate-800"
+                  >
+                    <span class="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white text-xs font-semibold text-slate-700 ring-1 ring-slate-300">
+                      {{ i + 1 }}
+                    </span>
+                    <span class="flex-1">{{ hint.text }}</span>
+                  </li>
+                </ol>
+                <p v-else class="text-sm text-slate-600">Keine spezifischen Hinweise.</p>
+
+                <p class="border-t border-slate-200/70 pt-2 text-xs text-slate-500">
+                  Diese Einschätzung ist eine Empfehlung. Letztes Urteil liegt bei dir.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <!-- "Worauf basiert das?" -->
+          <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-600">
+            <span class="font-medium text-slate-700">Worauf basiert das?</span>
+            <span
+              v-for="(dim, key) in view.dimensions"
+              :key="key"
+              class="flex items-center gap-1.5"
+            >
+              <span :class="['inline-block h-2.5 w-2.5 rounded-full', DIM_DOT_CLASS[dim.status]]" aria-hidden="true" />
+              <span>{{ dimensionLabels[key] }}</span>
+            </span>
+          </div>
+
+          <!-- Debug-Sektion: alle Forschungs-Karten + Raw-Layer -->
+          <section v-if="debugMode" class="space-y-6">
+            <Separator />
+            <h2 class="flex items-center gap-2 text-sm font-medium text-slate-700">
+              <Bug class="h-4 w-4" /> Debug-Layer
+            </h2>
+
+            <!-- Dimensions-Karten mit Scores -->
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              <Card v-for="(dim, key) in view.dimensions" :key="key">
+                <CardHeader class="pb-2">
+                  <CardTitle class="flex items-center justify-between">
+                    <span>{{ dimensionLabels[key] }}</span>
+                    <CheckCircle2 v-if="dim.status === 'green'" class="h-4 w-4 text-emerald-600" aria-hidden="true" />
+                    <CircleAlert v-else-if="dim.status === 'yellow'" class="h-4 w-4 text-amber-600" aria-hidden="true" />
+                    <XCircle v-else class="h-4 w-4 text-red-600" aria-hidden="true" />
+                  </CardTitle>
+                  <CardDescription>{{ dimensionDescriptions[key] }}</CardDescription>
+                </CardHeader>
+                <CardContent class="flex items-end justify-between">
+                  <Badge :variant="statusToBadgeVariant(dim.status)">{{ statusLabel(dim.status) }}</Badge>
+                  <span class="text-sm tabular-nums text-slate-500">{{ dim.score }}/100</span>
+                </CardContent>
+              </Card>
+
+              <!-- Aesthetic-Karte -->
             <Card>
               <CardHeader class="pb-2">
                 <CardTitle class="flex items-center justify-between">
@@ -551,56 +655,86 @@ function verdictBadgeVariant(verdict: MaskingVerdict) {
             </CardContent>
           </Card>
 
-          <!-- Debug-Layer -->
-          <section v-if="debugMode" class="space-y-4">
-            <Separator />
-            <h2 class="flex items-center gap-2 text-sm font-medium text-slate-700">
-              <Bug class="h-4 w-4" /> Debug-Layer
-            </h2>
+          <!-- Konsolidierte Hint-Spur (Topics) -->
+          <Card>
+            <CardHeader>
+              <CardTitle>Konsolidierte Hints (Topics)</CardTitle>
+              <CardDescription>
+                {{ view.userHints.length }} sichtbar (Hero, max. 3) · {{ view.hiddenHints.length }} ausgeblendet (Anti-Rauschen-Filter oder Top-3-Cap)
+              </CardDescription>
+            </CardHeader>
+            <CardContent class="space-y-2">
+              <details
+                v-for="hint in [...view.userHints, ...view.hiddenHints]"
+                :key="`hint-${hint.topic}`"
+                class="rounded border border-slate-200 bg-white"
+              >
+                <summary class="cursor-pointer select-none px-2 py-1.5 text-xs">
+                  <span class="font-mono text-slate-500">{{ hint.topic }}</span>
+                  <span class="ml-2">sev={{ hint.severity }} · support={{ hint.supportLevel }} · groups={{ hint.signalGroups.join(',') }}</span>
+                </summary>
+                <ul class="border-t border-slate-200 px-3 py-2 text-xs text-slate-700">
+                  <li v-for="signal in hint.signals" :key="signal" class="font-mono">{{ signal }}</li>
+                </ul>
+              </details>
+            </CardContent>
+          </Card>
 
-            <div class="grid grid-cols-1 gap-3 sm:grid-cols-4">
-              <Card>
-                <CardHeader class="pb-2"><CardTitle>Sonnet</CardTitle></CardHeader>
-                <CardContent>
-                  <span class="text-xl font-semibold tabular-nums">{{ view.debug.sonnetAesthetic }}</span>
-                  <span class="ml-1 text-xs text-slate-500">/100</span>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader class="pb-2"><CardTitle>V2.5</CardTitle></CardHeader>
-                <CardContent>
-                  <template v-if="view.debug.v25Aesthetic !== null">
-                    <span class="text-xl font-semibold tabular-nums">{{ view.debug.v25Aesthetic }}</span>
-                    <span class="ml-1 text-xs text-slate-500">/100 (raw {{ view.debug.v25Raw?.toFixed(2) }}/10)</span>
-                  </template>
-                  <Badge v-else variant="danger" class="text-[10px]">
-                    Fehler: {{ view.debug.laionError ?? 'unbekannt' }}
-                  </Badge>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader class="pb-2"><CardTitle>Integrity (lokal)</CardTitle></CardHeader>
-                <CardContent>
-                  <span class="text-xl font-semibold tabular-nums">{{ view.debug.integrityScore }}</span>
-                  <span class="ml-1 text-xs text-slate-500">/100</span>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader class="pb-2"><CardTitle>Pipeline-Meta</CardTitle></CardHeader>
-                <CardContent class="text-xs text-slate-600">
-                  <p><strong>Analyse:</strong> {{ view.debug.modelLabel }}</p>
-                  <p v-if="view.debug.aestheticModelLabel"><strong>Aesthetic:</strong> {{ view.debug.aestheticModelLabel }}</p>
-                  <p><strong>Laufzeit:</strong> {{ (view.debug.durationMs / 1000).toFixed(1) }} s</p>
-                </CardContent>
-              </Card>
-            </div>
+          <!-- Codebook-Variablen-Übersicht -->
+          <Card>
+            <CardHeader>
+              <CardTitle>Codebook (Pipeline-Ausgabe)</CardTitle>
+              <CardDescription>Rohwerte aus dem Gemini-Call</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <pre class="overflow-auto rounded bg-slate-900 p-3 text-xs text-slate-100">{{ JSON.stringify(view.debug.rawJson.analysis.research_layer.codebook, null, 2) }}</pre>
+            </CardContent>
+          </Card>
 
-            <details class="rounded border border-slate-200 bg-white">
-              <summary class="cursor-pointer select-none px-3 py-2 text-sm font-medium">
-                Roh-JSON (Pipeline-Output)
-              </summary>
-              <pre class="max-h-[60vh] overflow-auto border-t border-slate-200 bg-slate-900 p-3 text-xs text-slate-100">{{ JSON.stringify(view.debug.rawJson, null, 2) }}</pre>
-            </details>
+          <!-- Pipeline-Meta + Roh-JSON -->
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-4">
+            <Card>
+              <CardHeader class="pb-2"><CardTitle>Sonnet</CardTitle></CardHeader>
+              <CardContent>
+                <span class="text-xl font-semibold tabular-nums">{{ view.debug.sonnetAesthetic }}</span>
+                <span class="ml-1 text-xs text-slate-500">/100</span>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader class="pb-2"><CardTitle>V2.5</CardTitle></CardHeader>
+              <CardContent>
+                <template v-if="view.debug.v25Aesthetic !== null">
+                  <span class="text-xl font-semibold tabular-nums">{{ view.debug.v25Aesthetic }}</span>
+                  <span class="ml-1 text-xs text-slate-500">/100 (raw {{ view.debug.v25Raw?.toFixed(2) }}/10)</span>
+                </template>
+                <Badge v-else variant="danger" class="text-[10px]">
+                  Fehler: {{ view.debug.laionError ?? 'unbekannt' }}
+                </Badge>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader class="pb-2"><CardTitle>Integrity (lokal)</CardTitle></CardHeader>
+              <CardContent>
+                <span class="text-xl font-semibold tabular-nums">{{ view.debug.integrityScore }}</span>
+                <span class="ml-1 text-xs text-slate-500">/100</span>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader class="pb-2"><CardTitle>Pipeline-Meta</CardTitle></CardHeader>
+              <CardContent class="text-xs text-slate-600">
+                <p><strong>Analyse:</strong> {{ view.debug.modelLabel }}</p>
+                <p v-if="view.debug.aestheticModelLabel"><strong>Aesthetic:</strong> {{ view.debug.aestheticModelLabel }}</p>
+                <p><strong>Laufzeit:</strong> {{ (view.debug.durationMs / 1000).toFixed(1) }} s</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <details class="rounded border border-slate-200 bg-white">
+            <summary class="cursor-pointer select-none px-3 py-2 text-sm font-medium">
+              Roh-JSON (Pipeline-Output)
+            </summary>
+            <pre class="max-h-[60vh] overflow-auto border-t border-slate-200 bg-slate-900 p-3 text-xs text-slate-100">{{ JSON.stringify(view.debug.rawJson, null, 2) }}</pre>
+          </details>
           </section>
         </section>
       </main>
