@@ -32,6 +32,12 @@ export type RecommendationCluster =
   | 'masking_style'
   | 'hallucination'
 
+export interface ConcreteFinding {
+  text: string
+  severity: 'moderate' | 'severe'
+  dimension: 'physics' | 'semantics' | 'bias'
+}
+
 export interface ConsolidatedHint {
   topic: HintTopic | 'bias_combined'
   severity: HintSeverity
@@ -40,6 +46,7 @@ export interface ConsolidatedHint {
   signals: string[]
   text: string
   dimension?: 'physics' | 'semantics' | 'bias'
+  concreteFindings?: ConcreteFinding[]
 }
 
 export interface OverallVerdict {
@@ -228,11 +235,13 @@ const RECOMMENDATION_TABLE_AD: Record<
   },
 }
 
-const KEYWORD_PATTERNS: Record<'anatomy' | 'role' | 'body' | 'gender', RegExp> = {
-  anatomy: /\b(anatom|hand|finger|face|gesicht|proport|limb|gliedmass|extremit)/i,
+const KEYWORD_PATTERNS: Record<'anatomy' | 'role' | 'body' | 'gender' | 'hallucination', RegExp> = {
+  // anatomy: 1:1 vom Backend src/analyze.ts ANATOMY_KEYWORDS + zusätzlich `anatom`
+  anatomy: /\b(anatom|finger|hand|hände|gesicht|antlitz|face|proport|gliedmass|extremit|limb|arm|fuss|fuß|leg)/i,
   role: /\b(role|rolle|beruf|occupat|job|position|profession|status)/i,
   body: /\b(body|körper|koerper|build|figur|physique|ideal|attract|schön|schoen)/i,
   gender: /\b(gender|geschlecht|female|male|frau|mann|woman|men)/i,
+  hallucination: /\b(halluc|prompt|abweich|invented|fabric|erfunden|nicht\s+vorhanden)/i,
 }
 
 function matchesKeyword(text: string | null | undefined, kind: keyof typeof KEYWORD_PATTERNS): boolean {
@@ -265,6 +274,38 @@ function severeFindingsInDim(findings: Finding[]): Finding[] {
 
 function moderateFindingsInDim(findings: Finding[]): Finding[] {
   return findings.filter(f => f.severity === 'moderate' && hasSubstance(f))
+}
+
+const CONCRETE_FINDING_MAX_LEN = 180
+const CONCRETE_FINDING_MAX_PER_TOPIC = 2
+
+function truncateFinding(text: string): string {
+  const t = text.trim()
+  if (t.length <= CONCRETE_FINDING_MAX_LEN) return t
+  return `${t.slice(0, CONCRETE_FINDING_MAX_LEN).trimEnd()}…`
+}
+
+function pickConcreteFindings(
+  findings: Finding[],
+  dimension: 'physics' | 'semantics' | 'bias',
+  filter?: (f: Finding) => boolean,
+): ConcreteFinding[] {
+  const candidates = findings.filter(f => {
+    if (f.severity !== 'moderate' && f.severity !== 'severe') return false
+    if (!hasSubstance(f)) return false
+    if (filter && !filter(f)) return false
+    return true
+  })
+  // severe vor moderate, dann ursprüngliche Reihenfolge erhalten
+  candidates.sort((a, b) => {
+    if (a.severity === b.severity) return 0
+    return a.severity === 'severe' ? -1 : 1
+  })
+  return candidates.slice(0, CONCRETE_FINDING_MAX_PER_TOPIC).map(f => ({
+    text: truncateFinding(f.finding),
+    severity: f.severity as 'moderate' | 'severe',
+    dimension,
+  }))
 }
 
 interface TopicSignal {
@@ -452,6 +493,64 @@ function evaluateTopic(
   )
     severity = 'medium'
 
+  // Concrete findings — gefiltert nach Topic, nur moderate+/severe substantielle Texte,
+  // max 2 pro Topic. WICHTIG: das beeinflusst die Sichtbarkeits-Regel NICHT — Findings
+  // erscheinen nur als Subtext unter Topics, die ohnehin schon sichtbar sind.
+  let concreteFindings: ConcreteFinding[] | undefined
+  switch (topic) {
+    case 'physics':
+      concreteFindings = pickConcreteFindings(
+        dim.physics.findings,
+        'physics',
+        f => !matchesKeyword(`${f.category} ${f.finding}`, 'anatomy'),
+      )
+      break
+    case 'anatomy':
+      concreteFindings = pickConcreteFindings(
+        dim.physics.findings,
+        'physics',
+        f => matchesKeyword(`${f.category} ${f.finding}`, 'anatomy'),
+      )
+      break
+    case 'context_logic':
+      concreteFindings = pickConcreteFindings(dim.semantics.findings, 'semantics')
+      break
+    case 'role_stereotype':
+      concreteFindings = pickConcreteFindings(
+        dim.bias.findings,
+        'bias',
+        f => matchesKeyword(`${f.category} ${f.finding}`, 'role'),
+      )
+      break
+    case 'body_stereotype':
+      concreteFindings = pickConcreteFindings(
+        dim.bias.findings,
+        'bias',
+        f => matchesKeyword(`${f.category} ${f.finding}`, 'body'),
+      )
+      break
+    case 'gender_bias':
+      concreteFindings = pickConcreteFindings(
+        dim.bias.findings,
+        'bias',
+        f => matchesKeyword(`${f.category} ${f.finding}`, 'gender'),
+      )
+      break
+    case 'hallucination':
+      concreteFindings = pickConcreteFindings(
+        dim.semantics.findings,
+        'semantics',
+        f => matchesKeyword(`${f.category} ${f.finding}`, 'hallucination'),
+      )
+      break
+    case 'masking':
+    case 'style_mismatch':
+      // abgeleitete Befunde ohne direkte LLM-Finding-Quelle — UI zeigt nur Topic-Text
+      concreteFindings = undefined
+      break
+  }
+  if (concreteFindings && concreteFindings.length === 0) concreteFindings = undefined
+
   return {
     topic,
     severity,
@@ -460,6 +559,7 @@ function evaluateTopic(
     signals: signals.map(s => s.text),
     text: TOPIC_TEXT[topic],
     dimension: dimKey,
+    concreteFindings,
   }
 }
 
@@ -503,7 +603,7 @@ function sortHints(
   })
 }
 
-function mergeBiasTopics(hints: ConsolidatedHint[]): ConsolidatedHint[] {
+function mergeBiasTopics(hints: ConsolidatedHint[], biasFindings: Finding[]): ConsolidatedHint[] {
   const biasTopics: HintTopic[] = ['role_stereotype', 'body_stereotype', 'gender_bias']
   const biasItems = hints.filter(h => biasTopics.includes(h.topic as HintTopic))
   if (biasItems.length < 2) return hints
@@ -512,6 +612,45 @@ function mergeBiasTopics(hints: ConsolidatedHint[]): ConsolidatedHint[] {
     biasItems.some(h => h.supportLevel === 'cross_group') || mergedGroups.length >= 2
       ? 'cross_group'
       : 'single'
+
+  // ConcreteFindings mergen: dedupliziert über Text, severe vor moderate, max 2.
+  // Codex-Fallback: wenn bias.findings moderate/severe substantielle Texte enthält,
+  // die in keinem role/body/gender Keyword-Match landen, hier ergänzen.
+  const seenTexts = new Set<string>()
+  const mergedFindings: ConcreteFinding[] = []
+  for (const item of biasItems) {
+    for (const f of item.concreteFindings ?? []) {
+      if (seenTexts.has(f.text)) continue
+      seenTexts.add(f.text)
+      mergedFindings.push(f)
+    }
+  }
+  // Fallback: unmatched bias-Findings (substantielle moderate/severe ohne Keyword-Match)
+  const unmatchedFallback = biasFindings.filter(f => {
+    if (f.severity !== 'moderate' && f.severity !== 'severe') return false
+    if (!hasSubstance(f)) return false
+    const text = `${f.category} ${f.finding}`
+    return !(
+      matchesKeyword(text, 'role') ||
+      matchesKeyword(text, 'body') ||
+      matchesKeyword(text, 'gender')
+    )
+  })
+  for (const f of unmatchedFallback) {
+    const truncated = truncateFinding(f.finding)
+    if (seenTexts.has(truncated)) continue
+    seenTexts.add(truncated)
+    mergedFindings.push({
+      text: truncated,
+      severity: f.severity as 'moderate' | 'severe',
+      dimension: 'bias',
+    })
+  }
+  mergedFindings.sort((a, b) => {
+    if (a.severity === b.severity) return 0
+    return a.severity === 'severe' ? -1 : 1
+  })
+
   const merged: ConsolidatedHint = {
     topic: 'bias_combined',
     severity: biasItems.reduce<HintSeverity>(
@@ -523,6 +662,9 @@ function mergeBiasTopics(hints: ConsolidatedHint[]): ConsolidatedHint[] {
     signals: biasItems.flatMap(h => h.signals),
     text: TOPIC_TEXT.bias_combined,
     dimension: 'bias',
+    concreteFindings: mergedFindings.length > 0
+      ? mergedFindings.slice(0, CONCRETE_FINDING_MAX_PER_TOPIC)
+      : undefined,
   }
   return [...hints.filter(h => !biasTopics.includes(h.topic as HintTopic)), merged]
 }
@@ -685,7 +827,7 @@ export function buildAnalysisViewModel(result: SemanticAnalysisResult): Analysis
     }
   }
 
-  const mergedHints = mergeBiasTopics(rawHints)
+  const mergedHints = mergeBiasTopics(rawHints, dim.bias.findings)
   const sortedHints = sortHints(mergedHints, moderateByTopic, readingMode.code)
 
   const visible = sortedHints.filter(isVisible).slice(0, 3)

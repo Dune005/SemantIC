@@ -406,7 +406,7 @@ const HINT_SEVERITY_TEXT_CLASS: Record<'high' | 'medium' | 'low', string> = {
                 </div>
                 <p class="text-sm text-slate-700">{{ view.overallVerdict.recommendation }}</p>
 
-                <ol v-if="view.userHints.length > 0" class="space-y-1.5 pl-1">
+                <ol v-if="view.userHints.length > 0" class="space-y-2 pl-1">
                   <li
                     v-for="(hint, i) in view.userHints"
                     :key="hint.topic"
@@ -415,7 +415,22 @@ const HINT_SEVERITY_TEXT_CLASS: Record<'high' | 'medium' | 'low', string> = {
                     <span class="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white text-xs font-semibold text-slate-700 ring-1 ring-slate-300">
                       {{ i + 1 }}
                     </span>
-                    <span class="flex-1">{{ hint.text }}</span>
+                    <div class="flex-1 space-y-1">
+                      <span>{{ hint.text }}</span>
+                      <ul
+                        v-if="hint.concreteFindings?.length"
+                        class="space-y-0.5 text-xs text-slate-500"
+                      >
+                        <li
+                          v-for="(finding, j) in hint.concreteFindings"
+                          :key="`${hint.topic}-${j}`"
+                          class="flex items-start gap-1.5 leading-snug"
+                        >
+                          <span class="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-slate-400" aria-hidden="true"></span>
+                          <span class="flex-1">{{ finding.text }}</span>
+                        </li>
+                      </ul>
+                    </div>
                   </li>
                 </ol>
                 <p v-else class="text-sm text-slate-600">Keine spezifischen Hinweise.</p>
