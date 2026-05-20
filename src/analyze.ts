@@ -83,6 +83,14 @@ export interface ConsistencyReconcileReport {
     reason: string
     triggering_rules: string[]
   }
+  // Finale Normalisierung von dominant_error_type gegen die Codebook-Flags.
+  // Gesetzt, wenn der LLM-Wert inkonsistent zu den finalen Flags war und
+  // korrigiert wurde (sonst undefined).
+  dominant_error_type_change?: {
+    before: string
+    after: string
+    active_types: string[]
+  }
 }
 
 // Reconcile zwischen Codebook-Flags und Dimensions-Scores. Der LLM-Output ist
@@ -332,8 +340,8 @@ function applyEvidenceFilter(analysis: AnalysisOutput): EvidenceFilterReport {
   enforce('has_anatomy_issue', 'anatomy_evidence')
   enforce('has_context_issue', 'context_evidence')
 
-  reconcileDominantErrorType(analysis, report.downgraded_flags)
-
+  // dominant_error_type-Normalisierung läuft nicht mehr hier, sondern final
+  // nach applyConsistencyReconcile (siehe runSemanticAnalysis).
   return report
 }
 
@@ -399,30 +407,46 @@ function applyMaskingEvidenceFilter(analysis: AnalysisOutput): MaskingFilterRepo
   return report
 }
 
-function reconcileDominantErrorType(analysis: AnalysisOutput, downgradedFlags: string[]): void {
-  if (downgradedFlags.length === 0) return
+// Finale Normalisierung: bringt dominant_error_type mit den — nach Evidenz-
+// Filter UND Consistency-Reconcile — gültigen Codebook-Flags in Einklang.
+// Greift NUR ein, wenn der LLM-Wert inkonsistent ist; ein bereits konsistenter
+// Wert bleibt unangetastet (inkl. legitimer LLM-Wahl eines konkreten Typs bei
+// ≥2 aktiven Flags). Ändert ausschliesslich dominant_error_type, keine Flags
+// oder Scores. Gibt den Audit-Eintrag zurück, wenn korrigiert wurde, sonst null.
+//
+// Aufruf bewusst am Ende der Pipeline (nach applyConsistencyReconcile), damit
+// auch dort gesetzte flag_changes erfasst werden. Frühere Variante lief nur im
+// Evidenz-Filter und nur bei Flag-Downgrades — beides per Reconcile-Test
+// (2026-05-20) als Lücke belegt.
+export function reconcileDominantErrorType(
+  analysis: AnalysisOutput,
+): NonNullable<ConsistencyReconcileReport['dominant_error_type_change']> | null {
   const cb = analysis.research_layer.codebook
-  const flagToType: Record<string, 'physics' | 'anatomy' | 'context'> = {
-    has_physics_issue: 'physics',
-    has_anatomy_issue: 'anatomy',
-    has_context_issue: 'context',
-  }
-  const currentType = analysis.research_layer.dominant_error_type
-  const downgradedTypes = downgradedFlags.map(f => flagToType[f]).filter(Boolean)
-  if (!downgradedTypes.includes(currentType as any)) return
+  const current = analysis.research_layer.dominant_error_type
 
   const activeTypes: ('physics' | 'anatomy' | 'context')[] = []
   if (cb.has_physics_issue) activeTypes.push('physics')
   if (cb.has_anatomy_issue) activeTypes.push('anatomy')
   if (cb.has_context_issue) activeTypes.push('context')
 
+  let consistent: boolean
+  let normalized: AnalysisOutput['research_layer']['dominant_error_type']
   if (activeTypes.length === 0) {
-    analysis.research_layer.dominant_error_type = 'none'
+    consistent = current === 'none'
+    normalized = 'none'
   } else if (activeTypes.length === 1) {
-    analysis.research_layer.dominant_error_type = activeTypes[0]
+    consistent = current === activeTypes[0]
+    normalized = activeTypes[0]
   } else {
-    analysis.research_layer.dominant_error_type = 'mixed'
+    // ≥2 aktive Flags: 'mixed' oder ein konkreter aktiver Typ ist legitim.
+    consistent = current === 'mixed' || (activeTypes as string[]).includes(current)
+    normalized = 'mixed'
   }
+
+  if (consistent) return null
+
+  analysis.research_layer.dominant_error_type = normalized
+  return { before: current, after: normalized, active_types: [...activeTypes] }
 }
 
 const DEFAULT_MODEL = 'gemini-3-flash-preview'
@@ -852,6 +876,17 @@ export async function runSemanticAnalysis(
   const reconcileReport = applyConsistencyReconcile(analysis)
   if (reconcileReport.applied_rules.length > 0) {
     console.warn(`[R5 Consistency-Reconcile] Regeln angewendet: ${reconcileReport.applied_rules.join(', ')}; Score-Caps: ${reconcileReport.score_caps.map(c => `${c.dimension} ${c.score_before}→${c.score_after}`).join(', ')}`)
+  }
+
+  // Finale dominant_error_type-Normalisierung — nach allen flag-mutierenden
+  // Schritten (Evidenz-Filter + Consistency-Reconcile).
+  const detChange = reconcileDominantErrorType(analysis)
+  if (detChange) {
+    reconcileReport.dominant_error_type_change = detChange
+    console.warn(
+      `[Reconcile] dominant_error_type normalisiert: ${detChange.before} → ${detChange.after} ` +
+      `(aktive Fehlertypen: ${detChange.active_types.join(', ') || 'keine'})`,
+    )
   }
 
   const duration_ms = Date.now() - start
