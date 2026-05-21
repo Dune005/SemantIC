@@ -147,6 +147,27 @@ function hasModerateOrSevere(
   })
 }
 
+// Kanonische Status-Schwellen. Der Status (green/yellow/red) wird deterministisch
+// aus dem Score abgeleitet — das LLM setzt Score und Status als separate Felder
+// und lieferte sie gelegentlich widersprüchlich (z.B. Score 55 mit Status "red").
+// Schwelle 75/55 konsistent mit dem Score-Cap (capDim) und Prompt-Region "≤55".
+const STATUS_THRESHOLDS = { green: 75, yellow: 55 } as const
+
+function deriveStatus(score: number): 'green' | 'yellow' | 'red' {
+  if (score >= STATUS_THRESHOLDS.green) return 'green'
+  if (score >= STATUS_THRESHOLDS.yellow) return 'yellow'
+  return 'red'
+}
+
+// Klassifikation ist eine Anwendungsregel, kein eigenständiger LLM-Befund:
+// bringt status aller drei Dimensionen mit dem (finalen) score in Einklang.
+function applyStatusFromScore(analysis: AnalysisOutput): void {
+  for (const dim of ['physics', 'semantics', 'bias'] as const) {
+    const d = analysis.dimension_analysis[dim]
+    d.status = deriveStatus(d.score)
+  }
+}
+
 function applyConsistencyReconcile(analysis: AnalysisOutput): ConsistencyReconcileReport {
   const cb = analysis.research_layer.codebook
   const dims = analysis.dimension_analysis
@@ -197,7 +218,7 @@ function applyConsistencyReconcile(analysis: AnalysisOutput): ConsistencyReconci
     const statusBefore = d.status
     const scoreBefore = d.score
     d.score = cap
-    d.status = cap >= 75 ? 'green' : cap >= 55 ? 'yellow' : 'red'
+    d.status = deriveStatus(cap)
     report.score_caps.push({
       dimension: key,
       score_before: scoreBefore,
@@ -877,6 +898,9 @@ export async function runSemanticAnalysis(
   if (reconcileReport.applied_rules.length > 0) {
     console.warn(`[R5 Consistency-Reconcile] Regeln angewendet: ${reconcileReport.applied_rules.join(', ')}; Score-Caps: ${reconcileReport.score_caps.map(c => `${c.dimension} ${c.score_before}→${c.score_after}`).join(', ')}`)
   }
+
+  // Status deterministisch aus dem (finalen, ggf. gecappten) Score ableiten.
+  applyStatusFromScore(analysis)
 
   // Finale dominant_error_type-Normalisierung — nach allen flag-mutierenden
   // Schritten (Evidenz-Filter + Consistency-Reconcile).
