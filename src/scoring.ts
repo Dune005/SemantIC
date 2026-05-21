@@ -13,11 +13,9 @@ export function computeMaskingScore(aestheticScore: number, integrityScore: numb
   return aestheticScore - integrityScore
 }
 
-const AESTHETIC_HIGH_THRESHOLD = 75
-
 export function deriveMaskingVerdict(
   evidence: MaskingEvidence[],
-  aestheticScore: number,
+  maskingScore: number,
 ): MaskingVerdict {
   if (evidence.length === 0) return 'none'
 
@@ -35,7 +33,15 @@ export function deriveMaskingVerdict(
     derived = 'medium'
   }
 
-  if (aestheticScore < AESTHETIC_HIGH_THRESHOLD) {
+  // Plausibilitaets-Deckel (R4.2.2): Eine starke Maskierung setzt voraus, dass
+  // die aesthetische Oberflaeche die Integritaet ueberhaupt uebersteigt. Ist der
+  // Maskierungs-Score <= 0 (Aesthetik uebersteigt Integritaet nicht), ist ein
+  // medium/high-Verdict diagnostisch unplausibel und wird auf 'low' gedeckelt.
+  // Loest den frueheren absoluten Aesthetik-Floor (<75) ab, der an Sonnets
+  // komprimiertem Score haftete und den Maskierungs-Kernfall verfehlte.
+  // Das Verdict bleibt evidenzbasiert; der Score wirkt nur als Deckel nach
+  // unten, hebt nie an.
+  if (maskingScore <= 0) {
     const cap: MaskingVerdict = 'low'
     const rank: Record<MaskingVerdict, number> = { none: 0, low: 1, medium: 2, high: 3 }
     if (rank[derived] > rank[cap]) derived = cap

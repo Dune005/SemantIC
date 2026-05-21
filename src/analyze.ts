@@ -910,7 +910,7 @@ export async function runSemanticAnalysis(
   const verdictBeforeReconcile = analysis.research_layer.masking_verdict
   const maskingVerdict = deriveMaskingVerdict(
     analysis.research_layer.masking_evidence,
-    aestheticCombined,
+    maskingScore,
   )
   if (maskingVerdict !== verdictBeforeReconcile) {
     analysis.research_layer.masking_verdict = maskingVerdict
@@ -919,13 +919,15 @@ export async function runSemanticAnalysis(
       : `Sonnet ${sonnetAesthetic} (V2.5 nicht verfügbar)`
     analysis.research_layer.masking_reasoning =
       `Verdict per Reconcile auf "${maskingVerdict}" gesetzt (Vorher: "${verdictBeforeReconcile}"). ` +
-      `Deterministische Ableitung aus Evidenz (${analysis.research_layer.masking_evidence.length} Einträge) und kombiniertem Ästhetik-Score (${aestheticCombined}/100; ${sourceLabel}; Floor <75 deckelt auf 'low').`
+      `Evidenzbasierte Ableitung (${analysis.research_layer.masking_evidence.length} Einträge); ` +
+      `Plausibilitäts-Deckel auf 'low' greift bei Maskierungs-Score ≤ 0. ` +
+      `Hier: Ästhetik ${aestheticCombined}/100 (${sourceLabel}) − Integrität ${localIntegrity} = Maskierungs-Score ${maskingScore}.`
     if (!maskingReport.verdict_downgraded) {
       maskingReport.verdict_downgraded = true
       maskingReport.verdict_before = verdictBeforeReconcile
     }
     maskingReport.verdict_after = maskingVerdict
-    console.warn(`[R4.2 Masking-Filter] masking_verdict via aesthetic_combined+evidence reconcile: ${verdictBeforeReconcile} → ${maskingVerdict} (combined=${aestheticCombined}, source=${aestheticCombinedSource})`)
+    console.warn(`[R4.2.2 Masking-Filter] masking_verdict via maskingScore+evidence reconcile: ${verdictBeforeReconcile} → ${maskingVerdict} (maskingScore=${maskingScore}, combined=${aestheticCombined}, source=${aestheticCombinedSource})`)
   }
   const hints = deriveContextReviewHints({
     readingMode: analysis.research_layer.reading_mode,
