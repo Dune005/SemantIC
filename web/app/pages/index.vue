@@ -101,14 +101,67 @@ function stripBase64Prefix(dataUrl: string): { base64: string; mediaType: string
   return { base64: match[2], mediaType: match[1] }
 }
 
+// Der Anthropic-Ästhetik-Call lehnt Bilder über 5 MB (base64) ab — ein zu
+// grosser Upload lässt sonst die ganze Analyse scheitern. Bilder über dieser
+// Roh-Schwelle werden client-seitig per Canvas verkleinert (kein Server-Roundtrip).
+const MAX_UPLOAD_BYTES = 3_500_000
+const DOWNSCALE_MAX_EDGE = 2000
+const MAX_BASE64_CHARS = 5_000_000
+
+function downscaleImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const objectUrl = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl)
+      const scale = Math.min(1, DOWNSCALE_MAX_EDGE / Math.max(img.width, img.height))
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.max(1, Math.round(img.width * scale))
+      canvas.height = Math.max(1, Math.round(img.height * scale))
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        reject(new Error('Canvas-Kontext nicht verfügbar'))
+        return
+      }
+      // Weisser Hintergrund: Transparenz (PNG/WebP) würde bei JPEG-Export
+      // sonst schwarz und könnte die Analyse verfälschen.
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+      // Qualität iterativ senken, falls das verkleinerte JPEG noch zu gross ist
+      let quality = 0.85
+      let dataUrl = canvas.toDataURL('image/jpeg', quality)
+      while (dataUrl.length > MAX_BASE64_CHARS && quality > 0.4) {
+        quality -= 0.15
+        dataUrl = canvas.toDataURL('image/jpeg', quality)
+      }
+      // Garantie: lieber ein klarer Frontend-Fehler als ein stiller API-Crash.
+      if (dataUrl.length > MAX_BASE64_CHARS) {
+        reject(new Error('Bild ist auch nach Verkleinerung zu gross – bitte ein kleineres Bild verwenden.'))
+        return
+      }
+      resolve(dataUrl)
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      reject(new Error('Bild konnte nicht geladen werden'))
+    }
+    img.src = objectUrl
+  })
+}
+
 function fileToBase64(file: File): Promise<{ base64: string; mediaType: string; dataUrl: string }> {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => {
-      const dataUrl = String(reader.result ?? '')
+    const finish = (dataUrl: string) => {
       const stripped = stripBase64Prefix(dataUrl)
       resolve({ ...stripped, dataUrl })
     }
+    if (file.size > MAX_UPLOAD_BYTES) {
+      downscaleImage(file).then(finish).catch(reject)
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => finish(String(reader.result ?? ''))
     reader.onerror = () => reject(reader.error)
     reader.readAsDataURL(file)
   })
