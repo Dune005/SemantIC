@@ -135,22 +135,11 @@ const TOPIC_PRIORITY: Record<ConsolidatedHint['topic'], number> = {
   hallucination: 0,
 }
 
-// Werbe-/Magazin-Kontext: Bias ist genre-typisch und rückt nach hinten,
-// Bildintegrität (Skalierung, Anatomie) rückt nach vorne. style_mismatch
-// ist im Werbe-Kontext tautologisch und wird komplett deprioritisiert.
-const TOPIC_PRIORITY_AD: Record<ConsolidatedHint['topic'], number> = {
-  context_logic: 9,
-  anatomy: 8,
-  physics: 7,
-  bias_combined: 4,
-  role_stereotype: 3,
-  body_stereotype: 2,
-  gender_bias: 1,
-  masking: 0,
-  hallucination: -1,
-  style_mismatch: -2,
-}
-
+// Hinweis: Eine frühere, werbe-/magazin-spezifische Topic-Priorisierung
+// (TOPIC_PRIORITY_AD) wurde entfernt — sie schob Bias-Topics im Werbe-Kontext
+// nach hinten und drängte sie damit aus der Sichtbarkeit. Da Werbeästhetik laut
+// Thesis ein Maskierungsmechanismus ist (kein Entlastungsgrund), gilt jetzt für
+// alle Lesearten dieselbe Priorisierung (TOPIC_PRIORITY).
 function isAdContext(readingMode: ReadingModeCode): boolean {
   return readingMode === 'WA' || readingMode === 'MI'
 }
@@ -210,8 +199,9 @@ const RECOMMENDATION_TABLE: Record<
   },
 }
 
-// Werbe-/Magazin-Kontext: Recommendations rahmen Bias als genre-typisch,
-// gewichten Bildintegrität klar als das, worauf es im Werbe-Kontext ankommt.
+// Werbe-/Magazin-Kontext: Recommendations benennen den Werbe-Kontext explizit,
+// behandeln Bias-Befunde aber nicht als genre-typisch entlastet — Werbeästhetik
+// ist laut Thesis ein Maskierungsmechanismus, kein Entlastungsgrund.
 const RECOMMENDATION_TABLE_AD: Record<
   DimensionStatus,
   Partial<Record<RecommendationCluster | 'null', string>>
@@ -220,10 +210,10 @@ const RECOMMENDATION_TABLE_AD: Record<
     null: 'Aus Tool-Sicht keine kritischen Hinweise. Das letzte Urteil bleibt bei dir.',
   },
   yellow: {
-    null: 'Im Werbe-Kontext bleiben ein paar Punkte zu prüfen – aber nichts Dramatisches.',
+    null: 'Im Werbe-/Magazin-Kontext wurden prüfenswerte Punkte erkannt. Vor der Publikation gezielt kontrollieren.',
     image_integrity: 'Würde die Bildqualität sichtprüfen – Skalierung oder Anatomie wirken auffällig.',
-    bias_representation: 'Bias-Muster sind im Werbe-/Magazin-Kontext genre-typisch – Hinweis bleibt, aber kein Grund zur Sorge.',
-    masking_style: 'Das Bild ist visuell überzeugend – im Werbe-Genre erwartbar, im Detail nochmal sichten.',
+    bias_representation: 'Bias-Muster sind im Werbe-/Magazin-Genre verbreitet. Genau deshalb sollten Personendarstellung und Rollenbild vor der Publikation kritisch geprüft werden.',
+    masking_style: 'Das Bild ist visuell überzeugend – im Werbe-Genre erwartbar. Prüfen, ob die glatte Oberfläche vorhandene Hinweise überdeckt.',
     hallucination: 'Es gibt Hinweise, dass Bildinhalte vom Prompt abweichen – inhaltlich gegenprüfen.',
   },
   red: {
@@ -282,7 +272,13 @@ const CONCRETE_FINDING_MAX_PER_TOPIC = 2
 function truncateFinding(text: string): string {
   const t = text.trim()
   if (t.length <= CONCRETE_FINDING_MAX_LEN) return t
-  return `${t.slice(0, CONCRETE_FINDING_MAX_LEN).trimEnd()}…`
+  // An der letzten Wortgrenze vor dem Limit kappen — sonst endet der Text mitten
+  // im Wort und wirkt wie abgeschnitten ("als wäre kein Platz mehr da"). Der
+  // 0.6-Schutz greift bei extrem langen Einzelwörtern (dann hart kappen).
+  const cut = t.slice(0, CONCRETE_FINDING_MAX_LEN)
+  const lastWs = Math.max(cut.lastIndexOf(' '), cut.lastIndexOf('\n'), cut.lastIndexOf('\t'))
+  const base = lastWs > CONCRETE_FINDING_MAX_LEN * 0.6 ? cut.slice(0, lastWs) : cut
+  return `${base.trimEnd()}…`
 }
 
 function pickConcreteFindings(
@@ -586,9 +582,7 @@ function isVisible(hint: ConsolidatedHint): boolean {
 function sortHints(
   hints: ConsolidatedHint[],
   moderateByTopic: Record<string, number>,
-  readingMode: ReadingModeCode,
 ): ConsolidatedHint[] {
-  const priorityMap = isAdContext(readingMode) ? TOPIC_PRIORITY_AD : TOPIC_PRIORITY
   return [...hints].sort((a, b) => {
     if (SEVERITY_RANK[a.severity] !== SEVERITY_RANK[b.severity]) {
       return SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity]
@@ -599,7 +593,7 @@ function sortHints(
     const modA = moderateByTopic[a.topic] ?? 0
     const modB = moderateByTopic[b.topic] ?? 0
     if (modA !== modB) return modB - modA
-    return priorityMap[b.topic] - priorityMap[a.topic]
+    return TOPIC_PRIORITY[b.topic] - TOPIC_PRIORITY[a.topic]
   })
 }
 
@@ -828,7 +822,7 @@ export function buildAnalysisViewModel(result: SemanticAnalysisResult): Analysis
   }
 
   const mergedHints = mergeBiasTopics(rawHints, dim.bias.findings)
-  const sortedHints = sortHints(mergedHints, moderateByTopic, readingMode.code)
+  const sortedHints = sortHints(mergedHints, moderateByTopic)
 
   const visible = sortedHints.filter(isVisible).slice(0, 3)
   const visibleIds = new Set(visible.map(h => h.topic))
