@@ -5,6 +5,7 @@ import fs from 'fs'
 import path from 'path'
 import { runSemanticAnalysis, type SemanticAnalysisOptions } from './analyze.js'
 import { formatResult } from './format.js'
+import type { DeclaredIntent } from './schemas/analysis.js'
 
 function getFlag(args: string[], flag: string): string | undefined {
   const idx = args.indexOf(flag)
@@ -16,10 +17,11 @@ const imagePath = args[0]
 
 if (!imagePath || imagePath.startsWith('--')) {
   console.error([
-    'Usage: npm run spike -- <bildpfad> [--prompt "..."] [--context "..."] [--model "<provider:model>"] [--lang de|en] [--temperature 0.1] [--thinking-level medium] [--media-resolution high]',
+    'Usage: npm run spike -- <bildpfad> [--prompt "..."] [--context "..."] [--intent affirmative|critical|illustrative|unspecified] [--model "<provider:model>"] [--lang de|en] [--temperature 0.1] [--thinking-level medium] [--media-resolution high]',
     '',
     'Hinweis: --model steuert NUR den Analyse-Call. Der Aesthetik-Call laeuft fest gegen anthropic:claude-sonnet-4-6 (Default fuer stabilere Aesthetik-Scores).',
     '         --lang waehlt die Analyse-Prompt-Sprache. Default ist "en" (R4.1.2: Englischer Prompt liefert stabilere Detection mit Gemini). Output-Texte bleiben Deutsch.',
+    '         --intent setzt die erklaerte redaktionelle Haltung (Default: "unspecified"). Beeinflusst nur die Empfehlungs-Rahmung, nicht die Codebook-Flags oder den Verdict-Status.',
     '         --thinking-level und --media-resolution sind Gemini-spezifisch und greifen nur, wenn der Analyse-Call gegen Gemini laeuft.',
   ].join('\n'))
   process.exit(1)
@@ -27,6 +29,7 @@ if (!imagePath || imagePath.startsWith('--')) {
 
 const prompt = getFlag(args, '--prompt')
 const context = getFlag(args, '--context')
+const intentRaw = getFlag(args, '--intent')
 const model = getFlag(args, '--model')
 const temperatureRaw = getFlag(args, '--temperature')
 const thinkingLevel = getFlag(args, '--thinking-level')
@@ -72,6 +75,16 @@ if (mediaResolutionRaw !== undefined && !(mediaResolutionRaw in mediaResolutionM
   process.exit(1)
 }
 
+const allowedIntents = ['affirmative', 'critical', 'illustrative', 'unspecified'] as const
+let declaredIntent: DeclaredIntent | undefined
+if (intentRaw !== undefined) {
+  if (!(allowedIntents as readonly string[]).includes(intentRaw)) {
+    console.error(`--intent muss einer dieser Werte sein: ${allowedIntents.join(', ')}`)
+    process.exit(1)
+  }
+  declaredIntent = intentRaw as DeclaredIntent
+}
+
 const ext = path.extname(imagePath).toLowerCase()
 const mediaTypeMap: Record<string, string> = {
   '.jpg': 'image/jpeg',
@@ -98,6 +111,7 @@ const result = await runSemanticAnalysis(imageBase64, {
   context,
   mediaType,
   model,
+  ...(declaredIntent !== undefined ? { declaredIntent } : {}),
   ...(temperature !== undefined ? { temperature } : {}),
   ...(thinkingLevel !== undefined ? { thinkingLevel: thinkingLevel as SemanticAnalysisOptions['thinkingLevel'] } : {}),
   ...(mediaResolutionRaw !== undefined ? { mediaResolution: mediaResolutionMap[mediaResolutionRaw as keyof typeof mediaResolutionMap] } : {}),

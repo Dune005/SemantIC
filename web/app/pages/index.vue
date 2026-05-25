@@ -63,6 +63,8 @@ const imagePreview = ref('')
 const mediaType = ref('image/jpeg')
 const promptInput = ref('')
 const contextInput = ref('')
+type IntentValue = 'unspecified' | 'affirmative' | 'critical' | 'illustrative'
+const intentInput = ref<IntentValue>('unspecified')
 const fileName = ref('')
 
 const loading = ref(false)
@@ -211,6 +213,7 @@ async function submit() {
         mediaType: mediaType.value,
         prompt: promptInput.value || undefined,
         context: contextInput.value || undefined,
+        declaredIntent: intentInput.value,
       },
     })
     result.value = data
@@ -407,6 +410,25 @@ const HINT_SEVERITY_TEXT_CLASS: Record<'high' | 'medium' | 'low', string> = {
               </p>
             </div>
 
+            <div>
+              <label for="intent-input" class="mb-1 block text-sm font-medium text-slate-700">
+                Wie willst du das Bild einsetzen? <span class="font-normal text-slate-500">(optional)</span>
+              </label>
+              <select
+                id="intent-input"
+                v-model="intentInput"
+                class="block w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm"
+              >
+                <option value="unspecified">Standard — keine spezifische Haltung</option>
+                <option value="affirmative">zur bestätigenden Untermalung des Themas</option>
+                <option value="critical">zur kritischen Einordnung / als Negativbeispiel</option>
+                <option value="illustrative">als neutrales Beispielbild / allgemeine Bebilderung</option>
+              </select>
+              <p class="mt-1 text-xs text-slate-500">
+                Beeinflusst nur die Empfehlungs-Rahmung, nicht die Befunde oder den Verdict-Status.
+              </p>
+            </div>
+
             <Button :disabled="loading || !imageBase64" @click="submit">
               {{ loading ? 'Analysiere … (15–30 s)' : 'Analyse starten' }}
             </Button>
@@ -458,6 +480,13 @@ const HINT_SEVERITY_TEXT_CLASS: Record<'high' | 'medium' | 'low', string> = {
                   <p class="mt-1 text-xs uppercase tracking-wider text-slate-500">Empfehlung — keine Detektion</p>
                 </div>
                 <p class="text-sm text-slate-700">{{ view.overallVerdict.recommendation }}</p>
+
+                <p
+                  v-if="view.intentRecommendationNote"
+                  class="rounded border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-600"
+                >
+                  <span class="font-medium">Hinweis zur Empfehlung:</span> {{ view.intentRecommendationNote }}
+                </p>
 
                 <ol v-if="view.userHints.length > 0" class="space-y-2 pl-1">
                   <li

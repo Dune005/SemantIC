@@ -107,6 +107,33 @@ export const AnalysisSchema = z.object({
     score: z.number(),
     reasoning: z.string(),
   }),
+  intent_assessment: z.object({
+    declared_intent: z.enum(['affirmative', 'critical', 'illustrative', 'unspecified']).describe(
+      'Echo of the user-declared editorial intent. ' +
+      'affirmative = use the image as-is to support the topic. ' +
+      'critical = use the image to critically frame or question a topic. ' +
+      'illustrative = use the image as a neutral example. ' +
+      'unspecified = no intent declared (default).',
+    ),
+    intent_alignment: z.enum(['match', 'partial', 'mismatch', 'not_assessable']).describe(
+      'How well the image fits the declared editorial intent. ' +
+      'match = image clearly supports the intent. ' +
+      'partial = image fits partially or with caveats. ' +
+      'mismatch = image works against the intent (e.g. affirmative-looking image declared as critical). ' +
+      'not_assessable = intent is unspecified or there is not enough signal to judge.',
+    ),
+    framing_risk: z.enum(['low', 'medium', 'high']).describe(
+      'Risk that the combination of image + declared intent + context becomes ' +
+      'editorially problematic — independent of the integrity findings. ' +
+      'high = clear risk of misreading or harmful framing. low = combination is robust.',
+    ),
+    reasoning: z.string().max(280).describe(
+      'Short justification (max ~280 chars) for the alignment and framing_risk values. ' +
+      'Output language follows the rest of the analysis (German by default).',
+    ),
+  }),
 })
 
 export type AnalysisOutput = z.infer<typeof AnalysisSchema>
+export type IntentAssessment = AnalysisOutput['intent_assessment']
+export type DeclaredIntent = IntentAssessment['declared_intent']

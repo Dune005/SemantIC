@@ -2,7 +2,7 @@ import { generateObject, generateText } from 'ai'
 import { google, type GoogleLanguageModelOptions } from '@ai-sdk/google'
 import { anthropic } from '@ai-sdk/anthropic'
 import { createOpenAI } from '@ai-sdk/openai'
-import { AnalysisSchema, type AnalysisOutput } from './schemas/analysis.js'
+import { AnalysisSchema, type AnalysisOutput, type DeclaredIntent } from './schemas/analysis.js'
 import { AestheticSchema, type AestheticOutput } from './schemas/aesthetic.js'
 import { ANALYSIS_PROMPT } from './prompts/analysis.js'
 import { ANALYSIS_PROMPT_EN } from './prompts/analysis.en.js'
@@ -166,6 +166,30 @@ function applyStatusFromScore(analysis: AnalysisOutput): void {
     const d = analysis.dimension_analysis[dim]
     d.status = deriveStatus(d.score)
   }
+}
+
+// Intent-Sanity: declared_intent='unspecified' bedeutet per Definition keine
+// Grundlage für ein Alignment-Urteil. Wenn das LLM trotzdem 'match'/'partial'/
+// 'mismatch' setzt, ist das ein Prompt-Quirk. Statt einen Refine im Schema
+// (Crash bei generateObject) machen wir den Reparatur-Schritt deterministisch
+// hier. declared_intent ≠ 'unspecified' bleibt unverändert.
+function repairIntentAssessment(analysis: AnalysisOutput, requestedIntent: DeclaredIntent): {
+  declared_intent_overridden?: { before: string; after: DeclaredIntent }
+  intent_alignment_normalized?: { before: string; after: 'not_assessable' }
+} {
+  const ia = analysis.intent_assessment
+  const report: ReturnType<typeof repairIntentAssessment> = {}
+  // 1) Echo prüfen: declared_intent muss dem User-Input entsprechen.
+  if (ia.declared_intent !== requestedIntent) {
+    report.declared_intent_overridden = { before: ia.declared_intent, after: requestedIntent }
+    ia.declared_intent = requestedIntent
+  }
+  // 2) Sanity: bei 'unspecified' ist alignment immer 'not_assessable'.
+  if (ia.declared_intent === 'unspecified' && ia.intent_alignment !== 'not_assessable') {
+    report.intent_alignment_normalized = { before: ia.intent_alignment, after: 'not_assessable' }
+    ia.intent_alignment = 'not_assessable'
+  }
+  return report
 }
 
 function applyConsistencyReconcile(analysis: AnalysisOutput): ConsistencyReconcileReport {
@@ -481,12 +505,30 @@ type MediaResolution = NonNullable<GoogleLanguageModelOptions['mediaResolution']
 export interface SemanticAnalysisOptions {
   prompt?: string
   context?: string
+  declaredIntent?: DeclaredIntent
   mediaType?: string
   model?: string
   temperature?: number
   thinkingLevel?: ThinkingLevel
   mediaResolution?: MediaResolution
   lang?: 'de' | 'en'
+}
+
+// Format: <enum-id> (<short gloss>). Das LLM muss den exakten Enum-Wert
+// (links vom Klammer-Gloss) in intent_assessment.declared_intent echoen.
+// Der Gloss ist nur als menschlich lesbare Erinnerung für das LLM da.
+const DECLARED_INTENT_LABELS_EN: Record<DeclaredIntent, string> = {
+  affirmative: 'affirmative (use the image as-is to support the topic)',
+  critical: 'critical (use the image to critically frame or question the topic)',
+  illustrative: 'illustrative (use the image as a neutral example or generic illustration)',
+  unspecified: 'unspecified (no editorial intent declared by the user)',
+}
+
+const DECLARED_INTENT_LABELS_DE: Record<DeclaredIntent, string> = {
+  affirmative: 'affirmative (affirmativ — Bild soll das Thema bestätigend stützen)',
+  critical: 'critical (kritisch — Bild soll das Thema kritisch einordnen oder hinterfragen)',
+  illustrative: 'illustrative (illustrativ — Bild dient als neutrales Beispiel oder generische Illustration)',
+  unspecified: 'unspecified (nicht angegeben — keine redaktionelle Haltung erklärt)',
 }
 
 function resolveModel(modelFlag?: string): { model: ReturnType<typeof google>; label: string; useTextFallback: UseTextFallback } {
@@ -595,10 +637,17 @@ Dein JSON-Output MUSS exakt diese Top-Level-Struktur und Feldnamen verwenden:
   "integrity_score_llm": {
     "score": 0-100,
     "reasoning": "..."
+  },
+  "intent_assessment": {
+    "declared_intent": "affirmative | critical | illustrative | unspecified",
+    "intent_alignment": "match | partial | mismatch | not_assessable",
+    "framing_risk": "low | medium | high",
+    "reasoning": "..."
   }
 }
 
-WICHTIG: Verwende EXAKT diese Feldnamen. Keine Umbenennung, keine Verschachtelung unter "phase1"/"phase2" etc.`
+WICHTIG: Verwende EXAKT diese Feldnamen. Keine Umbenennung, keine Verschachtelung unter "phase1"/"phase2" etc.
+"declared_intent" muss EXAKT den vom User erklärten Wert echoen (siehe "Erklärte redaktionelle Haltung" im Input). Bei "nicht angegeben" → "unspecified" + "intent_alignment"="not_assessable".`
 
 const ANALYSIS_JSON_SKELETON_EN = `
 
@@ -677,13 +726,21 @@ Your JSON output MUST use exactly this top-level structure and these field names
   "integrity_score_llm": {
     "score": 0-100,
     "reasoning": "..."
+  },
+  "intent_assessment": {
+    "declared_intent": "affirmative | critical | illustrative | unspecified",
+    "intent_alignment": "match | partial | mismatch | not_assessable",
+    "framing_risk": "low | medium | high",
+    "reasoning": "..."
   }
 }
 
 IMPORTANT: use EXACTLY these field names. No renaming, no nesting under "phase1"/"phase2" etc.
 Enum values are English IDs as shown. Free-text fields (finding, observation, reasoning,
-reason_for_relevance, masked_issue, masking_reasoning, etc.) must be written in German
-per the LANGUAGE POLICY.`
+reason_for_relevance, masked_issue, masking_reasoning, intent_assessment.reasoning, etc.)
+must be written in German per the LANGUAGE POLICY.
+"declared_intent" must EXACTLY echo the user-declared value (see "Declared editorial intent"
+in the user input). When unspecified → "declared_intent"="unspecified" + "intent_alignment"="not_assessable".`
 
 export interface SemanticAnalysisResult {
   analysis: AnalysisOutput
@@ -760,9 +817,13 @@ export async function runSemanticAnalysis(
   const mediaType = options?.mediaType ?? 'image/jpeg'
   const lang = options?.lang ?? DEFAULT_LANG
   const analysisPrompt = lang === 'en' ? ANALYSIS_PROMPT_EN : ANALYSIS_PROMPT
+  const declaredIntent: DeclaredIntent = options?.declaredIntent ?? 'unspecified'
+  const intentLabel = lang === 'en'
+    ? DECLARED_INTENT_LABELS_EN[declaredIntent]
+    : DECLARED_INTENT_LABELS_DE[declaredIntent]
   const userText = lang === 'en'
-    ? `Original prompt: ${options?.prompt ?? 'not provided'}\nUsage context: ${options?.context ?? 'not provided'}`
-    : `Original-Prompt: ${options?.prompt ?? 'nicht vorhanden'}\nNutzungskontext: ${options?.context ?? 'nicht vorhanden'}`
+    ? `Original prompt: ${options?.prompt ?? 'not provided'}\nUsage context: ${options?.context ?? 'not provided'}\nDeclared editorial intent: ${intentLabel}`
+    : `Original-Prompt: ${options?.prompt ?? 'nicht vorhanden'}\nNutzungskontext: ${options?.context ?? 'nicht vorhanden'}\nErklärte redaktionelle Haltung: ${intentLabel}`
   const imageBuffer = Buffer.from(imageBase64, 'base64')
   const analysisResolved = resolveModel(options?.model)
   const aestheticResolved = resolveModel(DEFAULT_AESTHETIC_MODEL)
@@ -901,6 +962,20 @@ export async function runSemanticAnalysis(
 
   // Status deterministisch aus dem (finalen, ggf. gecappten) Score ableiten.
   applyStatusFromScore(analysis)
+
+  // Intent-Sanity: declared_intent muss dem User-Input entsprechen,
+  // intent_alignment 'not_assessable' wenn declared_intent='unspecified'.
+  const intentRepair = repairIntentAssessment(analysis, declaredIntent)
+  if (intentRepair.declared_intent_overridden) {
+    console.warn(
+      `[Intent-Repair] declared_intent normalisiert: ${intentRepair.declared_intent_overridden.before} → ${intentRepair.declared_intent_overridden.after} (User-Input überschreibt LLM-Echo)`,
+    )
+  }
+  if (intentRepair.intent_alignment_normalized) {
+    console.warn(
+      `[Intent-Repair] intent_alignment normalisiert: ${intentRepair.intent_alignment_normalized.before} → not_assessable (declared_intent='unspecified')`,
+    )
+  }
 
   // Finale dominant_error_type-Normalisierung — nach allen flag-mutierenden
   // Schritten (Evidenz-Filter + Consistency-Reconcile).

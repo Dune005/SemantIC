@@ -6,6 +6,20 @@ export type DimensionStatus = 'green' | 'yellow' | 'red'
 export type MaskingVerdict = 'none' | 'low' | 'medium' | 'high'
 export type RiskLevel = 'low' | 'medium' | 'high'
 export type ReadingModeCode = 'WA' | 'DA' | 'CI' | 'AA' | 'MI'
+export type DeclaredIntent = 'affirmative' | 'critical' | 'illustrative' | 'unspecified'
+export type IntentAlignment = 'match' | 'partial' | 'mismatch' | 'not_assessable'
+export type FramingRisk = 'low' | 'medium' | 'high'
+
+export interface IntentAssessmentView {
+  declaredIntent: DeclaredIntent
+  intentAlignment: IntentAlignment
+  framingRisk: FramingRisk
+  reasoning: string
+  // Wurde die Empfehlungs-Rahmung durch den Intent verändert?
+  // True, wenn intent-spezifischer Text aus RECOMMENDATION_BY_INTENT gegriffen
+  // hat — false bei 'unspecified' oder Fallback auf RECOMMENDATION_TABLE.
+  recommendationOverriddenByIntent: boolean
+}
 export type VisualDriverCode = 'CL' | 'BK' | 'WCG' | 'HDT' | 'MO' | 'GF' | 'DS' | 'NL' | 'MH'
 export type DominantErrorType = 'physics' | 'anatomy' | 'context' | 'mixed' | 'none'
 export type InputCompleteness = 'image_only' | 'image_prompt' | 'image_context' | 'full'
@@ -112,6 +126,13 @@ export interface AnalysisViewModel {
   inputCompleteness: InputCompleteness
   dominantErrorType: DominantErrorType
   biasAxesSummary: BiasAxesSummary
+  intentAssessment: IntentAssessmentView
+  // Kurzer Hinweis-Text neben der Empfehlung, wenn der declared_intent die
+  // Empfehlungs-Rahmung verändert hat (Transparenz: User soll sehen, dass die
+  // Empfehlung intent-sensitiv ist). null wenn declared_intent='unspecified'
+  // oder kein Override aktiv. Render-Hinweis: als separater Block unter der
+  // Empfehlung, nicht in userHints — sonst Vue-Key-Konflikte mit echten Topics.
+  intentRecommendationNote: string | null
   debug: DebugView
 }
 
@@ -196,6 +217,81 @@ const RECOMMENDATION_TABLE: Record<
     bias_representation: 'Kritische Bias-Hinweise – Personendarstellung überprüfen oder anderes Bild wählen.',
     masking_style: 'Bild wirkt täuschend überzeugend, mehrere Auffälligkeiten – bitte nicht in dieser Form verwenden.',
     hallucination: 'Bildinhalte weichen vom Prompt ab – bitte nicht in dieser Form verwenden.',
+  },
+}
+
+// Intent-sensitive Empfehlungs-Rahmung: 'affirmative', 'critical' und
+// 'illustrative' erhalten je eigene Texte. 'unspecified' fällt auf die
+// neutrale Tabelle (RECOMMENDATION_TABLE / RECOMMENDATION_TABLE_AD) zurück.
+// Der Verdict-Status (grün/gelb/rot) bleibt in jedem Fall aus dem Codebook +
+// Reconcile-Layer; Intent ändert NUR den Text. Die Texte sind bewusst
+// personen-agnostisch formuliert, damit sie auch für Bilder ohne Menschen
+// (Stillleben, Grafiken, abstrakte Motive) tragen. Anmerkung: der
+// bias_representation-Cluster zielt aktuell auf personenbezogene Bias-Muster
+// (Rolle/Körper/Geschlecht); für nicht-menschliche Bias-Achsen (z.B.
+// kulturelle Symbolik in Stilllebenkomposition) müsste die Cluster-Definition
+// später nachgeschärft werden — ist hier kein Blocker, weil solche Bilder
+// den Cluster derzeit selten als dominant bekommen.
+const RECOMMENDATION_BY_INTENT: Record<
+  'affirmative' | 'critical' | 'illustrative',
+  Record<DimensionStatus, Partial<Record<RecommendationCluster | 'null', string>>>
+> = {
+  affirmative: {
+    green: {
+      null: 'Keine Hinweise. Bild eignet sich für eine bestätigende Untermalung des Themas.',
+    },
+    yellow: {
+      null: 'Befunde aufgefallen – vor einer bestätigenden Verwendung prüfen, ob sie der gewünschten Aussage im Weg stehen.',
+      image_integrity: 'Bildqualitäts-Hinweise – eine bestätigende Verwendung wirkt nur, wenn diese Punkte geprüft und unkritisch sind.',
+      bias_representation: 'Bild trägt Bias-Hinweise. Bei bestätigender Verwendung wird das Muster mitgesendet – Bias bewusst markieren oder anderes Bild wählen.',
+      masking_style: 'Bild wirkt visuell überzeugend – bestätigende Verwendung möglich, aber prüfen, ob die glatte Oberfläche Befunde überdeckt.',
+      hallucination: 'Bildinhalte weichen vom Prompt ab – bestätigende Verwendung würde die Abweichung als Tatsache präsentieren.',
+    },
+    red: {
+      null: 'Substantielle Befunde – als bestätigende Untermalung ungeeignet.',
+      image_integrity: 'Sichtbare Bildfehler – würden in bestätigender Verwendung wie eine versteckte Schwäche wirken. Anderes Bild wählen.',
+      bias_representation: 'Substantieller Bias-Befund – als bestätigende Untermalung ungeeignet, würde das Muster zur Botschaft machen.',
+      masking_style: 'Bild wirkt zu glatt für die Hinweise im Bild – eine bestätigende Verwendung würde diese Spannung kaschieren.',
+      hallucination: 'Bildinhalte weichen vom Prompt ab – eine bestätigende Verwendung würde die Abweichung als Tatsache präsentieren.',
+    },
+  },
+  critical: {
+    green: {
+      null: 'Keine kritischen Hinweise. Mit kritischer Bildunterschrift / Rahmung publizierbar – die Distanzierung muss vom Text kommen, nicht vom Bild.',
+    },
+    yellow: {
+      null: 'Im kritischen Kontext nur verwendbar, wenn die Bildunterschrift den geprüften Punkt explizit benennt – ohne Distanzierung kippt die Lesart ins Affirmative.',
+      image_integrity: 'Bildqualitätsfehler – passen NICHT zur kritischen Einordnung. Anderes Bild wählen oder neu generieren.',
+      bias_representation: 'Kann im kritischen Kontext als Beleg dienen – ABER nur, wenn das Bias-Muster im Begleittext explizit benannt und distanziert wird. Sonst kippt es ins Affirmative.',
+      masking_style: 'Visuell überzeugend – im kritischen Kontext riskant, weil die glatte Oberfläche das Muster verharmlosen kann. Bildunterschrift braucht klare Distanzierung.',
+      hallucination: 'Halluzinierte Inhalte – auch in kritischer Rahmung problematisch (Faktentreue). Anderes Bild verwenden.',
+    },
+    red: {
+      null: 'Kritische Befunde – auch in kritischer Rahmung vor Publikation klären.',
+      image_integrity: 'Sichtbare Bildfehler – auch eine kritische Bildunterschrift macht diese Fehler nicht zur Botschaft. Anderes Bild wählen.',
+      bias_representation: 'Befund ist substantiell – als kritischer Beleg potenziell verwendbar, aber NUR mit eindeutiger Distanzierung im Begleittext. Ohne diese Distanzierung verstärkt das Bild das Muster.',
+      masking_style: 'Bild wirkt täuschend überzeugend – im kritischen Kontext muss die Distanzierung sehr explizit sein, sonst wirkt es affirmativ.',
+      hallucination: 'Bildinhalte weichen vom Prompt ab – auch in kritischer Rahmung Faktentreue gefährdet.',
+    },
+  },
+  illustrative: {
+    green: {
+      null: 'Keine kritischen Hinweise – als neutrales Beispiel verwendbar.',
+    },
+    yellow: {
+      null: 'Punkte aufgefallen – als „neutrales Beispiel" zu deklarieren wird schwierig, solange die Auffälligkeiten nicht geprüft sind.',
+      image_integrity: 'Sichtbare Bildfehler stören die illustrative Wirkung – sauberes Bild wählen.',
+      bias_representation: 'Stereotypisierung im illustrativen Material lenkt vom Thema ab – neutraleres Bild wählen.',
+      masking_style: 'Visuell auffällig – für eine illustrative Verwendung sind sachlichere Bilder geeigneter.',
+      hallucination: 'Halluzinierte Inhalte machen das Bild als illustratives Beispiel unbrauchbar – anderes Bild wählen.',
+    },
+    red: {
+      null: 'Kritische Befunde – als neutrales Beispiel nicht geeignet.',
+      image_integrity: 'Sichtbare Bildfehler – eignet sich nicht als illustratives Beispiel.',
+      bias_representation: 'Trotz illustrativer Absicht: Befund ist substantiell. Bild eignet sich nicht als neutrales Beispiel.',
+      masking_style: 'Bild wirkt täuschend überzeugend – als illustratives Beispiel würde es die thematische Neutralität untergraben.',
+      hallucination: 'Bildinhalte weichen vom Prompt ab – als illustratives Beispiel ungeeignet.',
+    },
   },
 }
 
@@ -697,16 +793,51 @@ function aggregateVerdict(
   return { status, dominantCluster }
 }
 
+function readFromTable(
+  table: Partial<Record<RecommendationCluster | 'null', string>>,
+  dominantCluster: RecommendationCluster | null,
+): string | undefined {
+  return (dominantCluster && table[dominantCluster]) || table.null
+}
+
+// Intent-sensitive Empfehlungs-Auswahl. Verdict-Status (status) und Cluster
+// werden NICHT verändert — nur der Empfehlungstext. Reihenfolge:
+//   1. Intent ∈ {affirmative, critical, illustrative} → RECOMMENDATION_BY_INTENT
+//   2. WA/MI-Reading-Mode → RECOMMENDATION_TABLE_AD
+//   3. Default → RECOMMENDATION_TABLE
+// 'unspecified' überspringt Schritt 1 und fällt direkt auf Schritt 2/3.
+function pickRecommendation(
+  status: DimensionStatus,
+  dominantCluster: RecommendationCluster | null,
+  readingMode: ReadingModeCode,
+  declaredIntent: DeclaredIntent,
+): { text: string; intentOverridden: boolean } {
+  if (declaredIntent === 'affirmative' || declaredIntent === 'critical' || declaredIntent === 'illustrative') {
+    const intentTable = RECOMMENDATION_BY_INTENT[declaredIntent][status]
+    const text = readFromTable(intentTable, dominantCluster)
+    if (text) return { text, intentOverridden: true }
+  }
+  const defaultTable = isAdContext(readingMode)
+    ? RECOMMENDATION_TABLE_AD[status]
+    : RECOMMENDATION_TABLE[status]
+  return {
+    text: readFromTable(defaultTable, dominantCluster) ?? 'Empfehlung verfügbar.',
+    intentOverridden: false,
+  }
+}
+
 function buildOverallVerdict(
   status: DimensionStatus,
   dominantCluster: RecommendationCluster | null,
   readingMode: ReadingModeCode,
-): OverallVerdict {
+  declaredIntent: DeclaredIntent,
+): { verdict: OverallVerdict; intentOverridden: boolean } {
   const headline = VERDICT_HEADLINES[status]
-  const table = isAdContext(readingMode) ? RECOMMENDATION_TABLE_AD[status] : RECOMMENDATION_TABLE[status]
-  const recommendation =
-    (dominantCluster && table[dominantCluster]) || table.null || 'Empfehlung verfügbar.'
-  return { status, headline, recommendation, dominantCluster }
+  const { text, intentOverridden } = pickRecommendation(status, dominantCluster, readingMode, declaredIntent)
+  return {
+    verdict: { status, headline, recommendation: text, dominantCluster },
+    intentOverridden,
+  }
 }
 
 export function buildAnalysisViewModel(result: SemanticAnalysisResult): AnalysisViewModel {
@@ -829,7 +960,57 @@ export function buildAnalysisViewModel(result: SemanticAnalysisResult): Analysis
   const hidden = sortedHints.filter(h => !visibleIds.has(h.topic))
 
   const { status, dominantCluster } = aggregateVerdict(sortedHints, visible, ctx.dim)
-  const overallVerdict = buildOverallVerdict(status, dominantCluster, readingMode.code)
+
+  // Backwards-Fallback: ältere API-Outputs (vor Intent-Konzept) oder gecachte
+  // Spike-JSONs ohne intent_assessment-Feld nicht crashen lassen. Default ist
+  // immer 'unspecified' / 'not_assessable' — gleicher Verhaltenspfad wie wenn
+  // der User die Haltung nicht angegeben hat.
+  const ia = analysis.intent_assessment ?? {
+    declared_intent: 'unspecified' as const,
+    intent_alignment: 'not_assessable' as const,
+    framing_risk: 'low' as const,
+    reasoning: '',
+  }
+  const declaredIntent = ia.declared_intent as DeclaredIntent
+  const { verdict: overallVerdict, intentOverridden } = buildOverallVerdict(
+    status,
+    dominantCluster,
+    readingMode.code,
+    declaredIntent,
+  )
+
+  const intentAlignment = ia.intent_alignment as IntentAlignment
+  const framingRisk = ia.framing_risk as FramingRisk
+
+  // Transparenz-Note neben der Empfehlung, wenn der Intent die Rahmung
+  // verändert hat. Bei intent_alignment='mismatch' oder framing_risk='high'
+  // wird die Note schärfer, weil die User-Haltung erklärtermassen NICHT zum
+  // Bild passt — die Empfehlung darf hier nicht beruhigend wirken.
+  let intentRecommendationNote: string | null = null
+  if (intentOverridden) {
+    const intentLabel =
+      declaredIntent === 'critical'
+        ? 'kritische'
+        : declaredIntent === 'illustrative'
+          ? 'illustrative'
+          : 'bestätigende'
+    if (intentAlignment === 'mismatch' || framingRisk === 'high') {
+      intentRecommendationNote =
+        `Empfehlung berücksichtigt deine erklärte ${intentLabel} Verwendung – ` +
+        'aber das Bild passt aus Tool-Sicht nicht klar dazu. Befund bleibt unverändert.'
+    } else {
+      intentRecommendationNote =
+        `Empfehlung berücksichtigt deine erklärte ${intentLabel} Verwendung. Befund selbst bleibt unverändert.`
+    }
+  }
+
+  const intentAssessment: IntentAssessmentView = {
+    declaredIntent,
+    intentAlignment,
+    framingRisk,
+    reasoning: ia.reasoning,
+    recommendationOverriddenByIntent: intentOverridden,
+  }
 
   const hasContextWarning = inputCompleteness !== 'full'
 
@@ -837,6 +1018,7 @@ export function buildAnalysisViewModel(result: SemanticAnalysisResult): Analysis
     overallVerdict,
     userHints: visible,
     hiddenHints: hidden,
+    intentRecommendationNote,
     hasContextWarning,
     aestheticCombined,
     aestheticDivergent,
@@ -852,6 +1034,7 @@ export function buildAnalysisViewModel(result: SemanticAnalysisResult): Analysis
     inputCompleteness,
     dominantErrorType: analysis.research_layer.dominant_error_type,
     biasAxesSummary,
+    intentAssessment,
     debug: {
       sonnetAesthetic: sonnet,
       v25Aesthetic: v25,
