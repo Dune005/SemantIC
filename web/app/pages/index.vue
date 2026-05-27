@@ -866,7 +866,7 @@ const HINT_SEVERITY_TEXT_CLASS: Record<'high' | 'medium' | 'low', string> = {
           </Card>
 
           <!-- Pipeline-Meta + Roh-JSON -->
-          <div class="grid grid-cols-1 gap-3 sm:grid-cols-4">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <Card>
               <CardHeader class="pb-2"><CardTitle>Sonnet</CardTitle></CardHeader>
               <CardContent>
@@ -884,6 +884,46 @@ const HINT_SEVERITY_TEXT_CLASS: Record<'high' | 'medium' | 'low', string> = {
                 <Badge v-else variant="danger" class="text-[10px]">
                   Fehler: {{ view.debug.laionError ?? 'unbekannt' }}
                 </Badge>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader class="pb-2">
+                <CardTitle class="flex items-center gap-1">
+                  CLIP-Alignment
+                  <span class="text-[10px] font-normal text-slate-400" title="Raw-Cosine zwischen Bild und Text. Typischer Bereich 0.10–0.35. Spike-Diagnostik, kein Score.">ℹ</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent class="text-xs text-slate-600">
+                <template v-if="view.debug.clipError">
+                  <Badge variant="danger" class="text-[10px]">
+                    Fehler: {{ view.debug.clipError }}
+                  </Badge>
+                </template>
+                <template v-else-if="view.debug.clipSkipped === null">
+                  <span class="text-slate-400">– (nicht verfügbar)</span>
+                </template>
+                <template v-else-if="view.debug.clipSkipped">
+                  <span class="text-slate-500">– (kein Text-Input)</span>
+                </template>
+                <template v-else>
+                  <p>
+                    <strong>Prompt:</strong>
+                    <span class="tabular-nums">{{ view.debug.clipPromptCosine === null ? '–' : view.debug.clipPromptCosine.toFixed(3) }}</span>
+                    <span class="ml-1 text-[10px] text-slate-400">
+                      ({{ view.debug.clipPromptTokenCount ?? 0 }} Tokens<span v-if="view.debug.clipPromptTruncated">, gekürzt</span>)
+                    </span>
+                  </p>
+                  <p>
+                    <strong>Context:</strong>
+                    <span class="tabular-nums">{{ view.debug.clipContextCosine === null ? '–' : view.debug.clipContextCosine.toFixed(3) }}</span>
+                    <span class="ml-1 text-[10px] text-slate-400">
+                      ({{ view.debug.clipContextTokenCount ?? 0 }} Tokens<span v-if="view.debug.clipContextTruncated">, gekürzt</span>)
+                    </span>
+                  </p>
+                  <p class="mt-1 text-[10px] text-slate-400">
+                    {{ view.debug.clipModel }} · {{ view.debug.clipDurationMs }} ms
+                  </p>
+                </template>
               </CardContent>
             </Card>
             <Card>

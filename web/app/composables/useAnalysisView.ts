@@ -115,6 +115,18 @@ export interface DebugView {
   durationMs: number
   modelLabel: string
   aestheticModelLabel: string | null
+  // CLIP-Alignment (Modal, vierter Call). null = nicht verfuegbar (alter JSON
+  // ohne CLIP-Feld, oder Fehler — dann steckt der Fehler in clipError).
+  clipSkipped: boolean | null
+  clipPromptCosine: number | null
+  clipContextCosine: number | null
+  clipPromptTruncated: boolean | null
+  clipContextTruncated: boolean | null
+  clipPromptTokenCount: number | null
+  clipContextTokenCount: number | null
+  clipModel: string | null
+  clipDurationMs: number | null
+  clipError: string | null
 }
 
 export interface AnalysisViewModel {
@@ -1151,6 +1163,51 @@ export function buildAnalysisViewModel(result: SemanticAnalysisResult): Analysis
       durationMs: meta.duration_ms,
       modelLabel: meta.model,
       aestheticModelLabel: meta.aesthetic_model ?? null,
+      ...(() => {
+        // CLIP-Pass-through mit Backwards-Fallback fuer alte JSONs.
+        const clip = meta.clip_alignment
+        const error = meta.clip_alignment_error ?? null
+        if (!clip || typeof clip !== 'object' || !('skipped' in clip)) {
+          return {
+            clipSkipped: null,
+            clipPromptCosine: null,
+            clipContextCosine: null,
+            clipPromptTruncated: null,
+            clipContextTruncated: null,
+            clipPromptTokenCount: null,
+            clipContextTokenCount: null,
+            clipModel: null,
+            clipDurationMs: null,
+            clipError: error,
+          }
+        }
+        if (clip.skipped === true) {
+          return {
+            clipSkipped: true,
+            clipPromptCosine: null,
+            clipContextCosine: null,
+            clipPromptTruncated: null,
+            clipContextTruncated: null,
+            clipPromptTokenCount: null,
+            clipContextTokenCount: null,
+            clipModel: null,
+            clipDurationMs: null,
+            clipError: error,
+          }
+        }
+        return {
+          clipSkipped: false,
+          clipPromptCosine: typeof clip.prompt_cosine === 'number' ? clip.prompt_cosine : null,
+          clipContextCosine: typeof clip.context_cosine === 'number' ? clip.context_cosine : null,
+          clipPromptTruncated: typeof clip.prompt_truncated === 'boolean' ? clip.prompt_truncated : null,
+          clipContextTruncated: typeof clip.context_truncated === 'boolean' ? clip.context_truncated : null,
+          clipPromptTokenCount: typeof clip.prompt_token_count === 'number' ? clip.prompt_token_count : null,
+          clipContextTokenCount: typeof clip.context_token_count === 'number' ? clip.context_token_count : null,
+          clipModel: typeof clip.model === 'string' ? clip.model : null,
+          clipDurationMs: typeof clip.duration_ms === 'number' ? clip.duration_ms : null,
+          clipError: error,
+        }
+      })(),
     },
   }
 }
