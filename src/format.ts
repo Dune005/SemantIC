@@ -106,6 +106,26 @@ export function formatResult(result: SemanticAnalysisResult): string {
   }
   lines.push('')
 
+  const clip = meta.clip_alignment
+  const clipError = meta.clip_alignment_error
+  lines.push('Bild↔Text-Alignment (CLIP, Modal)')
+  if (clipError) {
+    lines.push(`  – (Fehler: ${clipError})`)
+  } else if (!clip) {
+    lines.push('  – (nicht verfügbar)')
+  } else if (clip.skipped) {
+    lines.push('  – (kein Text-Input)')
+  } else {
+    const fmt = (cos: number | null) => cos === null ? '–' : cos.toFixed(3)
+    const tag = (truncated: boolean, tokenCount: number) =>
+      truncated ? `${tokenCount} Tokens, gekürzt` : `${tokenCount} Tokens`
+    lines.push(`  Prompt-Cosine:   ${fmt(clip.prompt_cosine).padEnd(6)}  (${tag(clip.prompt_truncated, clip.prompt_token_count)})`)
+    lines.push(`  Context-Cosine:  ${fmt(clip.context_cosine).padEnd(6)}  (${tag(clip.context_truncated, clip.context_token_count)})`)
+    lines.push(`  Modell: ${clip.model}  (${clip.duration_ms}ms)`)
+    lines.push('  Hinweis: Roh-Cosine, kein Score. Typischer Bereich 0.10–0.35.')
+  }
+  lines.push('')
+
   lines.push('Normative Maskierung (analytische Einordnung, keine Bewertung)')
   lines.push(`  Verdict: ${rl.normative_masking.verdict}`)
   if (rl.normative_masking.aspects.length > 0) {

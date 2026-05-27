@@ -10,6 +10,12 @@ import { AESTHETIC_PROMPT } from './prompts/aesthetic.js'
 import { computeIntegrityScore, computeMaskingScore, deriveMaskingVerdict, type MaskingVerdict } from './scoring.js'
 import { deriveContextReviewHints, type ContextReviewHint } from './context-hints.js'
 import { runModalAesthetic, type ModalAestheticResult } from './aesthetic-modal.js'
+import {
+  runClipAlignment,
+  toClipAlignmentMeta,
+  type ClipAlignmentMeta,
+  type ClipTextEntry,
+} from './clip-alignment-modal.js'
 import type { CodebookEvidence, MaskingEvidence } from './schemas/analysis.js'
 
 const EVIDENCE_MIN_OBSERVATION_LEN = 10
@@ -843,6 +849,8 @@ export interface SemanticAnalysisResult {
     consistency_reconcile?: ConsistencyReconcileReport
     laion_aesthetic?: ModalAestheticResult
     laion_aesthetic_error?: string
+    clip_alignment?: ClipAlignmentMeta
+    clip_alignment_error?: string
     test_config?: {
       temperature?: number
       thinkingLevel?: ThinkingLevel
@@ -1006,8 +1014,35 @@ export async function runSemanticAnalysis(
     }).then(r => r.object)
   }
 
+  // CLIP-Text-Inputs vorbereiten: trim + nur non-empty in den Texts-Array.
+  // Beide leer => Modal-Call wird ganz uebersprungen (skipped-Pfad).
+  // typeof-Check verhindert .trim()-Wurf bei untypisierten Callern.
+  const clipTexts: ClipTextEntry[] = []
+  const promptTrimmed = typeof options?.prompt === 'string' ? options.prompt.trim() : ''
+  const contextTrimmed = typeof options?.context === 'string' ? options.context.trim() : ''
+  if (promptTrimmed.length > 0) clipTexts.push({ id: 'prompt', text: promptTrimmed })
+  if (contextTrimmed.length > 0) clipTexts.push({ id: 'context', text: contextTrimmed })
+
+  type ClipPromise =
+    | { ok: true; value: ClipAlignmentMeta }
+    | { ok: false; error: string }
+  const clipCall: Promise<ClipPromise> = clipTexts.length === 0
+    ? Promise.resolve<ClipPromise>({
+        ok: true,
+        value: { skipped: true, reason: 'no_text_input' },
+      })
+    : runClipAlignment(imageBase64, clipTexts)
+        // .then().catch() statt .then(success, error), damit auch ein Wurf im
+        // Success-Mapping (toClipAlignmentMeta) gefangen wird.
+        .then<ClipPromise>(r => ({ ok: true as const, value: toClipAlignmentMeta(r) }))
+        .catch(err => {
+          const msg = err instanceof Error ? err.message : String(err)
+          console.warn(`[CLIP] Modal-CLIP fehlgeschlagen: ${msg}`)
+          return { ok: false as const, error: msg }
+        })
+
   const start = Date.now()
-  const [analysis, aesthetic, laionResult] = await Promise.all([
+  const [analysis, aesthetic, laionResult, clipResult] = await Promise.all([
     analysisCall(),
     aestheticCall(),
     runModalAesthetic(imageBase64).then(
@@ -1018,6 +1053,7 @@ export async function runSemanticAnalysis(
         return { ok: false as const, error: msg }
       },
     ),
+    clipCall,
   ])
 
   const evidenceReport = applyEvidenceFilter(analysis)
@@ -1172,6 +1208,7 @@ export async function runSemanticAnalysis(
       masking_filter: maskingReport,
       consistency_reconcile: reconcileReport,
       ...(laionResult.ok ? { laion_aesthetic: laionResult.value } : { laion_aesthetic_error: laionResult.error }),
+      ...(clipResult.ok ? { clip_alignment: clipResult.value } : { clip_alignment_error: clipResult.error }),
       ...(typeof options?.temperature === 'number' || options?.thinkingLevel || options?.mediaResolution
         ? {
             test_config: {
