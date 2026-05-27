@@ -102,6 +102,40 @@ export const AnalysisSchema = z.object({
     masking_evidence: z.array(MaskingEvidenceSchema),
     masking_verdict: z.enum(['none', 'low', 'medium', 'high']),
     masking_reasoning: z.string(),
+    normative_masking: z.object({
+      verdict: z.enum(['low', 'medium', 'high', 'not_applicable']).describe(
+        'Whether the image propagates an idealised norm. ' +
+        'not_applicable = image offers no anchor for normative assessment ' +
+        '(pure still-life without lifestyle/status, abstract graphic, technical diagram). ' +
+        'low = could plausibly idealise but does not (documentary, neutral framing). ' +
+        'medium = recognisable advertising aesthetic with at least one aspect. ' +
+        'high = clear normative promise AND smooth attractive staging ' +
+        'AND strong social norm carrier. Realism alone is never sufficient.',
+      ),
+      aspects: z.array(z.enum([
+        'beauty_ideal',
+        'lifestyle_aspiration',
+        'status_signaling',
+        'gender_norm',
+        'success_norm',
+      ])).max(3).describe(
+        'Which idealised pattern(s) the image propagates. Max 3. ' +
+        'Empty array if verdict is not_applicable or low without specific carrier.',
+      ),
+      reasoning: z.string().max(280).describe(
+        'Short justification (max ~280 chars) for the verdict and aspects. ' +
+        'Output in German. Analytical framing — describe the normative effect, ' +
+        'do not moralise.',
+      ),
+    }).describe(
+      'Normative masking — distinct from masking_evidence above. ' +
+      'masking_evidence requires a Codebook flaw being aesthetically hidden. ' +
+      'normative_masking is independent of any Codebook flaw: the image may ' +
+      'have flaws or be flag-free; the verdict here only describes whether ' +
+      'the surface propagates an idealised norm. The two are independent and ' +
+      'the verdict here MUST NOT influence Codebook flags, severities, scores, ' +
+      'masking_verdict or reading_mode.',
+    ),
   }),
   integrity_score_llm: z.object({
     score: z.number(),
@@ -137,3 +171,6 @@ export const AnalysisSchema = z.object({
 export type AnalysisOutput = z.infer<typeof AnalysisSchema>
 export type IntentAssessment = AnalysisOutput['intent_assessment']
 export type DeclaredIntent = IntentAssessment['declared_intent']
+export type NormativeMasking = AnalysisOutput['research_layer']['normative_masking']
+export type NormativeMaskingVerdict = NormativeMasking['verdict']
+export type NormativeMaskingAspect = NormativeMasking['aspects'][number]

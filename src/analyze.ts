@@ -192,6 +192,77 @@ function repairIntentAssessment(analysis: AnalysisOutput, requestedIntent: Decla
   return report
 }
 
+// Normative-Masking-Sanity: deterministische Repair-Regeln, parallel zur
+// Intent-Sanity. Skopus ist hart auf research_layer.normative_masking begrenzt
+// — die Funktion liest und schreibt KEINE anderen Felder. Status-Isolation
+// (Plan, Codex-Review #4).
+function repairNormativeMasking(analysis: AnalysisOutput): {
+  verdict_normalized?: { before: string; after: string; reason: string }
+  aspects_truncated?: { before: number; after: number }
+  reasoning_defaulted?: boolean
+  context_inflation_downgrade?: { before: string; after: string }
+} {
+  const nm = analysis.research_layer.normative_masking
+  const cb = analysis.research_layer.codebook
+  const report: ReturnType<typeof repairNormativeMasking> = {}
+  // Schema garantiert max 3 Aspects, aber wir prüfen defensiv (älter
+  // generiertes JSON, manuelle Edits, künftige Schema-Lockerungen).
+  if (nm.aspects.length > 3) {
+    report.aspects_truncated = { before: nm.aspects.length, after: 3 }
+    nm.aspects = nm.aspects.slice(0, 3)
+  }
+  // Sanity 1: not_applicable verlangt aspects=[]. Bei nicht-leerer Aspect-Liste
+  // ist 'low' das schwächere, semantisch korrektere Verdict.
+  if (nm.verdict === 'not_applicable' && nm.aspects.length > 0) {
+    report.verdict_normalized = {
+      before: nm.verdict,
+      after: 'low',
+      reason: 'not_applicable inkonsistent mit nicht-leeren aspects',
+    }
+    nm.verdict = 'low'
+  }
+  // Sanity 2: high ohne Aspect-Belege ist Inflation — Downgrade auf medium.
+  else if (nm.verdict === 'high' && nm.aspects.length === 0) {
+    report.verdict_normalized = {
+      before: nm.verdict,
+      after: 'medium',
+      reason: 'high ohne aspects = inflationärer Befund',
+    }
+    nm.verdict = 'medium'
+  }
+  // Sanity 3: not_applicable mit Aspect-Liste leer → reasoning bekommt
+  // mindestens einen Default-Hinweis, damit das Feld nicht stumm bleibt.
+  if (nm.verdict === 'not_applicable' && (!nm.reasoning || nm.reasoning.trim() === '')) {
+    nm.reasoning = 'Bild bietet keinen Anker für normative Bewertung.'
+    report.reasoning_defaulted = true
+  }
+  // Sanity 4 (Round-3-Heuristik gegen Kontext-Inflation): wenn das LLM
+  // ausschliesslich `lifestyle_aspiration` als Aspect setzt UND das Bild
+  // KEINEN personenbezogenen Stereotyp-Flag trägt (kein has_gender_bias,
+  // has_role_stereotype, has_body_stereotype), liest das Modell sehr
+  // wahrscheinlich das Kontext-Label statt das tatsächliche Bild —
+  // typisches Muster bei Stillleben / Symbolbildern in Lifestyle-Magazin-
+  // Kontexten. Downgrade auf 'low' mit aspects=[]. Multi-Aspect-Verdicts
+  // (z. B. status_signaling + success_norm + lifestyle_aspiration für ein
+  // CEO-Porträt) bleiben unberührt.
+  const onlyLifestyle = nm.aspects.length === 1 && nm.aspects[0] === 'lifestyle_aspiration'
+  const hasPersonStereotype = cb.has_gender_bias || cb.has_role_stereotype || cb.has_body_stereotype
+  if (
+    (nm.verdict === 'medium' || nm.verdict === 'high') &&
+    onlyLifestyle &&
+    !hasPersonStereotype
+  ) {
+    report.context_inflation_downgrade = { before: nm.verdict, after: 'low' }
+    nm.verdict = 'low'
+    nm.aspects = []
+    // Reasoning überschreiben, damit es nicht weiter von lifestyle_aspiration
+    // redet, während verdict/aspects leer sind (Codex-Review Round 3).
+    nm.reasoning =
+      'Kein sichtbarer normativer Träger im Bild; Kontextlabel allein zählt nicht als lifestyle_aspiration.'
+  }
+  return report
+}
+
 function applyConsistencyReconcile(analysis: AnalysisOutput): ConsistencyReconcileReport {
   const cb = analysis.research_layer.codebook
   const dims = analysis.dimension_analysis
@@ -632,7 +703,12 @@ Dein JSON-Output MUSS exakt diese Top-Level-Struktur und Feldnamen verwenden:
       }
     ],
     "masking_verdict": "none | low | medium | high",
-    "masking_reasoning": "..."
+    "masking_reasoning": "...",
+    "normative_masking": {
+      "verdict": "low | medium | high | not_applicable",
+      "aspects": ["beauty_ideal", "status_signaling"],
+      "reasoning": "..."
+    }
   },
   "integrity_score_llm": {
     "score": 0-100,
@@ -721,7 +797,12 @@ Your JSON output MUST use exactly this top-level structure and these field names
       }
     ],
     "masking_verdict": "none | low | medium | high",
-    "masking_reasoning": "..."
+    "masking_reasoning": "...",
+    "normative_masking": {
+      "verdict": "low | medium | high | not_applicable",
+      "aspects": ["beauty_ideal", "status_signaling"],
+      "reasoning": "..."
+    }
   },
   "integrity_score_llm": {
     "score": 0-100,
@@ -974,6 +1055,30 @@ export async function runSemanticAnalysis(
   if (intentRepair.intent_alignment_normalized) {
     console.warn(
       `[Intent-Repair] intent_alignment normalisiert: ${intentRepair.intent_alignment_normalized.before} → not_assessable (declared_intent='unspecified')`,
+    )
+  }
+
+  // Normative-Masking-Sanity (Plan: nach Intent-Repair, vor dominant_error_type-
+  // Reconcile). Skopus hart auf research_layer.normative_masking begrenzt.
+  const normRepair = repairNormativeMasking(analysis)
+  if (normRepair.verdict_normalized) {
+    console.warn(
+      `[Normative-Masking-Repair] verdict normalisiert: ${normRepair.verdict_normalized.before} → ${normRepair.verdict_normalized.after} (${normRepair.verdict_normalized.reason})`,
+    )
+  }
+  if (normRepair.aspects_truncated) {
+    console.warn(
+      `[Normative-Masking-Repair] aspects gekürzt: ${normRepair.aspects_truncated.before} → ${normRepair.aspects_truncated.after}`,
+    )
+  }
+  if (normRepair.reasoning_defaulted) {
+    console.warn(
+      `[Normative-Masking-Repair] reasoning leer bei not_applicable → Default-Text gesetzt`,
+    )
+  }
+  if (normRepair.context_inflation_downgrade) {
+    console.warn(
+      `[Normative-Masking-Repair] Kontext-Inflation entdeckt (nur lifestyle_aspiration, kein Personen-Stereotyp): ${normRepair.context_inflation_downgrade.before} → ${normRepair.context_inflation_downgrade.after}`,
     )
   }
 

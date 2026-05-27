@@ -106,6 +106,16 @@ export function formatResult(result: SemanticAnalysisResult): string {
   }
   lines.push('')
 
+  lines.push('Normative Maskierung (analytische Einordnung, keine Bewertung)')
+  lines.push(`  Verdict: ${rl.normative_masking.verdict}`)
+  if (rl.normative_masking.aspects.length > 0) {
+    lines.push(`  Aspekte: ${rl.normative_masking.aspects.join(', ')}`)
+  }
+  if (rl.normative_masking.reasoning) {
+    lines.push(`  Begründung: ${rl.normative_masking.reasoning}`)
+  }
+  lines.push('')
+
   const drivers = rl.visual_drivers.length > 0 ? rl.visual_drivers.join(', ') : '–'
   lines.push('Research Layer')
   lines.push(`  Leseart:              ${rl.reading_mode} – ${rl.reading_mode_label}`)
