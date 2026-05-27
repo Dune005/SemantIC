@@ -15,6 +15,8 @@ import {
   buildAnalysisViewModel,
   type DimensionStatus,
   type MaskingVerdict,
+  type NormativeMaskingAspect,
+  type NormativeMaskingVerdict,
   type RiskLevel,
 } from '~/composables/useAnalysisView'
 import { Badge } from '~/components/ui/badge'
@@ -242,6 +244,21 @@ const verdictLabels: Record<MaskingVerdict, string> = {
   low: 'geringe Tendenz',
   medium: 'mittlere Tendenz',
   high: 'starke Tendenz',
+}
+
+const normativeVerdictLabels: Record<NormativeMaskingVerdict, string> = {
+  not_applicable: 'nicht anwendbar',
+  low: 'gering',
+  medium: 'mittel',
+  high: 'stark',
+}
+
+const aspectLabels: Record<NormativeMaskingAspect, string> = {
+  beauty_ideal: 'Schönheitsideal',
+  lifestyle_aspiration: 'Lifestyle-Ideal',
+  status_signaling: 'Statussignal',
+  gender_norm: 'Geschlechternorm',
+  success_norm: 'Erfolgsnorm',
 }
 
 const readingModeDescriptions: Record<string, string> = {
@@ -488,6 +505,25 @@ const HINT_SEVERITY_TEXT_CLASS: Record<'high' | 'medium' | 'low', string> = {
                   <span class="font-medium">Hinweis zur Empfehlung:</span> {{ view.intentRecommendationNote }}
                 </p>
 
+                <p
+                  v-if="view.normativeMaskingNote"
+                  class="rounded border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-600"
+                >
+                  <span class="font-medium">Normative Bildwirkung</span>
+                  <span class="ml-1 inline-block rounded bg-slate-200 px-1.5 py-0.5 font-mono text-[10px] text-slate-700 align-baseline">{{ normativeVerdictLabels[view.normativeMasking.verdict] }}</span>
+                  <span class="ml-1">{{ view.normativeMaskingNote }}</span>
+                  <span
+                    v-if="view.normativeMasking.aspects.length > 0"
+                    class="ml-1 inline-flex flex-wrap gap-1 align-baseline"
+                  >
+                    <span
+                      v-for="aspect in view.normativeMasking.aspects"
+                      :key="aspect"
+                      class="rounded bg-slate-200 px-1.5 py-0.5 font-mono text-[10px] text-slate-700"
+                    >{{ aspectLabels[aspect] }}</span>
+                  </span>
+                </p>
+
                 <ol v-if="view.userHints.length > 0" class="space-y-2 pl-1">
                   <li
                     v-for="(hint, i) in view.userHints"
@@ -545,7 +581,7 @@ const HINT_SEVERITY_TEXT_CLASS: Record<'high' | 'medium' | 'low', string> = {
             </h2>
 
             <!-- Dimensions-Karten mit Scores -->
-            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
               <Card v-for="(dim, key) in view.dimensions" :key="key">
                 <CardHeader class="pb-2">
                   <CardTitle class="flex items-center justify-between">
@@ -616,6 +652,47 @@ const HINT_SEVERITY_TEXT_CLASS: Record<'high' | 'medium' | 'low', string> = {
                 <Badge :variant="verdictBadgeVariant(view.maskingVerdict)">
                   {{ verdictLabels[view.maskingVerdict] }}
                 </Badge>
+              </CardContent>
+            </Card>
+
+            <!-- Normative-Wirkung-Karte (Phase 7) -->
+            <Card>
+              <CardHeader class="pb-2">
+                <CardTitle class="flex items-center justify-between">
+                  <Tooltip>
+                    <TooltipTrigger as-child>
+                      <button type="button" class="cursor-help underline decoration-dotted underline-offset-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded">Normative Wirkung</button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Bezeichnet die Wirkung eines Bildes als idealisierte
+                      Norm (Lifestyle, Status, Erfolg, Schönheit, Geschlecht
+                      oder Ähnliches). Analytische Einordnung, keine
+                      moralische Bewertung. Befund kann grün sein, Wirkung
+                      trotzdem redaktionell relevant.
+                    </TooltipContent>
+                  </Tooltip>
+                  <Info class="h-4 w-4 text-slate-400" aria-hidden="true" />
+                </CardTitle>
+                <CardDescription>analytisch, kein Urteil</CardDescription>
+              </CardHeader>
+              <CardContent class="space-y-1.5">
+                <Badge variant="secondary">
+                  {{ normativeVerdictLabels[view.normativeMasking.verdict] }}
+                </Badge>
+                <div
+                  v-if="view.normativeMasking.aspects.length > 0"
+                  class="flex flex-wrap gap-1 pt-1"
+                >
+                  <span
+                    v-for="aspect in view.normativeMasking.aspects"
+                    :key="aspect"
+                    class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-700"
+                  >{{ aspectLabels[aspect] }}</span>
+                </div>
+                <p
+                  v-if="view.normativeMasking.reasoning"
+                  class="pt-1 text-xs leading-snug text-slate-500"
+                >{{ view.normativeMasking.reasoning }}</p>
               </CardContent>
             </Card>
           </div>

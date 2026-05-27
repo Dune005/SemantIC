@@ -10,6 +10,20 @@ export type DeclaredIntent = 'affirmative' | 'critical' | 'illustrative' | 'unsp
 export type IntentAlignment = 'match' | 'partial' | 'mismatch' | 'not_assessable'
 export type FramingRisk = 'low' | 'medium' | 'high'
 
+export type NormativeMaskingVerdict = 'low' | 'medium' | 'high' | 'not_applicable'
+export type NormativeMaskingAspect =
+  | 'beauty_ideal'
+  | 'lifestyle_aspiration'
+  | 'status_signaling'
+  | 'gender_norm'
+  | 'success_norm'
+
+export interface NormativeMaskingView {
+  verdict: NormativeMaskingVerdict
+  aspects: NormativeMaskingAspect[]
+  reasoning: string
+}
+
 export interface IntentAssessmentView {
   declaredIntent: DeclaredIntent
   intentAlignment: IntentAlignment
@@ -133,6 +147,13 @@ export interface AnalysisViewModel {
   // oder kein Override aktiv. Render-Hinweis: als separater Block unter der
   // Empfehlung, nicht in userHints — sonst Vue-Key-Konflikte mit echten Topics.
   intentRecommendationNote: string | null
+  // Phase-7-Pass-through. Analoge Behandlung wie intentAssessment: kein
+  // Einfluss auf den Verdict-Status, nur Anzeige + Note.
+  normativeMasking: NormativeMaskingView
+  // Separater Render-Block analog zu intentRecommendationNote. Befüllt bei
+  // normative_masking.verdict ∈ {medium, high}. null sonst. Intent-spezifisch
+  // beim verdict='high', mit Suffix bei doppelter Maskierung (faktisch + normativ).
+  normativeMaskingNote: string | null
   debug: DebugView
 }
 
@@ -293,6 +314,54 @@ const RECOMMENDATION_BY_INTENT: Record<
       hallucination: 'Bildinhalte weichen vom Prompt ab – als illustratives Beispiel ungeeignet.',
     },
   },
+}
+
+// Phase-7-Notes (normative Maskierung). Bewusst SEPARAT von
+// RECOMMENDATION_BY_INTENT gehalten — die Hauptempfehlung bleibt
+// Codebook-getrieben (Status-Isolation), die normative Wirkung kommt als
+// eigene Note. Reihenfolge:
+//   verdict='high': intent-spezifischer Text. Wenn faktische Maskierung
+//                   ebenfalls ≥medium, wird der Doppel-Maskierungs-Suffix
+//                   angehängt.
+//   verdict='medium': kurzer generischer Hinweis (intent-unabhängig).
+//   verdict='low' oder 'not_applicable': null (keine Note).
+// Personen-agnostisch formuliert. Aspect-Chips werden im UI eigenständig
+// gerendert und im Text NICHT genannt (vermeidet implizite Gruppen-
+// zuschreibung).
+const NORMATIVE_HIGH_INTENT_NOTES: Record<DeclaredIntent, string> = {
+  affirmative:
+    'Normwirkung im Begleittext transparent machen – sie ist nicht automatisch ein Ausschlussgrund.',
+  critical:
+    'Normwirkung ist hier der analytische Befund – im Begleittext explizit als zu kritisierender Mechanismus benennen.',
+  illustrative:
+    'Als neutrales Beispiel ungeeignet – Kontextualisierung/Captioning empfohlen, das die Idealisierung benennt.',
+  unspecified:
+    'Bild propagiert eine idealisierte Norm. Vor Verwendung prüfen, ob das in den Kontext passt.',
+}
+
+const NORMATIVE_HIGH_DOUBLE_MASKING_SUFFIX =
+  ' Zusätzlich wirkt die Ästhetik als Maskierung von Befunden – doppelt maskierender Effekt.'
+
+const NORMATIVE_MEDIUM_NOTE =
+  'Bild zeigt erkennbare idealisierende Ästhetik mit normativer Wirkung – im Begleittext bewusst rahmen.'
+
+function computeNormativeMaskingNote(
+  verdict: NormativeMaskingVerdict,
+  factualMaskingVerdict: MaskingVerdict,
+  declaredIntent: DeclaredIntent,
+): string | null {
+  if (verdict === 'high') {
+    const baseText = NORMATIVE_HIGH_INTENT_NOTES[declaredIntent]
+    // Doppel-Maskierungs-Suffix nur bei faktischem Verdict 'high' (Codex-Review #2:
+    // 'medium' ist methodisch vertretbar, aber der Suffix zu hart für eine
+    // mittlere Maskierungs-Tendenz).
+    const isDoubleMasked = factualMaskingVerdict === 'high'
+    return baseText + (isDoubleMasked ? NORMATIVE_HIGH_DOUBLE_MASKING_SUFFIX : '')
+  }
+  if (verdict === 'medium') {
+    return NORMATIVE_MEDIUM_NOTE
+  }
+  return null
 }
 
 // Werbe-/Magazin-Kontext: Recommendations benennen den Werbe-Kontext explizit,
@@ -1012,6 +1081,40 @@ export function buildAnalysisViewModel(result: SemanticAnalysisResult): Analysis
     recommendationOverriddenByIntent: intentOverridden,
   }
 
+  // Backwards-Fallback: ältere JSONs (vor Phase 7) haben kein normative_masking-
+  // Feld — Default 'not_applicable' + leere Aspects + Default-Reasoning.
+  // Zusätzliche Robustheit gegen handgeänderte/partielle JSONs (Codex-Review #2):
+  // Array.isArray-Guard auf aspects, Enum-Guard auf erlaubte verdict-Werte und
+  // Aspect-IDs.
+  const nmRaw = analysis.research_layer.normative_masking ?? {
+    verdict: 'not_applicable' as const,
+    aspects: [] as NormativeMaskingAspect[],
+    reasoning: '',
+  }
+  const allowedVerdicts: NormativeMaskingVerdict[] = ['low', 'medium', 'high', 'not_applicable']
+  const allowedAspects: NormativeMaskingAspect[] = [
+    'beauty_ideal', 'lifestyle_aspiration', 'status_signaling', 'gender_norm', 'success_norm',
+  ]
+  const safeVerdict: NormativeMaskingVerdict =
+    allowedVerdicts.includes(nmRaw.verdict as NormativeMaskingVerdict)
+      ? (nmRaw.verdict as NormativeMaskingVerdict)
+      : 'not_applicable'
+  const safeAspects: NormativeMaskingAspect[] = Array.isArray(nmRaw.aspects)
+    ? (nmRaw.aspects as unknown[]).filter((a): a is NormativeMaskingAspect =>
+        allowedAspects.includes(a as NormativeMaskingAspect),
+      )
+    : []
+  const normativeMasking: NormativeMaskingView = {
+    verdict: safeVerdict,
+    aspects: safeAspects,
+    reasoning: typeof nmRaw.reasoning === 'string' ? nmRaw.reasoning : '',
+  }
+  const normativeMaskingNote = computeNormativeMaskingNote(
+    normativeMasking.verdict,
+    result.computed.masking_verdict,
+    declaredIntent,
+  )
+
   const hasContextWarning = inputCompleteness !== 'full'
 
   return {
@@ -1035,6 +1138,8 @@ export function buildAnalysisViewModel(result: SemanticAnalysisResult): Analysis
     dominantErrorType: analysis.research_layer.dominant_error_type,
     biasAxesSummary,
     intentAssessment,
+    normativeMasking,
+    normativeMaskingNote,
     debug: {
       sonnetAesthetic: sonnet,
       v25Aesthetic: v25,
