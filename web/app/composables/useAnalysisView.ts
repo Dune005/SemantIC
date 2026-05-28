@@ -60,6 +60,22 @@ export type RecommendationCluster =
   | 'masking_style'
   | 'hallucination'
 
+// Verwendungsform (usage_form): zweite, vom declared_intent unabhängige
+// Eingabe-Achse. Beschreibt den vom Nutzer erklärten Einsatzzweck — NICHT
+// den vom LLM erkannten Bildstil. Bewusst Frontend-only (geht nicht in die
+// Pipeline/das LLM), steuert ausschliesslich die Strenge-Einordnung der
+// Empfehlung über ein Tier-Mapping. Ersetzt die frühere, fehlerhafte
+// Leseart→Zweck-Inferenz (isAdContext).
+export type UsageForm =
+  | 'advertising'
+  | 'editorial'
+  | 'header'
+  | 'symbol'
+  | 'illustration'
+  | 'mood'
+  | 'social'
+export type UsageTier = 'high_bar' | 'standard' | 'informal'
+
 export interface ConcreteFinding {
   text: string
   severity: 'moderate' | 'severe'
@@ -166,6 +182,12 @@ export interface AnalysisViewModel {
   // normative_masking.verdict ∈ {medium, high}. null sonst. Intent-spezifisch
   // beim verdict='high', mit Suffix bei doppelter Maskierung (faktisch + normativ).
   normativeMaskingNote: string | null
+  // Separater Render-Block analog zu normativeMaskingNote. Ordnet die
+  // Empfehlung in die vom Nutzer erklärte Verwendungsform ein (Strenge-Tier).
+  // null bei status='green', bei dominantem bias_representation-Cluster
+  // (Bias wird durch keine Verwendungsform entlastet) oder wenn keine
+  // Verwendungsform übergeben wurde. Kein Einfluss auf Status/Headline.
+  usageFormNote: string | null
   debug: DebugView
 }
 
@@ -194,9 +216,6 @@ const TOPIC_PRIORITY: Record<ConsolidatedHint['topic'], number> = {
 // nach hinten und drängte sie damit aus der Sichtbarkeit. Da Werbeästhetik laut
 // Thesis ein Maskierungsmechanismus ist (kein Entlastungsgrund), gilt jetzt für
 // alle Lesearten dieselbe Priorisierung (TOPIC_PRIORITY).
-function isAdContext(readingMode: ReadingModeCode): boolean {
-  return readingMode === 'WA' || readingMode === 'MI'
-}
 
 const TOPIC_TEXT: Record<ConsolidatedHint['topic'], string> = {
   physics: 'Mögliche Physik-Auffälligkeit (Licht/Schatten/Material) – sichtprüfen.',
@@ -255,7 +274,7 @@ const RECOMMENDATION_TABLE: Record<
 
 // Intent-sensitive Empfehlungs-Rahmung: 'affirmative', 'critical' und
 // 'illustrative' erhalten je eigene Texte. 'unspecified' fällt auf die
-// neutrale Tabelle (RECOMMENDATION_TABLE / RECOMMENDATION_TABLE_AD) zurück.
+// neutrale Tabelle (RECOMMENDATION_TABLE) zurück.
 // Der Verdict-Status (grün/gelb/rot) bleibt in jedem Fall aus dem Codebook +
 // Reconcile-Layer; Intent ändert NUR den Text. Die Texte sind bewusst
 // personen-agnostisch formuliert, damit sie auch für Bilder ohne Menschen
@@ -376,30 +395,54 @@ function computeNormativeMaskingNote(
   return null
 }
 
-// Werbe-/Magazin-Kontext: Recommendations benennen den Werbe-Kontext explizit,
-// behandeln Bias-Befunde aber nicht als genre-typisch entlastet — Werbeästhetik
-// ist laut Thesis ein Maskierungsmechanismus, kein Entlastungsgrund.
-const RECOMMENDATION_TABLE_AD: Record<
-  DimensionStatus,
-  Partial<Record<RecommendationCluster | 'null', string>>
-> = {
-  green: {
-    null: 'Aus Tool-Sicht keine kritischen Hinweise. Das letzte Urteil bleibt bei dir.',
+// Verwendungsform → Strenge-Tier. Drei Stufen statt sieben Einzelwerte, damit
+// die Note-Matrix klein bleibt. Das Tier moduliert NUR die handwerklich/faktische
+// Strenge (Physik, Anatomie, Halluzination, Stil) — Bias/Repräsentation wird in
+// KEINEM Tier entlastet (siehe cluster-aware Null-Regel in computeUsageFormNote).
+const USAGE_FORM_TO_TIER: Record<UsageForm, UsageTier> = {
+  advertising: 'high_bar',
+  editorial: 'high_bar',
+  header: 'standard',
+  symbol: 'standard',
+  illustration: 'standard',
+  mood: 'informal',
+  social: 'informal',
+}
+
+// Modulierende Note zur Verwendungsform. Separat von der Hauptempfehlung
+// (Pattern wie NORMATIVE_*-Notes). Ordnet die Strenge im erklärten Einsatz ein,
+// widerspricht aber nie dem Status. green hat keinen Eintrag → Note = null.
+const USAGE_TIER_NOTES: Record<UsageTier, Partial<Record<DimensionStatus, string>>> = {
+  high_bar: {
+    yellow: 'Für den erklärten Einsatz (Werbung/Editorial) gilt eine hohe Latte – die aufgefallenen Punkte vor Publikation gezielt klären.',
+    red: 'Im erklärten Einsatz (Werbung/Editorial) sind sichtbare Befunde disqualifizierend – in dieser Form nicht geeignet.',
   },
-  yellow: {
-    null: 'Im Werbe-/Magazin-Kontext wurden prüfenswerte Punkte erkannt. Vor der Publikation gezielt kontrollieren.',
-    image_integrity: 'Würde die Bildqualität sichtprüfen – Skalierung oder Anatomie wirken auffällig.',
-    bias_representation: 'Bias-Muster sind im Werbe-/Magazin-Genre verbreitet. Genau deshalb sollten Personendarstellung und Rollenbild vor der Publikation kritisch geprüft werden.',
-    masking_style: 'Das Bild ist visuell überzeugend – im Werbe-Genre erwartbar. Prüfen, ob die glatte Oberfläche vorhandene Hinweise überdeckt.',
-    hallucination: 'Es gibt Hinweise, dass Bildinhalte vom Prompt abweichen – inhaltlich gegenprüfen.',
+  standard: {
+    yellow: 'Für den erklärten Einsatz redaktionell üblich – die Punkte prüfen, ob sie im konkreten Beitrag stören.',
+    red: 'Auch für den erklärten Einsatz sind diese Befunde kritisch – vor Verwendung klären.',
   },
-  red: {
-    null: 'Auch im Werbe-Kontext sind diese Hinweise kritisch – bitte vor Publikation klären.',
-    image_integrity: 'Sichtbare Bildfehler – würden in einer professionellen Werbung sofort auffallen. Neu generieren oder anderes Bild.',
-    bias_representation: 'Auch für Werbe-Standards problematische Bias-Hinweise – Personendarstellung überdenken.',
-    masking_style: 'Bild wirkt zu glatt für die Hinweise, die im Bild stecken – noch nicht in dieser Form verwenden.',
-    hallucination: 'Bildinhalte weichen vom Prompt ab – bitte nicht in dieser Form verwenden.',
+  informal: {
+    yellow: 'Für den erklärten Einsatz (Mood/Social) sind handwerkliche Mikro-Auffälligkeiten eher tolerierbar – inhaltliche Befunde bleiben relevant.',
+    red: 'Auch im informellen Einsatz (Mood/Social) bleiben diese Befunde gewichtig – die Toleranz für Stil ersetzt keine inhaltliche Prüfung.',
   },
+}
+
+// Erzeugt die usageFormNote. Null-Regeln:
+//   - status='green' → keine Note (nichts zu rahmen).
+//   - dominanter Cluster 'bias_representation' → keine Note. Bias wird durch
+//     KEINE Verwendungsform entlastet (Doktrin: Werbeästhetik ist
+//     Maskierungsmechanismus, kein Entlastungsgrund). Die handwerkliche
+//     Toleranz-Formulierung der informal/standard-Tiers darf hier nie greifen.
+//   - sonst (image_integrity / hallucination / masking_style / kein dominanter
+//     Cluster) → Tier-Note für yellow/red.
+function computeUsageFormNote(
+  tier: UsageTier,
+  status: DimensionStatus,
+  dominantCluster: RecommendationCluster | null,
+): string | null {
+  if (status === 'green') return null
+  if (dominantCluster === 'bias_representation') return null
+  return USAGE_TIER_NOTES[tier][status] ?? null
 }
 
 const KEYWORD_PATTERNS: Record<'anatomy' | 'role' | 'body' | 'gender' | 'hallucination', RegExp> = {
@@ -884,13 +927,13 @@ function readFromTable(
 // Intent-sensitive Empfehlungs-Auswahl. Verdict-Status (status) und Cluster
 // werden NICHT verändert — nur der Empfehlungstext. Reihenfolge:
 //   1. Intent ∈ {affirmative, critical, illustrative} → RECOMMENDATION_BY_INTENT
-//   2. WA/MI-Reading-Mode → RECOMMENDATION_TABLE_AD
-//   3. Default → RECOMMENDATION_TABLE
-// 'unspecified' überspringt Schritt 1 und fällt direkt auf Schritt 2/3.
+//   2. 'unspecified' (oder defensiv jeder unbekannte Wert) → RECOMMENDATION_TABLE
+// Die frühere Leseart-getriebene Werbe-Tabelle (isAdContext/RECOMMENDATION_TABLE_AD)
+// wurde entfernt: die werbliche Strenge wird jetzt user-explizit über die
+// Verwendungsform-Achse (usageFormNote) gerahmt, nicht aus dem Bildstil inferiert.
 function pickRecommendation(
   status: DimensionStatus,
   dominantCluster: RecommendationCluster | null,
-  readingMode: ReadingModeCode,
   declaredIntent: DeclaredIntent,
 ): { text: string; intentOverridden: boolean } {
   if (declaredIntent === 'affirmative' || declaredIntent === 'critical' || declaredIntent === 'illustrative') {
@@ -898,11 +941,10 @@ function pickRecommendation(
     const text = readFromTable(intentTable, dominantCluster)
     if (text) return { text, intentOverridden: true }
   }
-  const defaultTable = isAdContext(readingMode)
-    ? RECOMMENDATION_TABLE_AD[status]
-    : RECOMMENDATION_TABLE[status]
+  // 'unspecified' und (Runtime-Guard) jeder ungültige Wert → neutrale Tabelle,
+  // intentOverridden=false → keine Intent-Transparenz-Note.
   return {
-    text: readFromTable(defaultTable, dominantCluster) ?? 'Empfehlung verfügbar.',
+    text: readFromTable(RECOMMENDATION_TABLE[status], dominantCluster) ?? 'Empfehlung verfügbar.',
     intentOverridden: false,
   }
 }
@@ -910,18 +952,20 @@ function pickRecommendation(
 function buildOverallVerdict(
   status: DimensionStatus,
   dominantCluster: RecommendationCluster | null,
-  readingMode: ReadingModeCode,
   declaredIntent: DeclaredIntent,
 ): { verdict: OverallVerdict; intentOverridden: boolean } {
   const headline = VERDICT_HEADLINES[status]
-  const { text, intentOverridden } = pickRecommendation(status, dominantCluster, readingMode, declaredIntent)
+  const { text, intentOverridden } = pickRecommendation(status, dominantCluster, declaredIntent)
   return {
     verdict: { status, headline, recommendation: text, dominantCluster },
     intentOverridden,
   }
 }
 
-export function buildAnalysisViewModel(result: SemanticAnalysisResult): AnalysisViewModel {
+export function buildAnalysisViewModel(
+  result: SemanticAnalysisResult,
+  usageForm?: UsageForm,
+): AnalysisViewModel {
   const analysis = result.analysis
   const aesthetic = result.aesthetic
   const meta = result.meta
@@ -1056,9 +1100,16 @@ export function buildAnalysisViewModel(result: SemanticAnalysisResult): Analysis
   const { verdict: overallVerdict, intentOverridden } = buildOverallVerdict(
     status,
     dominantCluster,
-    readingMode.code,
     declaredIntent,
   )
+
+  // Verwendungsform-Einordnung (usage_form). Frontend-only, rein view-seitig:
+  // moduliert nur die Strenge-Note, nie Status/Headline/Befund. Bei fehlender
+  // Verwendungsform (Backwards-Pfad, Alt-Aufrufe ohne 2. Param) → null.
+  const usageTier = usageForm ? USAGE_FORM_TO_TIER[usageForm] : null
+  const usageFormNote = usageTier
+    ? computeUsageFormNote(usageTier, status, dominantCluster)
+    : null
 
   const intentAlignment = ia.intent_alignment as IntentAlignment
   const framingRisk = ia.framing_risk as FramingRisk
@@ -1134,6 +1185,7 @@ export function buildAnalysisViewModel(result: SemanticAnalysisResult): Analysis
     userHints: visible,
     hiddenHints: hidden,
     intentRecommendationNote,
+    usageFormNote,
     hasContextWarning,
     aestheticCombined,
     aestheticDivergent,
@@ -1214,6 +1266,9 @@ export function buildAnalysisViewModel(result: SemanticAnalysisResult): Analysis
 
 export function useAnalysisView(
   result: Ref<SemanticAnalysisResult | null>,
+  usageForm?: Ref<UsageForm | null | undefined>,
 ): ComputedRef<AnalysisViewModel | null> {
-  return computed(() => (result.value ? buildAnalysisViewModel(result.value) : null))
+  return computed(() =>
+    result.value ? buildAnalysisViewModel(result.value, usageForm?.value ?? undefined) : null,
+  )
 }

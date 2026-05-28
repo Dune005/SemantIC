@@ -18,6 +18,7 @@ import {
   type NormativeMaskingAspect,
   type NormativeMaskingVerdict,
   type RiskLevel,
+  type UsageForm,
 } from '~/composables/useAnalysisView'
 import { Badge } from '~/components/ui/badge'
 import { Button } from '~/components/ui/button'
@@ -66,15 +67,42 @@ const mediaType = ref('image/jpeg')
 const promptInput = ref('')
 const contextInput = ref('')
 type IntentValue = 'unspecified' | 'affirmative' | 'critical' | 'illustrative'
-const intentInput = ref<IntentValue>('unspecified')
+// Pflicht-Wahl (kein stiller Default mehr): null bis der User eine Kachel wählt.
+const intentInput = ref<IntentValue | null>(null)
+const usageFormInput = ref<UsageForm | null>(null)
+// Beim Submit eingefrorene Verwendungsform. Hält die View konsistent mit dem
+// declared_intent (das aus dem Analyse-JSON kommt): ein nachträglicher
+// Kachel-Wechsel ändert die Note erst beim nächsten Submit, nicht live.
+const submittedUsageForm = ref<UsageForm | null>(null)
 const fileName = ref('')
 
 const loading = ref(false)
 const errorMessage = ref('')
 const result = ref<SemanticAnalysisResult | null>(null)
 
-const view = computed(() => result.value ? buildAnalysisViewModel(result.value) : null)
+const view = computed(() =>
+  result.value ? buildAnalysisViewModel(result.value, submittedUsageForm.value ?? undefined) : null,
+)
 const contextEmpty = computed(() => !contextInput.value.trim())
+
+// Pflicht-Kachel-Achsen. Haltung (declared_intent) rahmt die Empfehlung,
+// Verwendungsform (usage_form) ordnet die Strenge ein — beide ändern Befund/
+// Status nicht. Spike-minimal: reine Button-Toggles, kein eigenes Component.
+const INTENT_TILES: { value: IntentValue; label: string; hint: string }[] = [
+  { value: 'unspecified', label: 'Standard', hint: 'keine besondere Haltung' },
+  { value: 'affirmative', label: 'Bestätigend', hint: 'untermalt das Thema' },
+  { value: 'critical', label: 'Kritisch', hint: 'ordnet ein / Negativbeispiel' },
+  { value: 'illustrative', label: 'Illustrativ', hint: 'neutrales Beispielbild' },
+]
+const USAGE_FORM_TILES: { value: UsageForm; label: string }[] = [
+  { value: 'header', label: 'Headerbild' },
+  { value: 'mood', label: 'Moodbild' },
+  { value: 'symbol', label: 'Symbolbild' },
+  { value: 'illustration', label: 'Illustration' },
+  { value: 'social', label: 'Social-Post' },
+  { value: 'advertising', label: 'Werbe-/Marketingbild' },
+  { value: 'editorial', label: 'Editorial-Bild' },
+]
 
 // --- Debug-Modus ---
 const debugMode = ref(false)
@@ -204,9 +232,16 @@ async function submit() {
     errorMessage.value = 'Bitte zuerst ein Bild auswählen oder ein Beispiel laden.'
     return
   }
+  if (!intentInput.value || !usageFormInput.value) {
+    errorMessage.value = 'Bitte Haltung und Verwendungsform auswählen.'
+    return
+  }
   loading.value = true
   errorMessage.value = ''
   result.value = null
+  // Verwendungsform beim Submit einfrieren — usage_form ist Frontend-only und
+  // geht NICHT in den Body/die Pipeline; es steuert nur die view-seitige Note.
+  submittedUsageForm.value = usageFormInput.value
   try {
     const data = await $fetch<SemanticAnalysisResult>('/api/analyze', {
       method: 'POST',
@@ -428,25 +463,57 @@ const HINT_SEVERITY_TEXT_CLASS: Record<'high' | 'medium' | 'low', string> = {
             </div>
 
             <div>
-              <label for="intent-input" class="mb-1 block text-sm font-medium text-slate-700">
-                Wie willst du das Bild einsetzen? <span class="font-normal text-slate-500">(optional)</span>
-              </label>
-              <select
-                id="intent-input"
-                v-model="intentInput"
-                class="block w-full rounded border border-slate-300 bg-white px-3 py-2 text-sm"
-              >
-                <option value="unspecified">Standard — keine spezifische Haltung</option>
-                <option value="affirmative">zur bestätigenden Untermalung des Themas</option>
-                <option value="critical">zur kritischen Einordnung / als Negativbeispiel</option>
-                <option value="illustrative">als neutrales Beispielbild / allgemeine Bebilderung</option>
-              </select>
+              <span class="mb-1 block text-sm font-medium text-slate-700">
+                Haltung <span class="text-red-500">*</span>
+              </span>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  v-for="t in INTENT_TILES"
+                  :key="t.value"
+                  type="button"
+                  :class="[
+                    'rounded border px-3 py-1.5 text-left text-sm transition-colors',
+                    intentInput === t.value
+                      ? 'border-slate-900 bg-slate-900 text-white'
+                      : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50',
+                  ]"
+                  @click="intentInput = t.value"
+                >
+                  <span class="block font-medium leading-tight">{{ t.label }}</span>
+                  <span
+                    :class="['block text-[11px] leading-tight', intentInput === t.value ? 'text-slate-300' : 'text-slate-500']"
+                  >{{ t.hint }}</span>
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <span class="mb-1 block text-sm font-medium text-slate-700">
+                Verwendungsform <span class="text-red-500">*</span>
+              </span>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  v-for="u in USAGE_FORM_TILES"
+                  :key="u.value"
+                  type="button"
+                  :class="[
+                    'rounded border px-3 py-1.5 text-sm transition-colors',
+                    usageFormInput === u.value
+                      ? 'border-slate-900 bg-slate-900 text-white'
+                      : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50',
+                  ]"
+                  @click="usageFormInput = u.value"
+                >
+                  {{ u.label }}
+                </button>
+              </div>
               <p class="mt-1 text-xs text-slate-500">
-                Beeinflusst nur die Empfehlungs-Rahmung, nicht die Befunde oder den Verdict-Status.
+                Haltung rahmt die Empfehlung, Verwendungsform ordnet die Strenge ein — beide sind
+                Empfehlungs-Einordnung, kein Analyse-Input, und ändern Befund/Status nicht.
               </p>
             </div>
 
-            <Button :disabled="loading || !imageBase64" @click="submit">
+            <Button :disabled="loading || !imageBase64 || !intentInput || !usageFormInput" @click="submit">
               {{ loading ? 'Analysiere … (15–30 s)' : 'Analyse starten' }}
             </Button>
 
@@ -522,6 +589,13 @@ const HINT_SEVERITY_TEXT_CLASS: Record<'high' | 'medium' | 'low', string> = {
                       class="rounded bg-slate-200 px-1.5 py-0.5 font-mono text-[10px] text-slate-700"
                     >{{ aspectLabels[aspect] }}</span>
                   </span>
+                </p>
+
+                <p
+                  v-if="view.usageFormNote"
+                  class="rounded border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-600"
+                >
+                  <span class="font-medium">Einordnung zur Verwendung:</span> {{ view.usageFormNote }}
                 </p>
 
                 <ol v-if="view.userHints.length > 0" class="space-y-2 pl-1">
