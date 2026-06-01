@@ -32,6 +32,15 @@ export const STATUS_TO_SEVERITY = { green: 'safe', yellow: 'warn', red: 'crit' }
 // kein englisches "Conditional".
 export const STATUS_WORD = { green: 'unauffällig', yellow: 'auffällig', red: 'kritisch' } as const
 
+// Hint-Severity → Severity-Achse (Render-Farbe der Befund-Severity-Tags). Reine
+// Praesentation; das Wort kommt separat aus HINT_SEVERITY_LABEL (Doppelkodierung).
+export const HINT_SEVERITY_TO_SEVERITY = { high: 'crit', medium: 'warn', low: 'safe' } as const
+
+// Maskierungs-Verdikt → Render-Farbe. EIGENE Skala (NICHT severityFor): geringe
+// Maskierung ist kein Befund → neutral. medium=warn, high=crit. Wort separat aus
+// MASKING_VERDICT_LABELS (Doppelkodierung). 'neutral' = --muted/Ink-Border, keine Ampel.
+export const MASKING_TO_SEVERITY = { none: 'neutral', low: 'neutral', medium: 'warn', high: 'crit' } as const
+
 // ── Label-Maps (deutsche Render-Uebersetzung) ────────────────────────────────
 export const DIMENSION_LABELS = { physics: 'Physik', semantics: 'Semantik', bias: 'Bias' } as const
 
