@@ -13,10 +13,29 @@ export default defineNuxtConfig({
     port: 3500,
   },
   modules: ['@nuxtjs/tailwindcss'],
-  css: ['~/assets/css/tailwind.css'],
+  // Reihenfolge wichtig: tailwind.css (Preflight) zuerst, dann das
+  // Variante-C-Design-System (tokens -> base), damit base.css den Preflight
+  // ueberschreibt. tokens.css ist die einzige Token-Quelle.
+  css: [
+    '~/assets/css/tailwind.css',
+    '~/assets/css/tokens.css',
+    '~/assets/css/base.css',
+  ],
   tailwindcss: {
     cssPath: '~/assets/css/tailwind.css',
     configPath: '~~/tailwind.config.ts',
+  },
+  app: {
+    head: {
+      link: [
+        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
+        {
+          rel: 'stylesheet',
+          href: 'https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap',
+        },
+      ],
+    },
   },
   components: [
     { path: '~/components', pathPrefix: false, ignore: ['ui/**'] },

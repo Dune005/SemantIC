@@ -2,5 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Etappe 1 importiert hier das Paket-Design-System (Variante C):
-   tokens.css (einzige Token-Quelle) + base.css (Reset/Typo/Fokus/Motion/.mono). */
+/* Variante-C-Design-System wird ueber das nuxt.config css-Array geladen
+   (Reihenfolge: tailwind.css -> tokens.css -> base.css), damit der
+   Tailwind-Preflight zuerst greift und base.css ihn mit Variante C
+   ueberschreibt. tokens.css ist die einzige Token-Quelle. */

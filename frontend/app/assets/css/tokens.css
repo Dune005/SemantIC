@@ -1,0 +1,71 @@
+/* ============================================================ */
+/* SemantIC · Design-Tokens · umsetzung-1.0                       */
+/* ------------------------------------------------------------ */
+/* Designrichtung: Variante C "Laborjournal"                     */
+/*   (PostHog-System ohne Maskottchen)                           */
+/* Goldstandard-Quellen (1:1 verifiziert):                       */
+/*   · Konzept_Frontend/prototypen/_favorit/SPEC.md              */
+/*   · Konzept_Frontend/prototypen/variante-c-werkstatt.html     */
+/*   · Konzept_Frontend/prototypen/_favorit/befund-karte-stil-07.html */
+/*                                                               */
+/* Diese Datei ist die EINZIGE Quelle der Wahrheit fuer Farb-,   */
+/* Radius- und Hintergrund-Tokens. base.css und jeder Seiten-    */
+/* Prototyp importieren sie. Werte verbatim aus dem Goldstandard */
+/* uebernommen - keine Abweichung. Beim Vue-Port spiegelt        */
+/* tailwind-snippet.md diese Werte nach theme.extend.            */
+/* ============================================================ */
+
+:root {
+  /* ---------------------------------------------------------- */
+  /* FLAECHEN / GRUND                                           */
+  /* Tiefe entsteht ueber Flaechenwechsel, NICHT ueber Schatten.*/
+  /* ---------------------------------------------------------- */
+  --canvas:    #eeefe9;   /* warm-oliver Cremegrund - Karten-Boden, Verdikt-/Dim-Flaechen */
+  --surface:   #ffffff;   /* innere Karten-Flaeche (Body, Daten-Block) */
+  --surface-2: #e8e9e2;   /* dezent dunkler - Bildhintergrund, eingesenkte Flaechen */
+
+  /* ---------------------------------------------------------- */
+  /* TEXT / INK (olive-charcoal)                                */
+  /* Typografie traegt die Hierarchie, nicht Farbe.             */
+  /* ---------------------------------------------------------- */
+  --ink:      #23251d;   /* Hauptfarbe - Headlines, Werte, tragender Text */
+  --ink-soft: #33342d;   /* leicht abgesetzt - sekundaere Werte, Labels */
+  --muted:    #5c5e54;   /* sekundaerer Text (AA-Kontrast auf canvas/surface) */
+  --subtle:   #7c7e72;   /* NUR Captions/Kicker - nie tragender Text */
+
+  /* ---------------------------------------------------------- */
+  /* LINIEN (flache, bordered Karten - keine Schatten)          */
+  /* ---------------------------------------------------------- */
+  --line:        #c4c6bb;   /* duenne Standard-Trennlinien, Karten-Rahmen */
+  --line-soft:   #dcded3;   /* sehr dezente Trennlinien (Daten-Zeilen) */
+  --line-strong: #a9aa9f;   /* kraeftigere Inner-Karten-Trennlinien (Dim-Spalten) */
+
+  /* ---------------------------------------------------------- */
+  /* SEVERITY-AMPEL - der EINZIGE chromatische Akzent           */
+  /* Paar je Stufe: Punktfarbe (Indikator/Flaeche) + dunkler    */
+  /* *-ink-Ton (Text, AA-Kontrast). Nie flaechiger Hintergrund. */
+  /* Doppelkodierung: Farbe IMMER zusammen mit Severity-Wort.   */
+  /* Schwellen: >=70 OK(safe) / 40-69 WARN / <40 CRIT.          */
+  /* ---------------------------------------------------------- */
+  --safe:     #2c8c66;   --safe-ink: #1f6b4d;   /* OK   */
+  --warn:     #c8921f;   --warn-ink: #876012;   /* WARN */
+  --crit:     #cd4239;   --crit-ink: #a5322b;   /* CRIT */
+
+  /* ---------------------------------------------------------- */
+  /* AKZENT- / BRUTALIST-ALIASES                                */
+  /* Aus der Iterationsspur erhalten, auf Variante-C gemappt,   */
+  /* damit Goldstandard-Karten-Klassen (.combo-*) weiter        */
+  /* funktionieren. --accent und --crit sind DERSELBE Hex:      */
+  /* So bleibt das System bei genau einem chromatischen Akzent. */
+  /* ---------------------------------------------------------- */
+  --bg:     var(--surface);          /* = #ffffff */
+  --paper:  var(--canvas);           /* = #eeefe9 */
+  --accent: var(--crit);             /* = #cd4239 (Verdikt-Punkt am Satzende) */
+  --soft:   rgba(35, 37, 29, 0.55);  /* Ink bei 55% - Schraffuren, Hauchlinien */
+
+  /* ---------------------------------------------------------- */
+  /* GEOMETRIE / GLOBAL                                         */
+  /* ---------------------------------------------------------- */
+  --r:       6px;        /* kantig - kleiner Standard-Radius fuer Karten/Felder */
+  --page-bg: #e4e5dd;    /* Seitenhintergrund (hinter den Karten, body) */
+}
