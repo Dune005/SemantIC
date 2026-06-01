@@ -23,6 +23,9 @@ import yellowFx from '~/dev-fixtures/yellow.json'
 import redFx from '~/dev-fixtures/red.json'
 import nullfallFx from '~/dev-fixtures/nullfall.json'
 
+// Isolierte Komponenten-Galerie ohne globales Chrome (Header/Footer real auf / + 404).
+definePageMeta({ layout: false })
+
 // ── Welle 2a State ───────────────────────────────────────────────────────────
 const intent = ref<string | null>('affirmative')
 const usage = ref<string | null>(null)
@@ -78,6 +81,9 @@ const fixtures = {
 const fixtureKeys = ['green', 'yellow', 'red', 'nullfall'] as const
 const activeKey = ref<(typeof fixtureKeys)[number]>('yellow')
 const activeVm = computed(() => fixtures[activeKey.value])
+
+// ── Etappe 3 State (Shared Chrome) ───────────────────────────────────────────
+const bpDemo = ref('')
 </script>
 
 <template>
@@ -239,6 +245,36 @@ const activeVm = computed(() => fixtures[activeKey.value])
           sample-id="SEMANTIC · sample_0428"
           :submitted-usage-form="'header'"
         />
+      </div>
+    </section>
+
+    <!-- ═══════════ ETAPPE 3 — SHARED CHROME ═══════════ -->
+    <h2 class="mt-12 border-b border-line pb-2 text-[14px] font-bold uppercase tracking-wider text-subtle">Etappe 3 — Shared Chrome</h2>
+    <p class="mt-2 text-muted">
+      AppHeader/AppFooter werden real auf <span class="mono">/</span> und einer 404-Route geprüft (Sticky/Full-Width/Responsive).
+      Hier nur das BypassCodeField isoliert in allen vier States.
+    </p>
+
+    <section class="mt-6">
+      <h3 class="text-[18px] font-bold">BypassCodeField</h3>
+      <p class="mono mt-1 text-xs text-muted">Reines UI + submit-Event. Status doppelt kodiert (Farbe + Wort). Redeem/HMAC erst Etappe 6.</p>
+      <div class="mt-4 grid max-w-[760px] gap-8 md:grid-cols-2">
+        <div>
+          <p class="mono mb-2 text-xs uppercase tracking-wider text-subtle">idle</p>
+          <BypassCodeField v-model="bpDemo" state="idle" />
+        </div>
+        <div>
+          <p class="mono mb-2 text-xs uppercase tracking-wider text-subtle">submitting</p>
+          <BypassCodeField model-value="DEMO-2026" state="submitting" />
+        </div>
+        <div>
+          <p class="mono mb-2 text-xs uppercase tracking-wider text-subtle">success</p>
+          <BypassCodeField :model-value="''" state="success" />
+        </div>
+        <div>
+          <p class="mono mb-2 text-xs uppercase tracking-wider text-subtle">error</p>
+          <BypassCodeField model-value="x" state="error" />
+        </div>
       </div>
     </section>
   </main>

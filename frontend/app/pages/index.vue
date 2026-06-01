@@ -3,10 +3,10 @@
 </script>
 
 <template>
-  <main class="scaffold">
+  <section class="scaffold">
     <h1>SemantIC – Frontend 1.0</h1>
     <p>Scaffold steht. Design-System, Komponenten und Seiten folgen in den nächsten Etappen.</p>
-  </main>
+  </section>
 </template>
 
 <style scoped>
