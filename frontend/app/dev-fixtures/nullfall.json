@@ -1,0 +1,76 @@
+{
+  "_fixture": "nullfall – keine wesentlichen Befunde. Regelbasierte ruhige result-Variante (kein eigener Zustand). Bedingung: status green UND keine Hints high/mittel UND maskingVerdict none/low UND dominantErrorType none. Hier zusätzlich biasAxesSummary.count 0.",
+  "overallVerdict": {
+    "status": "green",
+    "headline": "Kann publiziert werden.",
+    "recommendation": "Aus Tool-Sicht keine kritischen Hinweise. Das letzte Urteil bleibt bei dir.",
+    "dominantCluster": null
+  },
+  "userHints": [],
+  "hiddenHints": [],
+  "intentRecommendationNote": null,
+  "usageFormNote": null,
+  "hasContextWarning": false,
+  "aestheticCombined": 68,
+  "aestheticDivergent": false,
+  "aestheticDelta": 4,
+  "aestheticFallbackOnly": false,
+  "dimensions": {
+    "physics": { "score": 84, "status": "green" },
+    "semantics": { "score": 81, "status": "green" },
+    "bias": { "score": 83, "status": "green" }
+  },
+  "readingMode": { "code": "DA", "label": "Dokumentarisch-Authentisch" },
+  "visualDrivers": [
+    { "code": "NL", "label": "Natürliches Licht" }
+  ],
+  "hintsSortedBySeverity": [],
+  "hintsCountBySeverity": { "high": 0, "medium": 0, "low": 0 },
+  "maskingVerdict": "none",
+  "maskingScore": -16,
+  "inputCompleteness": "full",
+  "dominantErrorType": "none",
+  "biasAxesSummary": { "count": 0, "maxRisk": "none" },
+  "intentAssessment": {
+    "declaredIntent": "illustrative",
+    "intentAlignment": "match",
+    "framingRisk": "low",
+    "reasoning": "",
+    "recommendationOverriddenByIntent": false
+  },
+  "normativeMasking": {
+    "verdict": "not_applicable",
+    "aspects": [],
+    "reasoning": ""
+  },
+  "normativeMaskingNote": null,
+  "integrityScore": 84,
+  "debug": {
+    "sonnetAesthetic": 70,
+    "v25Aesthetic": 66,
+    "v25Raw": 5.8,
+    "integrityScore": 84,
+    "rawJson": {
+      "_note": "Platzhalter für vollständigen SemanticAnalysisResult."
+    },
+    "meta": {
+      "model": "gemini-3-flash-preview",
+      "aesthetic_model": "anthropic:claude-sonnet-4-6",
+      "duration_ms": 12600
+    },
+    "laionError": null,
+    "durationMs": 12600,
+    "modelLabel": "gemini-3-flash-preview",
+    "aestheticModelLabel": "anthropic:claude-sonnet-4-6",
+    "clipSkipped": false,
+    "clipPromptCosine": 0.297,
+    "clipContextCosine": 0.271,
+    "clipPromptTruncated": false,
+    "clipContextTruncated": false,
+    "clipPromptTokenCount": 7,
+    "clipContextTokenCount": 18,
+    "clipModel": "ViT-L-14",
+    "clipDurationMs": 690,
+    "clipError": null
+  }
+}

@@ -32,9 +32,11 @@ export const STATUS_TO_SEVERITY = { green: 'safe', yellow: 'warn', red: 'crit' }
 // kein englisches "Conditional".
 export const STATUS_WORD = { green: 'unauffällig', yellow: 'auffällig', red: 'kritisch' } as const
 
-// Hint-Severity → Severity-Achse (Render-Farbe der Befund-Severity-Tags). Reine
-// Praesentation; das Wort kommt separat aus HINT_SEVERITY_LABEL (Doppelkodierung).
-export const HINT_SEVERITY_TO_SEVERITY = { high: 'crit', medium: 'warn', low: 'safe' } as const
+// Hint-Severity → Render-Farbe der Befund-Severity-Tags. Reine Praesentation; das
+// Wort kommt separat aus HINT_SEVERITY_LABEL (Doppelkodierung). low = 'neutral'
+// (surface-2, KEIN Gruen) – ein niedriger Hinweis ist kein „OK"-Befund (Prototyp
+// .hint-sev.low). 'neutral' = surface-2/Ink-Border, keine Ampel.
+export const HINT_SEVERITY_TO_SEVERITY = { high: 'crit', medium: 'warn', low: 'neutral' } as const
 
 // Maskierungs-Verdikt → Render-Farbe. EIGENE Skala (NICHT severityFor): geringe
 // Maskierung ist kein Befund → neutral. medium=warn, high=crit. Wort separat aus

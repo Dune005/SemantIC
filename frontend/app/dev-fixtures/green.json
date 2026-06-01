@@ -1,0 +1,84 @@
+{
+  "_fixture": "green – grünes Gesamturteil, Bild hält inhaltlich. KEIN Nullfall (eine Bias-Achse low vorhanden, Kontext vollständig).",
+  "overallVerdict": {
+    "status": "green",
+    "headline": "Kann publiziert werden.",
+    "recommendation": "Aus Tool-Sicht keine kritischen Hinweise. Das letzte Urteil bleibt bei dir.",
+    "dominantCluster": null
+  },
+  "userHints": [],
+  "hiddenHints": [],
+  "intentRecommendationNote": null,
+  "usageFormNote": null,
+  "hasContextWarning": false,
+  "aestheticCombined": 74,
+  "aestheticDivergent": false,
+  "aestheticDelta": 6,
+  "aestheticFallbackOnly": false,
+  "dimensions": {
+    "physics": { "score": 82, "status": "green" },
+    "semantics": { "score": 79, "status": "green" },
+    "bias": { "score": 76, "status": "green" }
+  },
+  "readingMode": { "code": "DA", "label": "Dokumentarisch-Authentisch" },
+  "visualDrivers": [
+    { "code": "NL", "label": "Natürliches Licht" },
+    { "code": "HDT", "label": "Hyper-Detail Textur" }
+  ],
+  "hintsSortedBySeverity": [
+    {
+      "id": "context_finding_review",
+      "severity": "low",
+      "hint": "Szenenlogik wirkt insgesamt schlüssig – ein letzter Abgleich mit dem Beitragsthema schadet nicht.",
+      "reviewQuestion": "Passt das gezeigte Setting zum redaktionellen Thema des Beitrags?"
+    }
+  ],
+  "hintsCountBySeverity": { "high": 0, "medium": 0, "low": 1 },
+  "maskingVerdict": "none",
+  "maskingScore": -8,
+  "inputCompleteness": "full",
+  "dominantErrorType": "none",
+  "biasAxesSummary": { "count": 1, "maxRisk": "low" },
+  "intentAssessment": {
+    "declaredIntent": "unspecified",
+    "intentAlignment": "not_assessable",
+    "framingRisk": "low",
+    "reasoning": "",
+    "recommendationOverriddenByIntent": false
+  },
+  "normativeMasking": {
+    "verdict": "low",
+    "aspects": [],
+    "reasoning": ""
+  },
+  "normativeMaskingNote": null,
+  "integrityScore": 80,
+  "debug": {
+    "sonnetAesthetic": 77,
+    "v25Aesthetic": 71,
+    "v25Raw": 6.1,
+    "integrityScore": 80,
+    "rawJson": {
+      "_note": "In der echten Instanz steht hier der vollständige SemanticAnalysisResult. Für die Fixture als Platzhalter reduziert."
+    },
+    "meta": {
+      "model": "gemini-3-flash-preview",
+      "aesthetic_model": "anthropic:claude-sonnet-4-6",
+      "duration_ms": 14200
+    },
+    "laionError": null,
+    "durationMs": 14200,
+    "modelLabel": "gemini-3-flash-preview",
+    "aestheticModelLabel": "anthropic:claude-sonnet-4-6",
+    "clipSkipped": false,
+    "clipPromptCosine": 0.281,
+    "clipContextCosine": 0.244,
+    "clipPromptTruncated": false,
+    "clipContextTruncated": false,
+    "clipPromptTokenCount": 11,
+    "clipContextTokenCount": 23,
+    "clipModel": "ViT-L-14",
+    "clipDurationMs": 820,
+    "clipError": null
+  }
+}
