@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "server/api/analyze.post.ts": {
+      "maxDuration": 300
+    }
+  }
+}

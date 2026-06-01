@@ -1,0 +1,24 @@
+# Nuxt dev/build outputs
+.output
+.data
+.nuxt
+.nitro
+.cache
+dist
+
+# Node dependencies
+node_modules
+
+# Logs
+*.log
+
+# Misc
+.DS_Store
+
+# vercel.json ist in der Repo-Root-.gitignore global ignoriert –
+# fuer frontend/ bewusst wieder einschliessen (Deploy braucht sie im Repo).
+!vercel.json
+
+
+# Weitere Dateien
+UMSETZUNG-STATUS.md

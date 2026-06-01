@@ -1,0 +1,21 @@
+{
+  // https://nuxt.com/docs/guide/concepts/typescript
+  // Der @pipeline-Alias aus nuxt.config wird von Nuxt in die generierten
+  // .nuxt/tsconfig.*.json-paths propagiert. Falls TS dennoch "cannot find module
+  // @pipeline" meldet, hier compilerOptions.paths ergaenzen (Codex-Mitigation 2).
+  "files": [],
+  "references": [
+    {
+      "path": "./.nuxt/tsconfig.app.json"
+    },
+    {
+      "path": "./.nuxt/tsconfig.server.json"
+    },
+    {
+      "path": "./.nuxt/tsconfig.shared.json"
+    },
+    {
+      "path": "./.nuxt/tsconfig.node.json"
+    }
+  ]
+}
