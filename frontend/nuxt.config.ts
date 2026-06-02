@@ -64,6 +64,15 @@ export default defineNuxtConfig({
     experimental: {
       asyncContext: true,
     },
+    // maxDuration der Vercel-Serverless-Funktion (LLM-Calls; Server-AbortController
+    // ~280s in analyze.post.ts). NICHT ueber vercel.json `functions` setzen – dessen
+    // Pattern matcht den Nitro-Output nicht (Build-Fehler). Nitro merged
+    // `vercel.functions` in die Vercel-Function-Config (.vc-config.json).
+    vercel: {
+      functions: {
+        maxDuration: 300,
+      },
+    },
     // Nitro generiert tsconfig.server.json separat und ignoriert den globalen
     // typescript.tsConfig oben – daher hier derselbe Override fuer den Server-Layer
     // (der @pipeline/analyze als Wert importiert). Grund s. typescript-Block oben.
