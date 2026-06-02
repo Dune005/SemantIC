@@ -154,7 +154,7 @@ const bpDemo = ref('')
       <div class="mt-4 grid max-w-[520px] gap-7">
         <div v-for="sc in scores" :key="sc">
           <p class="mono mb-1 text-xs text-muted">value {{ sc }} → {{ SEVERITY_WORD[severityFor(sc)] }}</p>
-          <ScoreBar :value="sc" :aria-label="`Score ${sc} von 100, ${SEVERITY_WORD[severityFor(sc)]}`" />
+          <ScoreBar :value="sc" :ariaLabel="`Score ${sc} von 100, ${SEVERITY_WORD[severityFor(sc)]}`" />
         </div>
       </div>
     </section>

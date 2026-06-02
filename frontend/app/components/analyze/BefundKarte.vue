@@ -169,7 +169,7 @@ const hasDeepDetails = computed(
         </div>
         <ScoreBar
           :value="vm.integrityScore"
-          :aria-label="`Integritäts-Score ${vm.integrityScore} von 100, ${SEVERITY_WORD[heroSeverity]}`"
+          :ariaLabel="`Integritäts-Score ${vm.integrityScore} von 100, ${SEVERITY_WORD[heroSeverity]}`"
         />
 
         <div class="lines">

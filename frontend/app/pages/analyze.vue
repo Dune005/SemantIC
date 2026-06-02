@@ -3,11 +3,12 @@
 // Tool-Seite mit clientseitiger Zustandsmaschine. Header/Footer/Skip-Link liefert das
 // default-Layout; diese Seite liefert nur den Inhalt (kein eigenes <main>).
 //
-// ETAPPE-4-GRENZE: Die State-Maschine, der Upload (Picker + Drag&Drop), die Typ-
-// Validierung, die TileSelect-Pflichtlogik, WaitState/ErrorCards und der usage_form-
-// Freeze sind echt. Der Analyse-Schritt ruft eine GEKAPSELTE Mock-Funktion
-// (runMockAnalysis → Fixture-ViewModel), KEIN $fetch. Echter Call + Downscaling/Base64 +
-// buildAnalysisViewModel ersetzen den Mock in Etappe 5/6 (einzige Naht).
+// ETAPPE 6 (Naht geschlossen): Upload → Canvas-Downscaling (prepareImage) → echter
+// $fetch.raw('/api/analyze', {signal}) → buildAnalysisViewModel(raw, submittedUsageForm)
+// → BefundKarte. usage_form bleibt frontend-only (nie im API-Body). Fehler werden über
+// mapFetchError(HTTP-Status → ErrorKind) abgebildet; rateLimitHint/bypassActive kommen
+// aus den Response-Headern in den geteilten Chrome-State (useState). Der Dev-State-
+// Switcher (+ RESULT_FIXTURES) bleibt bis Etappe 8.
 import { ref, computed, onBeforeUnmount } from 'vue'
 import Button from '~/components/ui/Button.vue'
 import TileSelect from '~/components/ui/TileSelect.vue'
@@ -15,6 +16,8 @@ import WaitState from '~/components/analyze/WaitState.vue'
 import ErrorCard from '~/components/analyze/ErrorCard.vue'
 import BefundKarte from '~/components/analyze/BefundKarte.vue'
 import type { AnalysisViewModel, UsageForm } from '~/types/analysis'
+import { buildAnalysisViewModel } from '~/composables/useAnalysisView'
+import type { SemanticAnalysisResult } from '@pipeline/analyze'
 import greenFx from '~/dev-fixtures/green.json'
 import yellowFx from '~/dev-fixtures/yellow.json'
 import redFx from '~/dev-fixtures/red.json'
@@ -150,11 +153,25 @@ const fileMeta = ref('')
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const isDragover = ref(false)
 
-// usage_form-Freeze (frontend-only, nie im API-Body) + Mock-Ergebnis
+// usage_form-Freeze (frontend-only, nie im API-Body) + Ergebnis-ViewModel
 const submittedUsageForm = ref<UsageForm | null>(null)
 const resultVm = ref<AnalysisViewModel | null>(null)
 
+// Fuer den API-Call vorbereitete Bilddaten: reines Base64 (ohne data:-Prefix) +
+// Magic-Byte-tauglicher mediaType. Getrennt von imageUrl (DataURL-Vorschau).
+const apiImageBase64 = ref<string | null>(null)
+const apiMediaType = ref<string | null>(null)
+
+// Chrome-State (Header/Footer im Layout) ueber die Layout<->Page-Grenze teilen.
+const rateLimitHint = useState<string | null>('chrome:rateLimitHint', () => null)
+const bypassActive = useState<boolean>('chrome:bypassActive', () => false)
+
 const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp']
+// Client-Downscale (error-taxonomy.md §0). Base64-Ziel bewusst < Server-Limit (4.5 MB).
+const MAX_UPLOAD_BYTES = 3_500_000
+const DOWNSCALE_MAX_EDGE = 2000
+const CLIENT_BASE64_BUDGET = 4_000_000
+const QUALITY_STEPS = [0.85, 0.7, 0.55, 0.4]
 
 // --- Abgeleitet ------------------------------------------------------------
 const canSubmit = computed(() => !!declaredIntent.value && !!usageForm.value)
@@ -182,43 +199,101 @@ function triggerPick() {
 }
 function onFileChange(event: Event) {
   const file = (event.target as HTMLInputElement).files?.[0]
-  if (file) handleFile(file)
+  if (file) void handleFile(file)
 }
 function onDrop(event: DragEvent) {
   isDragover.value = false
   const file = event.dataTransfer?.files?.[0]
-  if (file) handleFile(file)
+  if (file) void handleFile(file)
 }
-function handleFile(file: File) {
-  // Etappe-4-Validierung: Typ-Check. (Downscaling/Base64-Budget + too_large = Etappe 6.)
+
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = () => reject(new Error('downscale_failed'))
+    reader.readAsDataURL(file)
+  })
+}
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => resolve(img)
+    img.onerror = () => reject(new Error('downscale_failed'))
+    img.src = src
+  })
+}
+
+// Bild fuer den API-Call vorbereiten (Etappe 6): ggf. per Canvas verkleinern, bis
+// das Base64 unter dem Budget liegt. Wirft Error('too_large' | 'downscale_failed').
+// Liefert reines Base64 (ohne data:-Prefix) + mediaType + DataURL-Vorschau + Masse.
+async function prepareImage(file: File): Promise<{
+  base64: string; mediaType: string; previewUrl: string; width: number; height: number
+}> {
+  const originalUrl = await fileToDataUrl(file)
+  const img = await loadImage(originalUrl)
+  const w = img.naturalWidth
+  const h = img.naturalHeight
+
+  // Original passt direkt (klein genug + Kante im Limit): kein Re-Encode.
+  if (file.size <= MAX_UPLOAD_BYTES && Math.max(w, h) <= DOWNSCALE_MAX_EDGE) {
+    return {
+      base64: originalUrl.slice(originalUrl.indexOf(',') + 1),
+      mediaType: file.type,
+      previewUrl: originalUrl,
+      width: w,
+      height: h,
+    }
+  }
+
+  // Verkleinern: lange Kante auf DOWNSCALE_MAX_EDGE, dann Qualitaet schrittweise senken.
+  const scale = Math.min(1, DOWNSCALE_MAX_EDGE / Math.max(w, h))
+  const cw = Math.max(1, Math.round(w * scale))
+  const ch = Math.max(1, Math.round(h * scale))
+  const canvas = document.createElement('canvas')
+  canvas.width = cw
+  canvas.height = ch
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('downscale_failed')
+  ctx.drawImage(img, 0, 0, cw, ch)
+
+  for (const quality of QUALITY_STEPS) {
+    let encoded: string
+    try {
+      encoded = canvas.toDataURL('image/jpeg', quality)
+    } catch {
+      throw new Error('downscale_failed')
+    }
+    const base64 = encoded.slice(encoded.indexOf(',') + 1)
+    if (base64.length <= CLIENT_BASE64_BUDGET) {
+      return { base64, mediaType: 'image/jpeg', previewUrl: encoded, width: w, height: h }
+    }
+  }
+  throw new Error('too_large')
+}
+
+async function handleFile(file: File) {
   if (!ACCEPTED.includes(file.type)) {
     errorKind.value = 'unsupported_type'
     state.value = 'upload_error'
     return
   }
   state.value = 'validating'
-  const reader = new FileReader()
-  reader.onload = () => {
-    const dataUrl = reader.result as string
-    imageUrl.value = dataUrl
+  try {
+    const prepared = await prepareImage(file)
+    apiImageBase64.value = prepared.base64
+    apiMediaType.value = prepared.mediaType
+    imageUrl.value = prepared.previewUrl
     fileName.value = file.name
     const sizeMb = (file.size / 1024 / 1024).toFixed(1)
     const typeLabel = (file.type.split('/')[1] || '').toUpperCase()
-    const img = new Image()
-    img.onload = () => {
-      fileMeta.value = `${img.naturalWidth} × ${img.naturalHeight} px · ${sizeMb} MB · ${typeLabel}`
-    }
-    img.onerror = () => {
-      fileMeta.value = `${sizeMb} MB · ${typeLabel}`
-    }
-    img.src = dataUrl
+    fileMeta.value = `${prepared.width} × ${prepared.height} px · ${sizeMb} MB · ${typeLabel}`
     state.value = 'collecting'
-  }
-  reader.onerror = () => {
-    errorKind.value = 'downscale_failed'
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : ''
+    errorKind.value = msg === 'too_large' ? 'too_large' : 'downscale_failed'
     state.value = 'upload_error'
   }
-  reader.readAsDataURL(file)
 }
 
 // --- Analyse (Mock; Naht zu Etappe 6) -------------------------------------
@@ -230,29 +305,100 @@ function onSubmit() {
     triedSubmit.value = true
     return
   }
-  // usage_form einfrieren (frontend-only, nie im API-Body). Der Composable-Aufruf
-  // buildAnalysisViewModel(rawResult, submittedUsageForm.value ?? undefined) folgt
-  // in Etappe 6, sobald $fetch einen rohen SemanticAnalysisResult liefert (Etappe 5
-  // hat keinen Roh-Input – Verifikation des Composables läuft über /_playground).
-  // Cast begründet: usageForm enthält ausschliesslich gültige UsageForm-Werte (USAGE_OPTIONS).
+  // usage_form einfrieren (frontend-only, nie im API-Body). Wird als 2. Arg an
+  // buildAnalysisViewModel gereicht. Cast begründet: usageForm enthält ausschliesslich
+  // gültige UsageForm-Werte (USAGE_OPTIONS).
   submittedUsageForm.value = usageForm.value as UsageForm
-  runMockAnalysis()
+  void runAnalysis()
 }
-function runMockAnalysis() {
+
+// Echter Pipeline-Call: Bild-Base64 → /api/analyze → buildAnalysisViewModel → BefundKarte.
+// usage_form geht NICHT in den Body (nur als 2. Arg an den Composable).
+async function runAnalysis() {
+  if (!apiImageBase64.value) {
+    errorKind.value = 'unknown'
+    state.value = 'analysis_error'
+    return
+  }
   state.value = 'analyzing'
   abortController?.abort()
   abortController = new AbortController()
   const signal = abortController.signal
-  // ETAPPE-6-EINSTIEG: Hier ersetzt der echte Pfad den Mock:
-  //   const raw = await $fetch<SemanticAnalysisResult>('/api/analyze', { method:'POST', body, signal })
-  //   resultVm.value = buildAnalysisViewModel(raw, submittedUsageForm.value ?? undefined)
-  // In Etappe 5 bleibt der VM-Passthrough (die Fixtures sind fertige ViewModels,
-  // kein roher Result vorhanden) – der Composable ist über /_playground verifiziert.
+  // UI-Timeout 45 s (error-taxonomy §2.5): bricht den Call ab → timeout-Fehler.
+  let timedOut = false
   timeoutId = setTimeout(() => {
+    timedOut = true
+    abortController?.abort()
+  }, 45_000)
+
+  try {
+    const res = await $fetch.raw<SemanticAnalysisResult>('/api/analyze', {
+      method: 'POST',
+      body: {
+        imageBase64: apiImageBase64.value,
+        mediaType: apiMediaType.value ?? undefined,
+        prompt: promptText.value || undefined,
+        context: contextText.value || undefined,
+        declaredIntent: declaredIntent.value ?? undefined,
+      },
+      signal,
+    })
     if (signal.aborted) return
-    resultVm.value = RESULT_FIXTURES.yellow ?? null
+    // rateLimitHint + bypassActive aus den Response-Headern (Spec §6.6).
+    const remaining = res.headers.get('x-ratelimit-remaining')
+    if (remaining != null) {
+      const n = Number(remaining)
+      rateLimitHint.value = Number.isFinite(n) ? `Noch ${n} von 3 heute frei` : null
+    }
+    if (res.headers.get('x-ratelimit-bypass') === '1') bypassActive.value = true
+
+    const raw = res._data
+    if (!raw) {
+      errorKind.value = 'provider_error'
+      state.value = 'analysis_error'
+      return
+    }
+    resultVm.value = buildAnalysisViewModel(raw, submittedUsageForm.value ?? undefined)
     state.value = 'result'
-  }, 1500)
+  } catch (err) {
+    // User-Abbruch (kein Timeout) → stiller Rücksprung (error-taxonomy §2.7, kein Fehler).
+    if (signal.aborted && !timedOut) return
+    errorKind.value = mapFetchError(err, timedOut)
+    state.value = 'analysis_error'
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId)
+      timeoutId = null
+    }
+  }
+}
+
+// HTTP-Status → ErrorKind (error-taxonomy.md §1).
+function mapFetchError(err: unknown, timedOut: boolean): ErrorKind {
+  if (timedOut) return 'timeout'
+  const e = err as {
+    statusCode?: number
+    status?: number
+    data?: { data?: { resetsAt?: number; remaining?: number } }
+  }
+  const status = e?.statusCode ?? e?.status
+  if (status === 429) {
+    // ofetch legt den ganzen Response-Body auf error.data; createError schachtelt
+    // die Nutzdaten unter body.data → also error.data.data (Codex-Review B).
+    const rl = e?.data?.data
+    if (rl?.resetsAt) {
+      ERROR_PRESETS.rate_limited.rateLimit = {
+        remaining: rl.remaining ?? 0,
+        resetsAt: new Date(rl.resetsAt).toLocaleString('de-CH'),
+      }
+    }
+    return 'rate_limited'
+  }
+  if (status === 413) return 'too_large'
+  if (status === 415) return 'unsupported_type'
+  if (status === 504) return 'timeout'
+  if (status != null && status >= 400) return 'provider_error'
+  return 'unknown'
 }
 function abortAnalysis() {
   // Stiller Rücksprung (TASKS D2): kein Error, kein hängender Call.
@@ -280,6 +426,8 @@ function fullReset() {
   imageUrl.value = null
   fileName.value = ''
   fileMeta.value = ''
+  apiImageBase64.value = null
+  apiMediaType.value = null
   submittedUsageForm.value = null
   resultVm.value = null
   if (fileInputRef.value) fileInputRef.value.value = ''
@@ -290,9 +438,14 @@ function cancelAnalysis() {
 }
 function onErrorAction(event: string) {
   if (event === 'reset') fullReset()
-  else if (event === 'retry') runMockAnalysis()
+  else if (event === 'retry') void runAnalysis()
   else if (event === 'dismiss') state.value = 'collecting'
-  else if (event === 'focusBypass') focusFooterBypass()
+  else if (event === 'focusBypass') {
+    // error-taxonomy §3: ErrorCard schliesst → zurück zu collecting (Eingaben bleiben),
+    // dann Footer-Bypass-Feld fokussieren.
+    state.value = 'collecting'
+    focusFooterBypass()
+  }
 }
 function focusFooterBypass() {
   // Footer-Bypass liegt im Layout (AppFooter). Etappe 6 hängt die echte Redeem-Logik ein;

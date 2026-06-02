@@ -12,16 +12,29 @@ const activeNav = computed<'home' | 'analyze' | 'how-it-works' | undefined>(() =
   return undefined
 })
 
-// Chrome-State – statisch bis Etappe 6 (Server-Schicht).
-const bypassActive = ref(false)
-const rateLimitHint = ref<string | null>(null)
+// Chrome-State (Etappe 6 verkabelt): bypassActive + rateLimitHint sind via useState
+// mit der analyze-Seite geteilt (sie schreibt die Werte aus den Response-Headern);
+// bypassState/bypassError leben nur lokal im Layout (Status des Bypass-Felds).
+const bypassActive = useState<boolean>('chrome:bypassActive', () => false)
+const rateLimitHint = useState<string | null>('chrome:rateLimitHint', () => null)
 const bypassState = ref<'idle' | 'submitting' | 'success' | 'error'>('idle')
 const bypassError = ref<string | null>(null)
 
-function onRedeemBypass(code: string) {
-  // Etappe 6: POST /api/bypass/redeem; bei Erfolg bypassActive=true +
-  // bypassState='success' (HMAC-Cookie serverseitig). In Etappe 3 bewusst no-op.
-  void code
+async function onRedeemBypass(code: string) {
+  bypassState.value = 'submitting'
+  bypassError.value = null
+  try {
+    // HttpOnly-Cookie wird serverseitig gesetzt; {ok:true} → Badge reaktiv (kein Reload).
+    await $fetch('/api/bypass/redeem', { method: 'POST', body: { code } })
+    bypassState.value = 'success'
+    bypassActive.value = true
+    // Bypass hebt das Limit auf → alter Rate-Limit-Hint ist hinfaellig (Fixture-konform).
+    rateLimitHint.value = null
+  } catch {
+    // Verbatim aus content/microcopy.md (Bypass-Code-Feld, Fehler).
+    bypassState.value = 'error'
+    bypassError.value = 'Dieser Code stimmt nicht. Bitte prüf die Schreibweise.'
+  }
 }
 </script>
 

@@ -45,9 +45,34 @@ export default defineNuxtConfig({
     // Pipeline-Runtime-Deps in package.json gespiegelt sind (Deploy-Spike PR #3).
     '@pipeline': fileURLToPath(new URL('../src', import.meta.url)),
   },
+  // Die geteilte Pipeline (@pipeline -> ../src) wird von app/ (Typ-Importe in
+  // composables/types) UND server/ (Wert-Import in analyze.post) referenziert und
+  // dadurch in beiden Layern voll typgeprueft. src/ wird unter seiner EIGENEN
+  // Root-tsconfig OHNE noUncheckedIndexedAccess entwickelt + kalibriert; wir
+  // gleichen den frontend/-TypeCheck dieser bewussten Config-Wahl an, statt
+  // kalibrierungs-relevanten Pipeline-Code (Box-Validierung, dominant_error_type)
+  // einer strengeren Index-Regel zu unterwerfen. frontend/-eigener Code ist davon
+  // unberuehrt (war unter der Regel bereits konform).
+  typescript: {
+    tsConfig: {
+      compilerOptions: {
+        noUncheckedIndexedAccess: false,
+      },
+    },
+  },
   nitro: {
     experimental: {
       asyncContext: true,
+    },
+    // Nitro generiert tsconfig.server.json separat und ignoriert den globalen
+    // typescript.tsConfig oben – daher hier derselbe Override fuer den Server-Layer
+    // (der @pipeline/analyze als Wert importiert). Grund s. typescript-Block oben.
+    typescript: {
+      tsConfig: {
+        compilerOptions: {
+          noUncheckedIndexedAccess: false,
+        },
+      },
     },
   },
 })
