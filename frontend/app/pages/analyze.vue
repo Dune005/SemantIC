@@ -221,7 +221,7 @@ function handleFile(file: File) {
   reader.readAsDataURL(file)
 }
 
-// --- Analyse (Mock; Naht zu Etappe 5/6) -----------------------------------
+// --- Analyse (Mock; Naht zu Etappe 6) -------------------------------------
 let timeoutId: ReturnType<typeof setTimeout> | null = null
 let abortController: AbortController | null = null
 
@@ -230,7 +230,10 @@ function onSubmit() {
     triedSubmit.value = true
     return
   }
-  // usage_form einfrieren (frontend-only). buildAnalysisViewModel(result, usageForm) = Etappe 5.
+  // usage_form einfrieren (frontend-only, nie im API-Body). Der Composable-Aufruf
+  // buildAnalysisViewModel(rawResult, submittedUsageForm.value ?? undefined) folgt
+  // in Etappe 6, sobald $fetch einen rohen SemanticAnalysisResult liefert (Etappe 5
+  // hat keinen Roh-Input – Verifikation des Composables läuft über /_playground).
   // Cast begründet: usageForm enthält ausschliesslich gültige UsageForm-Werte (USAGE_OPTIONS).
   submittedUsageForm.value = usageForm.value as UsageForm
   runMockAnalysis()
@@ -240,7 +243,11 @@ function runMockAnalysis() {
   abortController?.abort()
   abortController = new AbortController()
   const signal = abortController.signal
-  // Echter $fetch('/api/analyze', { signal }) + buildAnalysisViewModel ersetzt das in Etappe 5/6.
+  // ETAPPE-6-EINSTIEG: Hier ersetzt der echte Pfad den Mock:
+  //   const raw = await $fetch<SemanticAnalysisResult>('/api/analyze', { method:'POST', body, signal })
+  //   resultVm.value = buildAnalysisViewModel(raw, submittedUsageForm.value ?? undefined)
+  // In Etappe 5 bleibt der VM-Passthrough (die Fixtures sind fertige ViewModels,
+  // kein roher Result vorhanden) – der Composable ist über /_playground verifiziert.
   timeoutId = setTimeout(() => {
     if (signal.aborted) return
     resultVm.value = RESULT_FIXTURES.yellow ?? null

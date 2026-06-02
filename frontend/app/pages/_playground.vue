@@ -22,6 +22,11 @@ import greenFx from '~/dev-fixtures/green.json'
 import yellowFx from '~/dev-fixtures/yellow.json'
 import redFx from '~/dev-fixtures/red.json'
 import nullfallFx from '~/dev-fixtures/nullfall.json'
+// Etappe 5: portierte ViewModel-Factory + echte rohe Pipeline-Outputs (Dev-only).
+import { buildAnalysisViewModel } from '~/composables/useAnalysisView'
+import type { SemanticAnalysisResult } from '@pipeline/analyze'
+import rawGreenFx from '~/dev-fixtures/raw/raw-green.json'
+import rawYellowFx from '~/dev-fixtures/raw/raw-yellow.json'
 
 // Isolierte Komponenten-Galerie ohne globales Chrome (Header/Footer real auf / + 404).
 definePageMeta({ layout: false })
@@ -81,6 +86,19 @@ const fixtures = {
 const fixtureKeys = ['green', 'yellow', 'red', 'nullfall'] as const
 const activeKey = ref<(typeof fixtureKeys)[number]>('yellow')
 const activeVm = computed(() => fixtures[activeKey.value])
+
+// ── Etappe 5 State (View-Model-Port: Roh-Result → buildAnalysisViewModel) ─────
+// Echte rohe SemanticAnalysisResult-JSONs aus spike-test/output (Dev-only, mit
+// _playground in Etappe 8 entfernt). Beweist den portierten Composable end-to-end:
+// Roh → VM → BefundKarte, inkl. integrityScore-Hoist (Hero-Score) und der
+// usage_form-abhängigen usageFormNote (gleiche Roh-Daten, einmal ohne / einmal mit
+// Verwendungsform 'editorial' = high_bar).
+const vmRawGreen = buildAnalysisViewModel(rawGreenFx as unknown as SemanticAnalysisResult)
+const vmRawYellow = buildAnalysisViewModel(rawYellowFx as unknown as SemanticAnalysisResult)
+const vmRawYellowEditorial = buildAnalysisViewModel(
+  rawYellowFx as unknown as SemanticAnalysisResult,
+  'editorial',
+)
 
 // ── Etappe 3 State (Shared Chrome) ───────────────────────────────────────────
 const bpDemo = ref('')
@@ -245,6 +263,48 @@ const bpDemo = ref('')
           sample-id="SEMANTIC · sample_0428"
           :submitted-usage-form="'header'"
         />
+      </div>
+    </section>
+
+    <!-- ═══════════ ETAPPE 5 — VIEW-MODEL (Roh → VM) ═══════════ -->
+    <h2 class="mt-14 border-b border-line pb-2 text-[14px] font-bold uppercase tracking-wider text-subtle">Etappe 5 — View-Model (Roh → VM)</h2>
+    <p class="mt-2 text-muted">
+      Echte rohe <span class="mono">SemanticAnalysisResult</span>-JSONs aus
+      <span class="mono">spike-test/output</span>, durch den portierten
+      <span class="mono">buildAnalysisViewModel</span> gefahren → BefundKarte. Beweist den
+      Composable-Port end-to-end: <span class="mono">integrityScore</span> top-level (Hero-Score)
+      und die <span class="mono">usageFormNote</span> aus echten Daten (gleiche Roh-Daten ohne /
+      mit Verwendungsform).
+    </p>
+
+    <section class="mt-6 space-y-8">
+      <div>
+        <p class="mono text-xs text-muted">
+          raw-green (zt-glass) · integrityScore = {{ vmRawGreen.integrityScore }} ·
+          Status {{ vmRawGreen.overallVerdict.status }}
+        </p>
+        <div class="mt-3">
+          <BefundKarte :vm="vmRawGreen" sample-id="RAW · zt-glass" :submitted-usage-form="null" />
+        </div>
+      </div>
+      <div>
+        <p class="mono text-xs text-muted">
+          raw-yellow (zt-coffeeshop) · OHNE Verwendungsform · integrityScore =
+          {{ vmRawYellow.integrityScore }} ·
+          usageFormNote = {{ vmRawYellow.usageFormNote === null ? 'null' : 'gesetzt' }}
+        </p>
+        <div class="mt-3">
+          <BefundKarte :vm="vmRawYellow" sample-id="RAW · zt-coffeeshop" :submitted-usage-form="null" />
+        </div>
+      </div>
+      <div>
+        <p class="mono text-xs text-muted">
+          raw-yellow (zt-coffeeshop) · MIT Verwendungsform editorial (high_bar) ·
+          usageFormNote = {{ vmRawYellowEditorial.usageFormNote === null ? 'null' : 'gesetzt' }}
+        </p>
+        <div class="mt-3">
+          <BefundKarte :vm="vmRawYellowEditorial" sample-id="RAW · zt-coffeeshop" :submitted-usage-form="'editorial'" />
+        </div>
       </div>
     </section>
 

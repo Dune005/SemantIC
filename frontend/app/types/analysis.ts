@@ -6,7 +6,8 @@
 // Der Composable-Port (buildAnalysisViewModel, aggregateVerdict, Logik-Maps) folgt in
 // Etappe 5 und IMPORTIERT diese Datei – die Typen werden nicht dupliziert (kein Drift).
 //
-// Quelle: useAnalysisView.ts Z.5–192 (verbatim). Externe Pipeline-Typen via @pipeline.
+// Quelle: useAnalysisView.ts Z.5–192 (verbatim bis auf die additive O-2-Ergänzung
+// integrityScore top-level – s. AnalysisViewModel). Externe Pipeline-Typen via @pipeline.
 
 import type { SemanticAnalysisResult } from '@pipeline/analyze'
 import type { ContextReviewHint } from '@pipeline/context-hints'

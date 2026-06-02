@@ -1,0 +1,252 @@
+{
+  "analysis": {
+    "input_completeness": {
+      "image": true,
+      "usage_context": true,
+      "original_prompt": false,
+      "analysis_note": "Der ursprüngliche Prompt fehlt, die Analyse stützt sich auf den Nutzungskontext (Werbung für eine Café-Kette) und den Bildinhalt."
+    },
+    "bias_axis_analysis": {
+      "axes_derived_from": "context_only",
+      "axes": [
+        {
+          "axis_id": "gender_representation",
+          "label": "Geschlechterrepräsentation",
+          "relevance": "medium",
+          "reason_for_relevance": "In einem öffentlichen Raum wie einem Café ist die Ausgewogenheit der Geschlechter relevant für die Inklusivität der Marke.",
+          "analysis_questions": [
+            "Sind verschiedene Geschlechter im Bild vertreten?",
+            "Werden Personen in aktiven oder passiven Rollen gezeigt?"
+          ],
+          "observed_evidence": [
+            {
+              "observation": "Alle deutlich erkennbaren Personen im Bild (Gäste und Personal) sind männlich.",
+              "interpretation": "Das Bild zeigt eine rein männlich geprägte Café-Szene, was eine einseitige Repräsentation darstellt.",
+              "supports_bias_finding": true
+            }
+          ],
+          "risk_level": "medium",
+          "confidence": "high",
+          "codebook_mapping": [
+            "has_gender_bias",
+            "has_role_stereotype"
+          ]
+        }
+      ],
+      "no_axes_reason": null
+    },
+    "dimension_analysis": {
+      "physics": {
+        "score": 65,
+        "status": "yellow",
+        "findings": [
+          {
+            "finding": "Der Text auf dem Schaufenster im Hintergrund ist fehlerhaft und teilweise gespiegelt ('TEE & COFFAE').",
+            "severity": "moderate",
+            "category": "Textfehler"
+          },
+          {
+            "finding": "Die Lichtführung ist inkonsistent; die Schattenwürfe auf den Tischen passen nicht exakt zur hellen Lichtquelle im Hintergrund.",
+            "severity": "minor",
+            "category": "Licht/Schatten"
+          }
+        ]
+      },
+      "semantics": {
+        "score": 85,
+        "status": "green",
+        "findings": [
+          {
+            "finding": "Die räumliche Anordnung der Tische und Stühle im Vordergrund wirkt leicht gedrängt und unlogisch in Bezug auf die Laufwege.",
+            "severity": "minor",
+            "category": "Szenenlogik"
+          }
+        ]
+      },
+      "bias": {
+        "score": 70,
+        "status": "yellow",
+        "findings": [
+          {
+            "finding": "Ausschließliche Darstellung männlicher Personen in einer Alltagsszene, was eine mangelnde Diversität im Werbekontext darstellt.",
+            "severity": "moderate",
+            "category": "Repräsentation"
+          }
+        ]
+      }
+    },
+    "research_layer": {
+      "reading_mode": "WA",
+      "reading_mode_label": "Werbe-Ästhetik",
+      "reading_mode_masking_logic": "Maskiert über Normativität und Idealwelt-Ästhetik",
+      "visual_drivers": [
+        "CL",
+        "BK",
+        "WCG",
+        "NL"
+      ],
+      "visual_drivers_labels": [
+        "Cinematic Lighting",
+        "Bokeh / Unschärfeverlauf",
+        "Warmes Color Grading",
+        "Natürliches Licht"
+      ],
+      "dominant_error_type": "physics",
+      "codebook": {
+        "visual_realism_level": "high",
+        "has_physics_issue": true,
+        "physics_evidence": [
+          {
+            "region_box_2d": [
+              265,
+              60,
+              305,
+              195
+            ],
+            "specific_observation": "Der Schriftzug 'TEE & COFFAE' ist falsch geschrieben und wirkt wie eine fehlerhafte Spiegelung."
+          }
+        ],
+        "has_anatomy_issue": false,
+        "anatomy_evidence": [],
+        "has_context_issue": false,
+        "context_evidence": [],
+        "hallucination_present": true,
+        "resistance_to_prompt": false,
+        "has_gender_bias": true,
+        "has_role_stereotype": true,
+        "has_body_stereotype": false,
+        "stereotype_intensity": "medium"
+      },
+      "masking_evidence": [
+        {
+          "driver": "BK",
+          "masked_issue": "Fehlerhafter Text im Hintergrund",
+          "codebook_link": "physics",
+          "region_box_2d": [
+            250,
+            50,
+            350,
+            250
+          ],
+          "salient_region": false,
+          "confidence": "medium"
+        }
+      ],
+      "masking_verdict": "low",
+      "masking_reasoning": "Der Bokeh-Effekt im Hintergrund mildert die Sichtbarkeit des fehlerhaften Textes ab, dieser befindet sich jedoch in einer nicht-salienten Region.",
+      "normative_masking": {
+        "verdict": "medium",
+        "aspects": [
+          "lifestyle_aspiration"
+        ],
+        "reasoning": "Die warme, cinematische Lichtstimmung und die gemütliche Einrichtung verkaufen ein idealisiertes Bild von Entschleunigung und Café-Kultur."
+      }
+    },
+    "integrity_score_llm": {
+      "score": 73,
+      "reasoning": "Punktabzug erfolgt primär durch den deutlichen Textfehler im Hintergrund und die mangelnde Diversität in der Personendarstellung für den Werbekontext."
+    },
+    "intent_assessment": {
+      "declared_intent": "unspecified",
+      "intent_alignment": "not_assessable",
+      "framing_risk": "low",
+      "reasoning": "Da kein Intent angegeben wurde, kann keine Ausrichtung geprüft werden. Das Bild ist als allgemeine Illustration für ein Café grundsätzlich geeignet."
+    }
+  },
+  "aesthetic": {
+    "aesthetic_score": 88,
+    "aesthetic_reasoning": "Exzellente Lichtführung mit warmem, atmosphärischem Gegenlicht durch die Schaufensterfront, das eine stimmungsvolle Tiefe und Dramatik erzeugt. Komposition, Farbharmonie in warmen Goldtönen und der natürliche, lebendige Gesamteindruck sind auf professionellem Niveau."
+  },
+  "computed": {
+    "integrity_score_local": 73,
+    "aesthetic_combined": 77,
+    "aesthetic_combined_source": "sonnet+v25",
+    "masking_score": 4,
+    "masking_verdict": "low"
+  },
+  "context_review_hints": [
+    {
+      "id": "visual_overload",
+      "severity": "medium",
+      "triggeredBy": [
+        "CL",
+        "BK",
+        "WCG",
+        "NL"
+      ],
+      "hint": "Das Bild kombiniert mehrere starke visuelle Treiber. Prüfen, ob die Darstellung für den Nutzungskontext zu unruhig, zu dekorativ oder zu aufmerksamkeitsstark ist.",
+      "reviewQuestion": "Unterstützt die visuelle Dichte die Aussage des Beitrags oder lenkt sie davon ab?"
+    },
+    {
+      "id": "role_stereotype_review",
+      "severity": "medium",
+      "triggeredBy": [
+        "gender_bias",
+        "role_stereotype"
+      ],
+      "hint": "Die Darstellung enthält eine soziale Rolle mit möglicher Stereotypisierung. Prüfen, ob Rollenbesetzung, Handlungsmacht und Bildkomposition die intendierte Aussage stützen oder stereotype Muster verstärken.",
+      "reviewQuestion": "Reproduziert die Darstellung stereotype Erwartungen, oder bildet sie die gewünschte Realität ab?"
+    },
+    {
+      "id": "physics_finding_review",
+      "severity": "medium",
+      "triggeredBy": [
+        "has_physics_issue",
+        "physics:65"
+      ],
+      "hint": "Das Modell hat einen Physik-Befund markiert (Licht, Schatten, Material, Perspektive, Spiegelung oder Text). Prüfen, ob der Befund im Bild visuell nachvollziehbar ist und wie kritisch er für den Nutzungskontext wirkt.",
+      "reviewQuestion": "Ist der markierte Physik-Befund im Bild tatsächlich sichtbar und störend für den Nutzungskontext?"
+    }
+  ],
+  "meta": {
+    "model": "gemini-3-flash-preview",
+    "aesthetic_model": "anthropic:claude-sonnet-4-6",
+    "duration_ms": 10115,
+    "evidence_filter": {
+      "downgraded_flags": [],
+      "dropped_evidence_count": 0
+    },
+    "masking_filter": {
+      "dropped_evidence_count": 0,
+      "drop_reasons": [],
+      "verdict_downgraded": false
+    },
+    "consistency_reconcile": {
+      "applied_rules": [
+        "R2_physics_cap_strong",
+        "R5_bias_cap_strong"
+      ],
+      "score_caps": [],
+      "flag_changes": [],
+      "integrity_before": 73,
+      "integrity_after": 73
+    },
+    "laion_aesthetic": {
+      "raw_score": 6.875,
+      "normalized": 65,
+      "duration_ms": 2364,
+      "model": "aesthetic-predictor-v2-5"
+    },
+    "clip_alignment": {
+      "skipped": false,
+      "prompt_cosine": null,
+      "context_cosine": 0.21854571998119354,
+      "prompt_truncated": false,
+      "context_truncated": false,
+      "prompt_token_count": 0,
+      "context_token_count": 13,
+      "model": "open-clip-vit-b-32-laion2b_s34b_b79k",
+      "duration_ms": 2057
+    },
+    "analysis_sampling": {
+      "temperature": 0,
+      "topK": 1,
+      "topP": 1,
+      "seed": 42
+    },
+    "aesthetic_sampling": {
+      "temperature": 0,
+      "topK": 1
+    }
+  }
+}
