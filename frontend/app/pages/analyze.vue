@@ -7,8 +7,7 @@
 // $fetch.raw('/api/analyze', {signal}) → buildAnalysisViewModel(raw, submittedUsageForm)
 // → BefundKarte. usage_form bleibt frontend-only (nie im API-Body). Fehler werden über
 // mapFetchError(HTTP-Status → ErrorKind) abgebildet; rateLimitHint/bypassActive kommen
-// aus den Response-Headern in den geteilten Chrome-State (useState). Der Dev-State-
-// Switcher (+ RESULT_FIXTURES) bleibt bis Etappe 8.
+// aus den Response-Headern in den geteilten Chrome-State (useState).
 import { ref, computed, onBeforeUnmount } from 'vue'
 import Button from '~/components/ui/Button.vue'
 import TileSelect from '~/components/ui/TileSelect.vue'
@@ -19,10 +18,6 @@ import ReportPrintView from '~/components/analyze/ReportPrintView.vue'
 import type { AnalysisViewModel, UsageForm } from '~/types/analysis'
 import { buildAnalysisViewModel } from '~/composables/useAnalysisView'
 import type { SemanticAnalysisResult } from '@pipeline/analyze'
-import greenFx from '~/dev-fixtures/green.json'
-import yellowFx from '~/dev-fixtures/yellow.json'
-import redFx from '~/dev-fixtures/red.json'
-import nullfallFx from '~/dev-fixtures/nullfall.json'
 
 useHead({ title: 'Bild prüfen – SemantIC' })
 
@@ -126,14 +121,6 @@ const ERROR_PRESETS: Record<ErrorKind, ErrorPreset> = {
     primaryAction: { label: 'Erneut versuchen', event: 'retry' },
     secondaryAction: { label: 'Neues Bild prüfen', event: 'reset' },
   },
-}
-
-// Dev-Fixtures (nur für den Mock + Dev-Switcher; in Etappe 8 mit app/dev-fixtures/ entfernt).
-const RESULT_FIXTURES: Record<string, AnalysisViewModel> = {
-  green: greenFx as unknown as AnalysisViewModel,
-  yellow: yellowFx as unknown as AnalysisViewModel,
-  red: redFx as unknown as AnalysisViewModel,
-  nullfall: nullfallFx as unknown as AnalysisViewModel,
 }
 
 // --- Zustand ---------------------------------------------------------------
@@ -304,7 +291,7 @@ async function handleFile(file: File) {
   }
 }
 
-// --- Analyse (Mock; Naht zu Etappe 6) -------------------------------------
+// --- Analyse (echter Pipeline-Call: $fetch /api/analyze) ------------------
 let timeoutId: ReturnType<typeof setTimeout> | null = null
 let abortController: AbortController | null = null
 
@@ -463,8 +450,8 @@ function onErrorAction(event: string) {
   }
 }
 function focusFooterBypass() {
-  // Footer-Bypass liegt im Layout (AppFooter). Etappe 6 hängt die echte Redeem-Logik ein;
-  // hier nur scrollen + fokussieren (ID dynamisch via useId → Attribut-Selektor).
+  // Footer-Bypass liegt im Layout (AppFooter); die Redeem-Logik hängt dort. Hier nur
+  // scrollen + fokussieren (ID dynamisch via useId → Attribut-Selektor).
   const field = document.querySelector<HTMLInputElement>('.app-footer input[id^="bypass-code"]')
   if (field) {
     // reduced-motion respektieren: smooth ist JS-Motion, vom CSS-Guard nicht erfasst (Etappe 7).
@@ -479,19 +466,6 @@ function focusFooterBypass() {
 function exportPdf() {
   window.print()
 }
-
-// --- Dev-Switcher (no-print; in Etappe 8 entfernt) ------------------------
-function devSetState(target: StageState, kind?: ErrorKind) {
-  if (kind) errorKind.value = kind
-  state.value = target
-}
-function devSetResult(key: keyof typeof RESULT_FIXTURES) {
-  resultVm.value = RESULT_FIXTURES[key] ?? null
-  submittedUsageForm.value = submittedUsageForm.value ?? 'header'
-  // generatedAt ist Pflicht-Prop der ReportPrintView – auch im Dev-Print-Test setzen.
-  generatedAt.value = generatedAt.value ?? new Date().toLocaleString('de-CH')
-  state.value = 'result'
-}
 </script>
 
 <template>
@@ -501,27 +475,6 @@ function devSetResult(key: keyof typeof RESULT_FIXTURES) {
     <p class="lead">
       Leg ein KI-generiertes Bild ab, ergänze zwei kurze Angaben zur Verwendung – und SemantIC prüft
       Physik, Semantik und Bias, bevor du es veröffentlichst.
-    </p>
-  </div>
-
-  <!-- Dev-State-Switcher (NUR Entwicklung, no-print; entfällt in Etappe 8) -->
-  <div class="state-switch no-print" role="group" aria-label="Zustand der Eingabe-Maschine umschalten (nur Entwicklung)">
-    <span class="state-switch__lab">Zustand</span>
-    <button type="button" :aria-pressed="state === 'empty'" @click="devSetState('empty')">empty</button>
-    <button type="button" :aria-pressed="state === 'validating'" @click="devSetState('validating')">validating</button>
-    <button type="button" :aria-pressed="state === 'collecting'" @click="devSetState('collecting')">collecting</button>
-    <button type="button" :aria-pressed="state === 'analyzing'" @click="devSetState('analyzing')">analyzing</button>
-    <button type="button" :aria-pressed="state === 'upload_error'" @click="devSetState('upload_error', 'unsupported_type')">upload_error</button>
-    <button type="button" :aria-pressed="state === 'analysis_error' && errorKind === 'timeout'" @click="devSetState('analysis_error', 'timeout')">err · timeout</button>
-    <button type="button" :aria-pressed="state === 'analysis_error' && errorKind === 'rate_limited'" @click="devSetState('analysis_error', 'rate_limited')">err · 429</button>
-    <button type="button" :aria-pressed="state === 'analysis_error' && errorKind === 'provider_error'" @click="devSetState('analysis_error', 'provider_error')">err · provider</button>
-    <button type="button" @click="devSetResult('green')">result · green</button>
-    <button type="button" @click="devSetResult('yellow')">result · yellow</button>
-    <button type="button" @click="devSetResult('red')">result · red</button>
-    <button type="button" @click="devSetResult('nullfall')">result · nullfall</button>
-    <p class="state-switch__note">
-      Nur Entwicklungs-Hilfe: schaltet die Zustandsmaschine durch. Die echte Pipeline-Verkabelung
-      (API-Call statt Mock) folgt in Etappe 5/6.
     </p>
   </div>
 
@@ -789,59 +742,6 @@ function devSetResult(key: keyof typeof RESULT_FIXTURES) {
   font-size: 15px;
   margin-top: 8px;
   max-width: var(--container-text);
-}
-
-/* Dev-State-Switcher (no-print) */
-.state-switch {
-  max-width: 760px;
-  margin: 24px auto 8px;
-  padding: 14px 16px;
-  border: 1px dashed var(--line-strong);
-  border-radius: var(--r);
-  background: var(--canvas);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-.state-switch__lab {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-right: 8px;
-}
-.state-switch button {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-size: 12px;
-  letter-spacing: 0.04em;
-  color: var(--ink);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  padding: 6px 10px;
-  cursor: pointer;
-  line-height: 1.2;
-  transition: background 0.12s ease, border-color 0.12s ease;
-}
-.state-switch button:hover {
-  border-color: var(--ink);
-}
-.state-switch button[aria-pressed='true'] {
-  background: var(--ink);
-  color: var(--surface);
-  border-color: var(--ink);
-}
-.state-switch button:focus-visible {
-  outline: 2px solid var(--ink);
-  outline-offset: 2px;
-}
-.state-switch__note {
-  flex-basis: 100%;
-  font-size: 12px;
-  color: var(--muted);
-  margin-top: 4px;
 }
 
 /* Tool-Stage */
@@ -1259,12 +1159,11 @@ textarea.field::placeholder {
   margin-top: 24px;
 }
 
-/* Druck (report-print.md §3): interaktive Stage + Dev-/Seitenkopf ausblenden –
+/* Druck (report-print.md §3): interaktive Stage + Seitenkopf ausblenden –
    sichtbar bleibt nur die ReportPrintView (ausserhalb der .stage). AppHeader/
    AppFooter blenden sich global via .no-print aus. */
 @media print {
   .page-head,
-  .state-switch,
   .stage {
     display: none !important;
   }

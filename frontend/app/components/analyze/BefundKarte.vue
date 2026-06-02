@@ -56,12 +56,12 @@ const heroSeverity = computed(() => severityFor(props.vm.integrityScore))
 const headlineMain = computed(() => props.vm.overallVerdict.headline.replace(/\.$/, ''))
 const headlineHasDot = computed(() => props.vm.overallVerdict.headline.endsWith('.'))
 
-// Mono-Pre-Comment (kein LLM-Text), aus Status + Leseart + Laufzeit konstruiert.
+// Mono-Pre-Comment (kein LLM-Text), aus Status + Leseart konstruiert. Bewusst KEIN
+// debug.*-Feld (Laufzeit) – DoD §7.2: debug.* nicht in der Hauptansicht.
 const PRE_FLAG = { green: '--ok', yellow: '--review', red: '--reject' } as const
-const preComment = computed(() => {
-  const t = (props.vm.debug.durationMs / 1000).toFixed(1)
-  return `// integrity ${PRE_FLAG[status.value]} · reading ${props.vm.readingMode.code} · 3 dimensions · t = ${t}s`
-})
+const preComment = computed(
+  () => `// integrity ${PRE_FLAG[status.value]} · reading ${props.vm.readingMode.code} · 3 dimensions`,
+)
 
 // Top-Strip-Marker: Severity-Echo der drei Dimensions-Status (aus Pipeline-Status).
 const dimMarkers = computed(() =>
