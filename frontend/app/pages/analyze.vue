@@ -15,6 +15,7 @@ import TileSelect from '~/components/ui/TileSelect.vue'
 import WaitState from '~/components/analyze/WaitState.vue'
 import ErrorCard from '~/components/analyze/ErrorCard.vue'
 import BefundKarte from '~/components/analyze/BefundKarte.vue'
+import ReportPrintView from '~/components/analyze/ReportPrintView.vue'
 import type { AnalysisViewModel, UsageForm } from '~/types/analysis'
 import { buildAnalysisViewModel } from '~/composables/useAnalysisView'
 import type { SemanticAnalysisResult } from '@pipeline/analyze'
@@ -156,6 +157,13 @@ const isDragover = ref(false)
 // usage_form-Freeze (frontend-only, nie im API-Body) + Ergebnis-ViewModel
 const submittedUsageForm = ref<UsageForm | null>(null)
 const resultVm = ref<AnalysisViewModel | null>(null)
+
+// Eingefrorener Submit-State fuer die Druckansicht (report-print.md §2/§5):
+// Kontext/Prompt sind frontend-only (nicht im Pipeline-JSON) und werden der
+// ReportPrintView separat gereicht; generatedAt = Client-Datum des Befunds.
+const submittedContext = ref<string | null>(null)
+const submittedPrompt = ref<string | null>(null)
+const generatedAt = ref<string | null>(null)
 
 // Fuer den API-Call vorbereitete Bilddaten: reines Base64 (ohne data:-Prefix) +
 // Magic-Byte-tauglicher mediaType. Getrennt von imageUrl (DataURL-Vorschau).
@@ -359,6 +367,10 @@ async function runAnalysis() {
       return
     }
     resultVm.value = buildAnalysisViewModel(raw, submittedUsageForm.value ?? undefined)
+    // Submit-State fuer die Druckansicht festhalten (was tatsaechlich gesendet wurde).
+    submittedContext.value = contextText.value || null
+    submittedPrompt.value = promptText.value || null
+    generatedAt.value = new Date().toLocaleString('de-CH')
     state.value = 'result'
   } catch (err) {
     // User-Abbruch (kein Timeout) → stiller Rücksprung (error-taxonomy §2.7, kein Fehler).
@@ -429,6 +441,9 @@ function fullReset() {
   apiImageBase64.value = null
   apiMediaType.value = null
   submittedUsageForm.value = null
+  submittedContext.value = null
+  submittedPrompt.value = null
+  generatedAt.value = null
   resultVm.value = null
   if (fileInputRef.value) fileInputRef.value.value = ''
 }
@@ -452,9 +467,17 @@ function focusFooterBypass() {
   // hier nur scrollen + fokussieren (ID dynamisch via useId → Attribut-Selektor).
   const field = document.querySelector<HTMLInputElement>('.app-footer input[id^="bypass-code"]')
   if (field) {
-    field.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    // reduced-motion respektieren: smooth ist JS-Motion, vom CSS-Guard nicht erfasst (Etappe 7).
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    field.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' })
     field.focus({ preventScroll: true })
   }
+}
+
+// „Als PDF exportieren" → Browser-Druckdialog (report-print.md: window.print(),
+// kein jsPDF/html2canvas). Die ReportPrintView ist nur im @media print sichtbar.
+function exportPdf() {
+  window.print()
 }
 
 // --- Dev-Switcher (no-print; in Etappe 8 entfernt) ------------------------
@@ -465,6 +488,8 @@ function devSetState(target: StageState, kind?: ErrorKind) {
 function devSetResult(key: keyof typeof RESULT_FIXTURES) {
   resultVm.value = RESULT_FIXTURES[key] ?? null
   submittedUsageForm.value = submittedUsageForm.value ?? 'header'
+  // generatedAt ist Pflicht-Prop der ReportPrintView – auch im Dev-Print-Test setzen.
+  generatedAt.value = generatedAt.value ?? new Date().toLocaleString('de-CH')
   state.value = 'result'
 }
 </script>
@@ -717,10 +742,25 @@ function devSetResult(key: keyof typeof RESULT_FIXTURES) {
         />
         <div class="result-actions">
           <Button variant="secondary" @click="fullReset">Neues Bild prüfen</Button>
+          <Button variant="secondary" @click="exportPdf">Als PDF exportieren</Button>
         </div>
       </div>
     </div>
   </section>
+
+  <!-- Druckansicht (report-print.md): im Screen verborgen, im @media print sichtbar.
+       Bewusst AUSSERHALB der .stage, damit die interaktive Stage im Druck ausgeblendet
+       werden kann. usage_form/Kontext/Prompt = eingefrorener Submit-State (frontend-only). -->
+  <ReportPrintView
+    v-if="state === 'result' && resultVm && generatedAt"
+    :view-model="resultVm"
+    :hero-score="resultVm.integrityScore"
+    :generated-at="generatedAt"
+    :image-url="imageUrl"
+    :submitted-usage-form="submittedUsageForm"
+    :submitted-context="submittedContext"
+    :submitted-prompt="submittedPrompt"
+  />
 </template>
 
 <style scoped>
@@ -1217,5 +1257,16 @@ textarea.field::placeholder {
   flex-wrap: wrap;
   gap: 12px;
   margin-top: 24px;
+}
+
+/* Druck (report-print.md §3): interaktive Stage + Dev-/Seitenkopf ausblenden –
+   sichtbar bleibt nur die ReportPrintView (ausserhalb der .stage). AppHeader/
+   AppFooter blenden sich global via .no-print aus. */
+@media print {
+  .page-head,
+  .state-switch,
+  .stage {
+    display: none !important;
+  }
 }
 </style>

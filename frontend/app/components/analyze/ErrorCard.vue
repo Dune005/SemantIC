@@ -4,7 +4,7 @@
 // Familie: inline (role=status, am Upload) vs Block (role=alert, ersetzt Report).
 // Severity doppelt kodiert (Wort im Kopf). 429 → Verweis aufs Footer-Bypass-Feld.
 // KEIN roher Stacktrace/LLM-Text – nur kuratierte `details`.
-import { computed } from 'vue'
+import { computed, onMounted, nextTick, ref } from 'vue'
 import Button from '~/components/ui/Button.vue'
 import { cn } from '~/lib/utils'
 
@@ -47,15 +47,25 @@ const DEFAULT_SEV: Record<ErrorKind, 'warn' | 'crit'> = {
 }
 const sev = computed(() => props.severity ?? DEFAULT_SEV[props.kind])
 const sevWord = computed(() => (sev.value === 'crit' ? 'CRIT' : 'WARN'))
+
+// A11y (primitives.md §8): Die Block-Variante (analysis_error, role=alert) erhält
+// beim Auftreten den Fokus, damit Tastatur-Nutzer:innen direkt am Fehler stehen.
+// Inline (role=status, am Upload) bleibt ohne Fokus-Sprung.
+const cardRef = ref<HTMLElement | null>(null)
+onMounted(() => {
+  if (!isInline.value) nextTick(() => cardRef.value?.focus())
+})
 </script>
 
 <template>
   <!-- aborted = stiller Rücksprung (error-taxonomy.md §2.7): keine ErrorCard rendern. -->
   <div
     v-if="kind !== 'aborted'"
+    ref="cardRef"
+    :tabindex="isInline ? undefined : -1"
     :class="
       cn(
-        'rounded border-[1.5px] bg-surface',
+        'rounded border-[1.5px] bg-surface outline-none',
         sev === 'crit' ? 'border-crit' : 'border-warn',
         isInline ? 'mt-4 px-[18px] py-4' : 'p-6',
       )

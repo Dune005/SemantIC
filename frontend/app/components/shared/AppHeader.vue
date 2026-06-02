@@ -31,7 +31,7 @@ function closeMenu() {
 </script>
 
 <template>
-  <header class="app-header">
+  <header class="app-header no-print">
     <div class="app-header__inner">
       <NuxtLink to="/" class="brand" aria-label="SemantIC – zur Startseite">
         <span class="brand__mark">SemantIC</span>

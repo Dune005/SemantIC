@@ -155,4 +155,16 @@ textarea {
   body { background: #ffffff; }
   .no-print { display: none !important; }
   a { text-decoration-color: var(--line-strong); }
+
+  /* Severity-Ampel + Score-Farben muessen im Druck farbig bleiben (die Aussage
+     traegt zusaetzlich das Wort – Doppelkodierung, S/W-robust). */
+  *,
+  *::before,
+  *::after {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Seitenraender fuer den PDF-Export (report-print.md §3). */
+  @page { margin: 16mm 14mm; }
 }
