@@ -1,14 +1,16 @@
 <script setup lang="ts">
-// BefundKarte (primitives.md §6) – zentrale Ergebnis-Karte. Rendert AUSSCHLIESSLICH
+// BefundKarte (Frontend 1.1, Etappe 2) – zentrale Ergebnis-Karte. Rendert AUSSCHLIESSLICH
 // aus AnalysisViewModel (+ Nicht-ViewModel-Meta: Bild/usageForm/Identität).
+// Vue-Port des abgenommenen Design-Sheets (Konzept_Frontend/prototypen/befund-karte-1.1-etappe2.html).
+// Vier Blöcke (Inverted Pyramid):
+//   1 Gesamturteil · 2 Diagnose auf einen Blick · 3 Was jetzt zu tun ist · 4 Warum dieses Urteil?
 // Harte Leitplanken:
 //  - Status NUR aus vm.overallVerdict.status (NIE aus Score neu berechnet).
-//  - Hero-Score = vm.integrityScore (Variante A: Hero-Zahl + ScoreBar). Farbe via
-//    severityFor; Hero-Status-Tag deutsch aus STATUS_WORD (Defekt #7, kein "Conditional").
-//  - Faktische (maskingScore/-Verdict) vs. normative Maskierung (normativeMasking) getrennt.
-//  - Die drei Notes als NoteBlock UNTER der Empfehlung, nicht in userHints.
-//  - KEIN v-html – alle Texte sind Interpolation; reasoning nur in Disclosure.
-import { computed, reactive } from 'vue'
+//  - Variante B: Hero-Score-Zahl + ScoreBar-Marker NEUTRAL (--ink, Messwert). Urteilsfarbe
+//    trägt das Gesamturteil/Status-Tag + die dezente Flächen-/Track-/Dim-Tönung (= Urteil,
+//    nicht Score-Position). Doppelkodierung (Farbe + Wort) bleibt Pflicht.
+//  - KEIN v-html – alle Texte sind Interpolation; reasoning nur in der Vertiefung.
+import { computed, reactive, ref, onMounted, onBeforeUnmount } from 'vue'
 import ScoreBar from '~/components/ui/ScoreBar.vue'
 import Chip from '~/components/ui/Chip.vue'
 import DimBadge from '~/components/ui/DimBadge.vue'
@@ -16,8 +18,6 @@ import HintItem from '~/components/ui/HintItem.vue'
 import NoteBlock from '~/components/ui/NoteBlock.vue'
 import Disclosure from '~/components/ui/Disclosure.vue'
 import {
-  severityFor,
-  SEVERITY_WORD,
   STATUS_TO_SEVERITY,
   STATUS_WORD,
   DIMENSION_LABELS,
@@ -42,11 +42,10 @@ const props = withDefaults(
   { imageUrl: null, submittedUsageForm: null, imageAspect: '4:5' },
 )
 
-const open = reactive({ hidden: false, detail: false, deep: false })
+const open = reactive({ deep: false })
 
 const status = computed(() => props.vm.overallVerdict.status)
 const statusSeverity = computed(() => STATUS_TO_SEVERITY[status.value])
-const heroSeverity = computed(() => severityFor(props.vm.integrityScore))
 
 // Headline: letzten Satzpunkt als chromatischen Akzent abtrennen (Akzent, NICHT links).
 const headlineMain = computed(() => props.vm.overallVerdict.headline.replace(/\.$/, ''))
@@ -57,7 +56,7 @@ const dimMarkers = computed(() =>
   (['physics', 'semantics', 'bias'] as const).map((d) => STATUS_TO_SEVERITY[props.vm.dimensions[d].status]),
 )
 
-// Faktische Maskierung (eigene Skala, NICHT severityFor).
+// Faktische Maskierung (eigene Skala, NICHT severityFor) – kompakte Daten-Zeile.
 const maskingSign = computed(() =>
   props.vm.maskingScore >= 0 ? `+${props.vm.maskingScore}` : `−${Math.abs(props.vm.maskingScore)}`,
 )
@@ -71,6 +70,7 @@ const dims = computed(() =>
     desc: DIMENSION_DESC[d],
     score: props.vm.dimensions[d].score,
     status: props.vm.dimensions[d].status,
+    sev: STATUS_TO_SEVERITY[props.vm.dimensions[d].status],
   })),
 )
 
@@ -80,21 +80,38 @@ const STATUS_BG = {
   warn: 'bg-warn text-ink',
   crit: 'bg-crit text-surface',
 } as const
-const RISK_BADGE = {
-  neutral: 'bg-surface-2 text-ink-soft border border-line-strong',
-  warn: 'bg-warn text-ink',
-  crit: 'bg-crit text-surface',
-} as const
 
+// Block 3: Empfehlungs-Bedingungen (Haltung + Verwendungsform). normativeMaskingNote NICHT
+// hier – sie steht in der Vertiefung (Block 4).
 const hasNotes = computed(
-  () => !!(props.vm.intentRecommendationNote || props.vm.normativeMaskingNote || props.vm.usageFormNote),
+  () => !!(props.vm.intentRecommendationNote || props.vm.usageFormNote),
 )
-const hasDeepDetails = computed(
-  () =>
-    !!props.vm.normativeMasking.reasoning ||
-    !!props.vm.intentAssessment.reasoning ||
-    props.vm.biasAxesSummary.count > 0,
-)
+
+// Count-up der Hero-Zahl (Variante-B-konform: nur der Zahlenwert zählt hoch, neutral).
+// prefers-reduced-motion → sofort der Endwert. Echter Wert steht zusätzlich im ScoreBar-aria.
+const displayScore = ref(0)
+let rafId: number | null = null
+onMounted(() => {
+  const target = props.vm.integrityScore
+  const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
+  if (reduce) {
+    displayScore.value = target
+    return
+  }
+  const dur = 520
+  let start: number | null = null
+  const step = (ts: number) => {
+    if (start === null) start = ts
+    const p = Math.min((ts - start) / dur, 1)
+    displayScore.value = Math.round((1 - Math.pow(1 - p, 3)) * target)
+    if (p < 1) rafId = requestAnimationFrame(step)
+    else displayScore.value = target
+  }
+  rafId = requestAnimationFrame(step)
+})
+onBeforeUnmount(() => {
+  if (rafId !== null) cancelAnimationFrame(rafId)
+})
 </script>
 
 <template>
@@ -107,7 +124,7 @@ const hasDeepDetails = computed(
       </span>
     </div>
 
-    <!-- Verdict-Display: Gesamturteil (Status-Quelle = overallVerdict.status) -->
+    <!-- Block 1 · Gesamturteil (Status-Quelle = overallVerdict.status) -->
     <div class="verdict-display">
       <div class="verdict-label">
         <span class="status-dot" :class="SEV_DOT[statusSeverity]" aria-hidden="true" />
@@ -119,140 +136,104 @@ const hasDeepDetails = computed(
       </span>
     </div>
 
-    <!-- Empfehlung + die drei Notes (separate Blöcke unter recommendation) -->
+    <!-- Block 2 · Diagnose auf einen Blick: Bild + Score + Dimensionen -->
+    <div class="diag">
+      <div class="block-head">Diagnose auf einen Blick</div>
+      <div class="body">
+        <div class="imgwrap">
+          <div class="img">
+            <img v-if="imageUrl" :src="imageUrl" alt="Geprüftes Bild" class="abs-img" />
+            <div v-else class="ph"><span>Bild · {{ imageAspect }}</span></div>
+          </div>
+        </div>
+        <div class="data" :class="`tint-${statusSeverity}`">
+          <div class="lab">&gt; integrity-score</div>
+          <div class="hero-line">
+            <!-- Variante B: Zahl NEUTRAL (--ink) – Messwert, keine Severity-Farbe.
+                 aria-hidden: der count-up zählt visuell hoch; der echte Wert steht im ScoreBar-aria. -->
+            <span class="hero" aria-hidden="true">{{ displayScore }}</span>
+            <span class="hero-den" aria-hidden="true">/ 100</span>
+            <!-- Urteil farbig (separates Status-Element) -->
+            <span class="hero-status" :class="STATUS_BG[statusSeverity]">{{ STATUS_WORD[status] }}</span>
+          </div>
+          <ScoreBar
+            variant="meter"
+            :tone="statusSeverity"
+            :value="vm.integrityScore"
+            :ariaLabel="`Integritätsscore ${vm.integrityScore} von 100. Das Gesamturteil wird unabhängig vom Score bestimmt.`"
+          />
+          <div class="lines">
+            <div class="l">
+              <span class="prompt">&gt;</span><span class="key">aesthetic</span>
+              <span class="val">{{ vm.aestheticCombined }} / 100</span>
+            </div>
+            <div class="l">
+              <span class="prompt">&gt;</span><span class="key">masking · Δ</span>
+              <span class="val">{{ maskingSign }} <span class="tag" :class="maskingSeverity">[{{ maskingWord }}]</span></span>
+            </div>
+            <div class="l">
+              <span class="prompt">&gt;</span><span class="key">reading</span>
+              <span class="val">{{ vm.readingMode.label }} ({{ vm.readingMode.code }})</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <ul class="dims" aria-label="Die drei Dimensionen">
+        <li v-for="d in dims" :key="d.key" class="d" :class="`tint-${d.sev}`">
+          <DimBadge :label="d.label" :desc="d.desc" :score="d.score" :status="d.status" />
+        </li>
+      </ul>
+      <p class="diag-note">
+        Der Score ist ein <strong>Messwert</strong> – das Gesamturteil berücksichtigt zusätzlich
+        Kontext und Risiken. Ein hoher Score bedeutet daher nicht automatisch „unkritisch".
+      </p>
+    </div>
+
+    <!-- Block 3 · Was jetzt zu tun ist (Empfehlung + flache Bedingungen) -->
     <div class="recommendation">
-      <div class="rec-label">Empfehlung</div>
+      <div class="block-head">Was jetzt zu tun ist</div>
       <p class="rec-text">{{ vm.overallVerdict.recommendation }}</p>
       <div v-if="hasNotes" class="notes">
-        <NoteBlock :content="vm.intentRecommendationNote" type="intent" />
-        <NoteBlock :content="vm.normativeMaskingNote" type="masking">
-          <template v-if="vm.normativeMasking.aspects.length" #chips>
-            <Chip v-for="a in vm.normativeMasking.aspects" :key="a" :label="NORMATIVE_ASPECT_LABELS[a]" />
-          </template>
-        </NoteBlock>
-        <NoteBlock :content="vm.usageFormNote" type="usage" />
+        <NoteBlock :content="vm.intentRecommendationNote" type="intent" flat />
+        <NoteBlock :content="vm.usageFormNote" type="usage" flat />
       </div>
     </div>
 
-    <!-- Body: Bild links, Hero-Integritätswert + Daten rechts -->
-    <div class="body">
-      <div class="imgwrap">
-        <div class="img">
-          <img v-if="imageUrl" :src="imageUrl" alt="Geprüftes Bild" class="abs-img" />
-          <div v-else class="ph"><span>Bild · {{ imageAspect }}</span></div>
-        </div>
-      </div>
-      <div class="data">
-        <div class="lab">&gt; integrity-score</div>
-        <div class="hero-line">
-          <span class="hero" :class="`ink-${heroSeverity}`">{{ vm.integrityScore }}</span>
-          <span class="hero-den">/ 100</span>
-          <!-- Defekt #7: deutsches Status-Wort, Farbe aus overallVerdict.status -->
-          <span class="hero-status" :class="STATUS_BG[statusSeverity]">{{ STATUS_WORD[status] }}</span>
-        </div>
-        <ScoreBar
-          :value="vm.integrityScore"
-          :ariaLabel="`Integritäts-Score ${vm.integrityScore} von 100, ${SEVERITY_WORD[heroSeverity]}`"
-        />
-
-        <div class="lines">
-          <div class="l">
-            <span class="prompt">&gt;</span><span class="key">aesthetic</span>
-            <span class="val">{{ vm.aestheticCombined }} / 100</span>
-          </div>
-          <div class="l">
-            <span class="prompt">&gt;</span><span class="key">masking · Δ</span>
-            <span class="val">{{ maskingSign }} <span class="tag" :class="maskingSeverity">[{{ maskingWord }}]</span></span>
-          </div>
-          <div class="l">
-            <span class="prompt">&gt;</span><span class="key">reading</span>
-            <span class="val">{{ vm.readingMode.label }} ({{ vm.readingMode.code }})</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Dim-Strip: drei Dimensionen (DimBadge), Severity doppelt kodiert -->
-    <ul class="dims" aria-label="Die drei Dimensionen">
-      <li v-for="d in dims" :key="d.key" class="d">
-        <DimBadge :label="d.label" :desc="d.desc" :score="d.score" :status="d.status" />
-      </li>
-    </ul>
-
-    <!-- Maskierungs-Score (faktisch) -->
-    <div class="card-section">
-      <div class="section-label">Maskierungs-Score</div>
-      <div class="bias-summary">
-        <span class="risk-badge" :class="RISK_BADGE[maskingSeverity]">{{ maskingSign }} · {{ maskingWord }}</span>
-        <span>Differenz zwischen visueller Wirkung ({{ vm.aestheticCombined }}) und inhaltlicher Integrität ({{ vm.integrityScore }}).</span>
-      </div>
-    </div>
-
-    <!-- Leseart + visuelle Treiber -->
-    <div class="card-section">
-      <div class="section-label">Leseart &amp; visuelle Treiber</div>
-      <p class="reading-desc">{{ READING_MODE_DESC[vm.readingMode.code] }}</p>
-      <div v-if="vm.visualDrivers.length" class="driver-chips" role="list" aria-label="Visuelle Treiber">
-        <Chip v-for="(drv, i) in vm.visualDrivers" :key="`${drv.code}-${i}`" :code="drv.code" :label="drv.label" role="listitem" />
-      </div>
-    </div>
-
-    <!-- Befunde (Progressive Disclosure Ebene 1: userHints) -->
-    <div class="card-section">
-      <div class="section-label">Befunde</div>
+    <!-- Block 4 · Warum dieses Urteil? (Befunde + eine Vertiefung) -->
+    <div class="why">
+      <div class="block-head">Warum dieses Urteil?</div>
       <ul v-if="vm.userHints.length" class="hint-list">
-        <HintItem v-for="(h, i) in vm.userHints" :key="i" :hint="h" />
+        <HintItem v-for="(h, i) in vm.userHints" :key="i" :hint="h" concise />
       </ul>
-      <p v-else class="text-[14px] text-muted">Keine spezifischen Hinweise – das Tool sieht aktuell keine auffälligen Befunde.</p>
+      <p v-else class="no-finding">
+        Keine spezifischen Auffälligkeiten – das Tool sieht aktuell keine kritischen Befunde.
+      </p>
     </div>
-
-    <!-- Ebene 2: weitere (versteckte) Hinweise -->
-    <div v-if="vm.hiddenHints.length" class="disclosure-wrap">
-      <Disclosure v-model:open="open.hidden" title="Weitere Hinweise" :count="`(${vm.hiddenHints.length})`">
-        <ul class="hint-list">
-          <HintItem v-for="(h, i) in vm.hiddenHints" :key="i" :hint="h" />
-        </ul>
-      </Disclosure>
-    </div>
-
-    <!-- Ebene 2: Befunde im Detail (regelbasierte Prüfhinweise + Prüffragen) -->
-    <div v-if="vm.hintsSortedBySeverity.length" class="disclosure-wrap">
-      <Disclosure
-        v-model:open="open.detail"
-        title="Befunde im Detail"
-        :count="`(${vm.hintsCountBySeverity.high} hoch · ${vm.hintsCountBySeverity.medium} mittel · ${vm.hintsCountBySeverity.low} niedrig)`"
-      >
-        <div class="acc-list">
-          <div v-for="h in vm.hintsSortedBySeverity" :key="h.id" class="acc-item">
-            <p class="acc-hint">{{ h.hint }}</p>
-            <p class="q-label">Prüffrage</p>
-            <p class="q-text">{{ h.reviewQuestion }}</p>
-          </div>
-        </div>
-      </Disclosure>
-    </div>
-
-    <!-- Ebene 3: Einordnung / reasoning (auf Wunsch) -->
-    <div v-if="hasDeepDetails" class="disclosure-wrap">
-      <Disclosure v-model:open="open.deep" title="Einordnung &amp; Details">
+    <div class="disclosure-wrap">
+      <Disclosure v-model:open="open.deep" title="Analyse vertiefen">
         <div class="deep">
+          <p class="deep-label">Normative Maskierung</p>
           <template v-if="vm.normativeMasking.verdict !== 'not_applicable'">
-            <p class="deep-label">Normative Maskierung</p>
             <p class="deep-text">
               Idealisierende Norm: {{ NORMATIVE_VERDICT_LABELS[vm.normativeMasking.verdict] }}.
               <template v-if="vm.normativeMasking.reasoning"> {{ vm.normativeMasking.reasoning }}</template>
             </p>
+            <div v-if="vm.normativeMasking.aspects.length" class="deep-chips">
+              <Chip v-for="a in vm.normativeMasking.aspects" :key="a" :label="NORMATIVE_ASPECT_LABELS[a]" />
+            </div>
+            <p v-if="vm.normativeMaskingNote" class="deep-text">{{ vm.normativeMaskingNote }}</p>
           </template>
+          <p v-else class="deep-text">Keine normative Maskierung erkannt – für dieses Bild nicht einschlägig.</p>
+
           <template v-if="vm.biasAxesSummary.count > 0">
             <p class="deep-label">Bias-Achsen</p>
             <p class="deep-text">
               {{ vm.biasAxesSummary.count }} Achse(n) erkannt · maximales Risiko: {{ vm.biasAxesSummary.maxRisk }}.
             </p>
           </template>
-          <template v-if="vm.intentAssessment.reasoning">
-            <p class="deep-label">Haltung</p>
-            <p class="deep-text">{{ vm.intentAssessment.reasoning }}</p>
-          </template>
+
+          <p class="deep-label">Leseart</p>
+          <p class="deep-text">{{ READING_MODE_DESC[vm.readingMode.code] }}</p>
         </div>
       </Disclosure>
     </div>
@@ -264,8 +245,8 @@ const hasDeepDetails = computed(
 </template>
 
 <style scoped>
-/* primitives.md §6 – Goldstandard-DOM (befund-karte-stil-07 / analyze-report.html).
-   Tokens aus tokens.css. Severity doppelt kodiert. Kein Links-Akzent-Streifen. */
+/* Vue-Port des abgenommenen Design-Sheets. Tokens aus tokens.css. Severity doppelt
+   kodiert (Farbe + Wort). Kein Links-Akzent-Streifen. */
 .combo-card {
   border: 1.5px solid var(--ink);
   background: var(--canvas);
@@ -297,7 +278,17 @@ const hasDeepDetails = computed(
   height: 10px;
 }
 
-/* Verdict-Display */
+/* Block-Titel (Klartext-Fragen) */
+.block-head {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+/* Block 1 · Gesamturteil */
 .verdict-display {
   padding: 30px 32px 26px;
   border-bottom: 1.5px solid var(--ink);
@@ -321,9 +312,9 @@ const hasDeepDetails = computed(
   flex: 0 0 auto;
 }
 .head {
-  font-size: 62px;
+  font-size: 54px;
   font-weight: 700;
-  line-height: 0.96;
+  line-height: 0.98;
   letter-spacing: -0.03em;
   color: var(--ink);
 }
@@ -345,38 +336,16 @@ const hasDeepDetails = computed(
   text-transform: uppercase;
 }
 
-/* Empfehlung + Notes */
-.recommendation {
-  padding: 22px 32px 24px;
+/* Block 2 · Diagnose auf einen Blick */
+.diag {
   border-bottom: 1.5px solid var(--ink);
 }
-.rec-label {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  font-weight: 600;
-  color: var(--ink-soft);
-  margin-bottom: 8px;
+.diag > .block-head {
+  padding: 20px 32px 0;
 }
-.rec-text {
-  font-size: 16px;
-  line-height: 1.5;
-  color: var(--ink);
-  max-width: 62ch;
-}
-.notes {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 18px;
-}
-
-/* Body */
 .body {
   display: grid;
   grid-template-columns: 280px 1fr;
-  border-bottom: 1.5px solid var(--ink);
   background: var(--surface);
 }
 .imgwrap {
@@ -413,7 +382,17 @@ const hasDeepDetails = computed(
   padding: 4px 8px;
 }
 .data {
-  padding: 26px 32px;
+  padding: 22px 32px;
+}
+/* Flächen-Tönung = Urteil (gleichmässig, nicht Score-Position) */
+.data.tint-safe {
+  background: rgba(44, 140, 102, 0.07);
+}
+.data.tint-warn {
+  background: rgba(200, 146, 31, 0.1);
+}
+.data.tint-crit {
+  background: rgba(205, 66, 57, 0.07);
 }
 .lab {
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
@@ -427,24 +406,17 @@ const hasDeepDetails = computed(
   display: flex;
   align-items: baseline;
   gap: 14px;
-  margin: 6px 0 16px;
+  margin: 6px 0 14px;
   flex-wrap: wrap;
 }
+/* Variante B: Hero-Zahl neutral – KEINE Severity-Farbe */
 .hero {
-  font-size: 82px;
+  font-size: 74px;
   font-weight: 700;
   line-height: 0.9;
   letter-spacing: -0.04em;
   color: var(--ink);
-}
-.hero.ink-safe {
-  color: var(--safe-ink);
-}
-.hero.ink-warn {
-  color: var(--warn-ink);
-}
-.hero.ink-crit {
-  color: var(--crit-ink);
+  font-variant-numeric: tabular-nums;
 }
 .hero-den {
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
@@ -465,7 +437,7 @@ const hasDeepDetails = computed(
   text-transform: uppercase;
 }
 .lines {
-  margin-top: 24px;
+  margin-top: 34px;
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
   font-size: 13px;
   line-height: 1.65;
@@ -512,105 +484,87 @@ const hasDeepDetails = computed(
 .lines .tag.neutral {
   color: var(--muted);
 }
-/* Dim-Strip */
+
+/* Dim-Strip (drei Dimensionen) */
 .dims {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   background: var(--canvas);
-  border-bottom: 1.5px solid var(--ink);
+  border-top: 1.5px solid var(--ink);
   list-style: none;
 }
 .dims .d {
-  padding: 20px 24px;
+  padding: 18px 24px;
   border-right: 1px solid var(--line-strong);
 }
 .dims .d:last-child {
   border-right: none;
 }
+.dims .d.tint-safe {
+  background: rgba(44, 140, 102, 0.09);
+}
+.dims .d.tint-warn {
+  background: rgba(200, 146, 31, 0.12);
+}
+.dims .d.tint-crit {
+  background: rgba(205, 66, 57, 0.09);
+}
 
-/* Card-Sections */
-.card-section {
+/* Fixer Entkopplungs-Hinweis */
+.diag-note {
+  padding: 13px 32px 16px;
+  background: var(--canvas);
+  border-top: 1px solid var(--line);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* Block 3 · Was jetzt zu tun ist */
+.recommendation {
+  padding: 22px 32px 24px;
+  border-bottom: 1.5px solid var(--ink);
+}
+.recommendation .block-head {
+  margin-bottom: 10px;
+}
+.rec-text {
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink);
+  max-width: 62ch;
+}
+.notes {
+  margin-top: 8px;
+}
+/* flache NoteBlocks: Haarlinie zwischen den Items (kein Box-Stapel) */
+.notes > div + div {
+  border-top: 1px solid var(--line-soft);
+}
+
+/* Block 4 · Warum dieses Urteil? */
+.why {
   padding: 22px 32px;
   background: var(--surface);
-  border-bottom: 1px solid var(--line);
 }
-.section-label {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  font-weight: 600;
-  color: var(--ink-soft);
+.why .block-head {
   margin-bottom: 12px;
-}
-.reading-desc {
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--ink-soft);
-  margin-bottom: 12px;
-}
-.driver-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-}
-.bias-summary {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-size: 13px;
-  color: var(--ink-soft);
-}
-.risk-badge {
-  padding: 3px 8px;
-  border-radius: 2px;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
 }
 .hint-list {
   list-style: none;
   display: flex;
   flex-direction: column;
 }
+.no-finding {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.5;
+}
 
-/* Disclosures (padding-Rahmen analog Prototyp) */
+/* Vertiefung (eine Disclosure) */
 .disclosure-wrap {
   padding: 0 32px;
   background: var(--canvas);
-}
-.acc-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.acc-item {
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  background: var(--surface);
-  padding: 12px 14px;
-}
-.acc-hint {
-  font-size: 14px;
-  color: var(--ink);
-  line-height: 1.5;
-}
-.q-label {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--subtle);
-  font-weight: 600;
-  margin: 12px 0 4px;
-}
-.q-text {
-  font-size: 14px;
-  color: var(--ink-soft);
-  line-height: 1.5;
 }
 .deep {
   display: flex;
@@ -631,9 +585,16 @@ const hasDeepDetails = computed(
   color: var(--ink-soft);
   line-height: 1.5;
 }
+.deep-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 8px;
+}
 .card-footnote {
   padding: 16px 32px;
   background: var(--canvas);
+  border-top: 1.5px solid var(--ink);
   font-size: 13px;
   color: var(--muted);
   line-height: 1.5;
@@ -648,10 +609,10 @@ const hasDeepDetails = computed(
     border-bottom: 1.5px solid var(--ink);
   }
   .hero {
-    font-size: 64px;
+    font-size: 62px;
   }
   .head {
-    font-size: 46px;
+    font-size: 40px;
   }
 }
 @media (max-width: 600px) {

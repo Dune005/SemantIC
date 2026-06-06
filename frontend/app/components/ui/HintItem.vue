@@ -6,7 +6,9 @@ import { computed } from 'vue'
 import { HINT_SEVERITY_LABEL, DIMENSION_LABELS } from '~/lib/severity'
 import type { ConsolidatedHint } from '~/types/analysis'
 
-const props = defineProps<{ hint: ConsolidatedHint }>()
+// `concise` (Frontend 1.1): unterdrückt die aufklappbaren concreteFindings – die schlanke
+// Befundkarte zeigt nur den Topic-Text (keine zusätzlichen Detail-Disclosures neben „Analyse vertiefen").
+const props = defineProps<{ hint: ConsolidatedHint; concise?: boolean }>()
 
 // Severity-Farbe (Prototyp .hint-sev): high=crit, medium=warn, low=neutral (surface-2).
 const SEV = {
@@ -31,7 +33,7 @@ const findings = computed(() => (props.hint.concreteFindings ?? []).slice(0, 2))
       <div class="flex-1">
         <span class="text-[14px] leading-normal text-ink">{{ hint.text }}</span>
         <span v-if="dimLabel" class="ml-2 font-mono text-[10px] uppercase tracking-[0.08em] text-subtle">{{ dimLabel }}</span>
-        <details v-if="findings.length" class="hint-details mt-2">
+        <details v-if="findings.length && !concise" class="hint-details mt-2">
           <summary>Details</summary>
           <ul class="mt-2 flex flex-col gap-[7px]">
             <li

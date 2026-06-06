@@ -3,9 +3,12 @@
 // kuratierten Notes. `content: string | null` → bei null NICHT rendern. Mono-Kicker
 // „Hinweis" + type-spezifischer Suffix. surface-2 + Haarlinie, KEIN Links-Streifen.
 // Du-Ansprache, „Hinweis statt Nachweis"-Ton. Verändert NIE Status/Badges.
+// `flat` (Frontend 1.1): ohne Box (kein Rahmen/Hintergrund/horizontale Polsterung) –
+// flacher Hinweis-Absatz fuer die entschachtelte Empfehlung. Default = Box (Druck/Report).
 defineProps<{
   content: string | null
   type?: 'intent' | 'masking' | 'usage'
+  flat?: boolean
 }>()
 
 const SUFFIX = {
@@ -16,7 +19,7 @@ const SUFFIX = {
 </script>
 
 <template>
-  <div v-if="content" class="rounded border border-line bg-surface-2 px-4 py-[13px]">
+  <div v-if="content" :class="flat ? 'py-[13px]' : 'rounded border border-line bg-surface-2 px-4 py-[13px]'">
     <div class="mb-[5px] flex items-center gap-2 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">
       <span class="text-ink-soft">Hinweis</span>
       <span v-if="type">· {{ SUFFIX[type] }}</span>
