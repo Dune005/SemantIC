@@ -139,7 +139,8 @@ const imageUrl = ref<string | null>(null)
 const fileName = ref('')
 const fileMeta = ref('')
 const fileInputRef = ref<HTMLInputElement | null>(null)
-const isDragover = ref(false)
+const dragDepth = ref(0)
+const isDragover = computed(() => dragDepth.value > 0)
 
 // usage_form-Freeze (frontend-only, nie im API-Body) + Ergebnis-ViewModel
 const submittedUsageForm = ref<UsageForm | null>(null)
@@ -171,7 +172,7 @@ const QUALITY_STEPS = [0.85, 0.7, 0.55, 0.4]
 // --- Abgeleitet ------------------------------------------------------------
 const canSubmit = computed(() => !!declaredIntent.value && !!usageForm.value)
 const submitHint = computed(() => {
-  if (canSubmit.value) return 'Bereit – beim Start friert SemantIC die Verwendungsform ein.'
+  if (canSubmit.value) return 'Bereit – du kannst die Analyse starten.'
   if (!declaredIntent.value && !usageForm.value) return 'Wähl Haltung und Verwendungsform, dann kannst du starten.'
   if (!declaredIntent.value) return 'Es fehlt noch die Haltung.'
   return 'Es fehlt noch die Verwendungsform.'
@@ -196,8 +197,16 @@ function onFileChange(event: Event) {
   const file = (event.target as HTMLInputElement).files?.[0]
   if (file) void handleFile(file)
 }
+// Drag-Tiefenzähler: dragenter/dragleave feuern auch beim Wechsel über Kind-Elemente
+// der Dropzone – der Zähler verhindert das Flackern (is-dragover bleibt, solange Tiefe > 0).
+function onDragEnter() {
+  dragDepth.value++
+}
+function onDragLeave() {
+  if (dragDepth.value > 0) dragDepth.value--
+}
 function onDrop(event: DragEvent) {
-  isDragover.value = false
+  dragDepth.value = 0
   const file = event.dataTransfer?.files?.[0]
   if (file) void handleFile(file)
 }
@@ -510,8 +519,9 @@ function exportPdf() {
           @click="triggerPick"
           @keydown.enter.prevent="triggerPick"
           @keydown.space.prevent="triggerPick"
-          @dragover.prevent="isDragover = true"
-          @dragleave="isDragover = false"
+          @dragenter.prevent="onDragEnter"
+          @dragover.prevent
+          @dragleave.prevent="onDragLeave"
           @drop.prevent="onDrop"
         >
           <div class="dz-default">
@@ -560,8 +570,7 @@ function exportPdf() {
             <span class="preview__name">{{ fileName }}</span>
             <span class="preview__dims">{{ fileMeta }}</span>
             <div class="preview__actions">
-              <Button variant="ghost" size="sm" @click="removeImage">Bild entfernen</Button>
-              <Button variant="secondary" size="sm" @click="triggerPick">Anderes Bild</Button>
+              <Button variant="secondary" size="sm" @click="removeImage">Bild entfernen</Button>
             </div>
           </div>
         </div>
@@ -573,10 +582,6 @@ function exportPdf() {
             <p class="help lead">
               Zwei kurze Angaben, damit die Empfehlung zu deinem Einsatz passt. Beide sind nötig, bevor du
               starten kannst.
-            </p>
-            <p class="frame-hint">
-              Haltung rahmt die Empfehlung, Verwendungsform ordnet die Strenge ein – beide sind
-              Empfehlungs-Einordnung, kein Analyse-Input, und ändern Befund oder Status nicht.
             </p>
           </div>
 
@@ -605,7 +610,7 @@ function exportPdf() {
           />
 
           <div class="optionals">
-            <details class="opt">
+            <details class="opt" open>
               <summary>
                 <svg class="opt__chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M6 4l4 4-4 4" /></svg>
                 Nutzungskontext hinzufügen
@@ -613,10 +618,7 @@ function exportPdf() {
               </summary>
               <div class="opt__body">
                 <label class="opt__field-lab" for="ctxField">Nutzungskontext</label>
-                <p class="opt__field-help">
-                  Wo und wie soll das Bild erscheinen? Ein paar Sätze genügen – das schärft besonders die
-                  Bias-Einschätzung.
-                </p>
+                <p class="opt__field-help">Bitte beschreibe kurz in 1 bis 2 Sätzen.</p>
                 <textarea
                   id="ctxField"
                   v-model="contextText"
@@ -625,7 +627,7 @@ function exportPdf() {
                   placeholder="z. B. Aufmacher zu einem Artikel über Pflegeberufe in einer Tageszeitung"
                 />
                 <span class="charcount">{{ contextText.length }} / 2000</span>
-                <p v-if="!contextText" class="opt__emptyhint">Ohne Nutzungskontext bleibt die Bias-Einschätzung allgemeiner.</p>
+                <p v-if="!contextText" class="opt__emptyhint">Ohne Nutzungskontext bleibt die Einschätzung allgemeiner.</p>
               </div>
             </details>
 
@@ -637,7 +639,7 @@ function exportPdf() {
               </summary>
               <div class="opt__body">
                 <label class="opt__field-lab" for="promptField">Original-Prompt</label>
-                <p class="opt__field-help">Der Text, mit dem das Bild generiert wurde. Hilft, die Bias-Achsen genauer abzuleiten.</p>
+                <p class="opt__field-help">Der Text, mit dem das Bild generiert wurde.</p>
                 <textarea
                   id="promptField"
                   v-model="promptText"
@@ -655,10 +657,6 @@ function exportPdf() {
               <Button type="submit" variant="primary" :disabled="!canSubmit">Analyse starten</Button>
               <p class="submit-hint" :class="{ 'submit-hint--blocked': !canSubmit }">{{ submitHint }}</p>
             </div>
-            <p class="help-sm">
-              Beim Start friert SemantIC die Verwendungsform ein.
-              <span class="mono-note">usage_form bleibt frontend-only – nie im API-Body.</span>
-            </p>
           </div>
         </form>
       </div>
@@ -719,7 +717,7 @@ function exportPdf() {
 <style scoped>
 .page-head {
   max-width: 760px;
-  margin: 0 auto 8px;
+  margin: 32px auto 8px;
 }
 .page-kicker {
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
@@ -747,7 +745,7 @@ function exportPdf() {
 /* Tool-Stage */
 .stage {
   max-width: 760px;
-  margin-inline: auto;
+  margin: 0 auto 56px;
   background: var(--surface);
   border: 1.5px solid var(--ink);
   border-radius: var(--r);
@@ -791,11 +789,6 @@ function exportPdf() {
   color: var(--muted);
   line-height: 1.55;
 }
-.help-sm {
-  font-size: 12px;
-  color: var(--muted);
-  line-height: 1.5;
-}
 .mono-note {
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
   font-size: 11px;
@@ -826,6 +819,7 @@ function exportPdf() {
   margin-top: 6px;
 }
 .dropzone {
+  position: relative;
   border: 1.5px dashed var(--line-strong);
   border-radius: var(--r);
   background: var(--canvas);
@@ -879,17 +873,37 @@ function exportPdf() {
   letter-spacing: 0.06em;
   color: var(--subtle);
 }
+/* Drag-Hinweis als Overlay: blendet OHNE Layout-Shift ueber dem ruhenden Inhalt
+   ein. Feld bleibt konstant gross; nur Opacity + Rahmen/Flaeche signalisieren den
+   Drag. Doppelkodierung (Farbe + Wort), wie im uebrigen UI. */
 .dz-dragmsg {
-  display: none;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r);
+  background: rgba(232, 233, 226, 0.96);
   font-weight: 600;
   font-size: 16px;
   color: var(--ink);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
 }
+/* Waehrend des Drags keine Pointer-Events auf dem ruhenden Inhalt -> nur die
+   Dropzone selbst feuert dragenter/leave (Ergaenzung zum dragDepth-Zaehler). */
 .dropzone.is-dragover .dz-default {
-  display: none;
+  pointer-events: none;
 }
 .dropzone.is-dragover .dz-dragmsg {
-  display: block;
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dropzone,
+  .dz-dragmsg {
+    transition: none;
+  }
 }
 
 /* Validating */
@@ -1013,17 +1027,6 @@ function exportPdf() {
 .collect-block__head .lead {
   margin-top: 6px;
 }
-.frame-hint {
-  margin-top: 12px;
-  padding: 11px 14px;
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  background: var(--surface-2);
-  font-size: 12.5px;
-  color: var(--ink-soft);
-  line-height: 1.55;
-}
-
 /* Optionale Felder */
 .optionals {
   margin-top: 26px;

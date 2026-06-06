@@ -25,12 +25,8 @@ import {
   MASKING_VERDICT_LABELS,
   MASKING_TO_SEVERITY,
   READING_MODE_DESC,
-  DOMINANT_ERROR_LABELS,
-  INPUT_COMPLETENESS_LABELS,
   NORMATIVE_VERDICT_LABELS,
   NORMATIVE_ASPECT_LABELS,
-  HINT_SEVERITY_TO_SEVERITY,
-  HINT_SEVERITY_LABEL,
 } from '~/lib/severity'
 import type { AnalysisViewModel, UsageForm } from '~/types/analysis'
 
@@ -56,13 +52,6 @@ const heroSeverity = computed(() => severityFor(props.vm.integrityScore))
 const headlineMain = computed(() => props.vm.overallVerdict.headline.replace(/\.$/, ''))
 const headlineHasDot = computed(() => props.vm.overallVerdict.headline.endsWith('.'))
 
-// Mono-Pre-Comment (kein LLM-Text), aus Status + Leseart konstruiert. Bewusst KEIN
-// debug.*-Feld (Laufzeit) – DoD §7.2: debug.* nicht in der Hauptansicht.
-const PRE_FLAG = { green: '--ok', yellow: '--review', red: '--reject' } as const
-const preComment = computed(
-  () => `// integrity ${PRE_FLAG[status.value]} · reading ${props.vm.readingMode.code} · 3 dimensions`,
-)
-
 // Top-Strip-Marker: Severity-Echo der drei Dimensions-Status (aus Pipeline-Status).
 const dimMarkers = computed(() =>
   (['physics', 'semantics', 'bias'] as const).map((d) => STATUS_TO_SEVERITY[props.vm.dimensions[d].status]),
@@ -74,11 +63,6 @@ const maskingSign = computed(() =>
 )
 const maskingSeverity = computed(() => MASKING_TO_SEVERITY[props.vm.maskingVerdict])
 const maskingWord = computed(() => MASKING_VERDICT_LABELS[props.vm.maskingVerdict])
-
-const dominantErrorLabel = computed(() =>
-  props.vm.dominantErrorType !== 'none' ? DOMINANT_ERROR_LABELS[props.vm.dominantErrorType] : null,
-)
-const firstHint = computed(() => props.vm.userHints[0] ?? null)
 
 const dims = computed(() =>
   (['physics', 'semantics', 'bias'] as const).map((d) => ({
@@ -125,7 +109,6 @@ const hasDeepDetails = computed(
 
     <!-- Verdict-Display: Gesamturteil (Status-Quelle = overallVerdict.status) -->
     <div class="verdict-display">
-      <div class="pre">{{ preComment }}</div>
       <div class="verdict-label">
         <span class="status-dot" :class="SEV_DOT[statusSeverity]" aria-hidden="true" />
         Gesamturteil
@@ -185,21 +168,6 @@ const hasDeepDetails = computed(
             <span class="prompt">&gt;</span><span class="key">reading</span>
             <span class="val">{{ vm.readingMode.label }} ({{ vm.readingMode.code }})</span>
           </div>
-          <div v-if="dominantErrorLabel" class="l">
-            <span class="prompt">&gt;</span><span class="key">error-type</span>
-            <span class="val">{{ dominantErrorLabel }}</span>
-          </div>
-          <div v-if="firstHint" class="l finding">
-            <span class="prompt">&gt;</span><span class="key">finding</span>
-            <span class="val">{{ firstHint.text }}
-              <span class="tag" :class="HINT_SEVERITY_TO_SEVERITY[firstHint.severity]">[{{ HINT_SEVERITY_LABEL[firstHint.severity] }}]</span>
-            </span>
-          </div>
-        </div>
-
-        <div class="context-note" :class="{ 'is-warn': vm.hasContextWarning }">
-          <span class="ico" aria-hidden="true">i</span>
-          <span>{{ INPUT_COMPLETENESS_LABELS[vm.inputCompleteness] }}.</span>
         </div>
       </div>
     </div>
@@ -333,13 +301,6 @@ const hasDeepDetails = computed(
 .verdict-display {
   padding: 30px 32px 26px;
   border-bottom: 1.5px solid var(--ink);
-}
-.verdict-display .pre {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  color: var(--muted);
-  margin-bottom: 14px;
 }
 .verdict-label {
   display: flex;
@@ -535,14 +496,6 @@ const hasDeepDetails = computed(
   font-weight: 600;
   color: var(--ink);
 }
-.lines .l.finding {
-  align-items: start;
-}
-.lines .l.finding .val {
-  font-weight: 500;
-  color: var(--ink-soft);
-  line-height: 1.55;
-}
 .lines .tag {
   display: inline-block;
   margin-left: 8px;
@@ -559,30 +512,6 @@ const hasDeepDetails = computed(
 .lines .tag.neutral {
   color: var(--muted);
 }
-.context-note {
-  display: flex;
-  align-items: baseline;
-  gap: 9px;
-  margin-top: 14px;
-  padding: 11px 14px;
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  background: var(--canvas);
-  font-size: 13px;
-  color: var(--muted);
-  line-height: 1.5;
-}
-.context-note.is-warn {
-  border-color: var(--warn);
-  color: var(--ink-soft);
-}
-.context-note .ico {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-weight: 600;
-  color: var(--ink-soft);
-  font-size: 12px;
-}
-
 /* Dim-Strip */
 .dims {
   display: grid;
