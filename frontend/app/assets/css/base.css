@@ -1,0 +1,170 @@
+/* ============================================================ */
+/* SemantIC · Basis-Stylesheet · frontend 1.0                    */
+/* ------------------------------------------------------------ */
+/* Reset + Basistypografie + Fokus-States + Motion-Praeferenzen */
+/* + .mono-Utility + Layout-Variablen.                          */
+/*                                                              */
+/* tokens.css wird separat ueber das zentrale CSS-Entry geladen */
+/* (nuxt.config css: [tailwind.css, tokens.css, base.css]) –    */
+/* daher hier KEIN @import "./tokens.css" mehr (Port-Hinweis).  */
+/* ============================================================ */
+
+/* ------------------------------------------------------------ */
+/* LAYOUT-VARIABLEN (Ergaenzung lt. layout-spec.md)             */
+/* ------------------------------------------------------------ */
+:root {
+  --container:      1100px;                 /* Standard-Inhaltsbreite */
+  --container-text: 720px;                  /* Lesespalte (Langtext) */
+  --gutter:         clamp(20px, 5vw, 48px); /* seitliches Container-Padding */
+  --header-h:       64px;                   /* feste Header-Hoehe (Desktop) */
+}
+@media (max-width: 719px) {
+  :root { --header-h: 56px; }               /* Mobile */
+}
+
+/* ------------------------------------------------------------ */
+/* RESET                                                         */
+/* ------------------------------------------------------------ */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-size-adjust: 100%;
+}
+
+/* ------------------------------------------------------------ */
+/* BODY / BASISTYPOGRAFIE                                        */
+/* Seitenhintergrund = --page-bg (hinter den Karten).           */
+/* tnum global: tabellarische Ziffern, damit Scores nicht        */
+/* springen.                                                     */
+/* ------------------------------------------------------------ */
+body {
+  background: var(--page-bg);
+  color: var(--ink);
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  font-feature-settings: "tnum";
+}
+
+/* ------------------------------------------------------------ */
+/* TYPO-GRUNDELEMENTE                                            */
+/* Detaillierte Rollen-Skala: siehe design-system.md.           */
+/* Hier nur vernuenftige Defaults, die Komponenten ueberschreiben.*/
+/* ------------------------------------------------------------ */
+h1, h2, h3, h4 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: var(--ink);
+}
+h1 { font-size: 26px; }
+h2 { font-size: 20px; }
+h3 { font-size: 16px; }
+h4 { font-size: 14px; }
+
+p { color: var(--ink); }
+
+a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--line-strong);
+  transition: text-decoration-color 0.16s ease;
+}
+a:hover { text-decoration-color: var(--ink); }
+
+strong, b { font-weight: 600; }
+
+img,
+svg,
+picture {
+  max-width: 100%;
+  display: block;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+/* ------------------------------------------------------------ */
+/* .mono-UTILITY                                                 */
+/* IBM Plex Mono mit tabellarischen Ziffern - fuer Daten,       */
+/* Scores, Tags, Identifier, Schluessel/Werte.                  */
+/* ------------------------------------------------------------ */
+.mono {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-feature-settings: "tnum";
+}
+
+/* ------------------------------------------------------------ */
+/* FOKUS-STATES (sichtbar, tastaturbedienbar)                   */
+/* :focus-visible statt :focus - kein Ring bei Mausklick.       */
+/* Ring in --ink, deutlich, mit Offset auf jedem Grund lesbar.  */
+/* ------------------------------------------------------------ */
+:focus { outline: none; }
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Auf farbigen Severity-Flaechen (z. B. crit-Stat-Tag) braucht  */
+/* der Ring zusaetzlichen Abstand, damit er nicht verschwimmt.   */
+.severity-surface :focus-visible,
+[data-severity] :focus-visible {
+  outline-offset: 3px;
+}
+
+/* ------------------------------------------------------------ */
+/* MOTION - "ruhig, nichts Nervoeses"                           */
+/* Animationen sind dezent und kurz. Bei prefers-reduced-motion */
+/* alles auf praktisch null - kein Aufdecken, kein Marker-Slide. */
+/* ------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ------------------------------------------------------------ */
+/* DRUCK - PDF-Export-Grundlage (@media print)                  */
+/* Karten flach, Seitenhintergrund weiss, Ampel-Farben behalten.*/
+/* Detail-Druckansicht baut die ReportPrintView selbst aus.     */
+/* ------------------------------------------------------------ */
+@media print {
+  body { background: #ffffff; }
+  .no-print { display: none !important; }
+  a { text-decoration-color: var(--line-strong); }
+
+  /* Severity-Ampel + Score-Farben muessen im Druck farbig bleiben (die Aussage
+     traegt zusaetzlich das Wort – Doppelkodierung, S/W-robust). */
+  *,
+  *::before,
+  *::after {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Seitenraender fuer den PDF-Export (report-print.md §3). */
+  @page { margin: 16mm 14mm; }
+}

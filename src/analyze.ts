@@ -589,6 +589,12 @@ export interface SemanticAnalysisOptions {
   thinkingLevel?: ThinkingLevel
   mediaResolution?: MediaResolution
   lang?: 'de' | 'en'
+  // Etappe 6 (additiv): Abbruch-/Timeout-Durchgriff. Wird an die vier AI-SDK-Calls
+  // (Analyse + Aesthetik, je generateText/generateObject) als abortSignal gereicht.
+  // Die parallelen Modal-Nebencalls (runModalAesthetic/runClipAlignment) behalten
+  // bewusst ihre eigenen Controller – sie sind nicht token-teuer (Kostenschutz-Kern
+  // liegt bei den AI-SDK-Calls); ein Durchreichen waere ein groesserer Eingriff.
+  signal?: AbortSignal
 }
 
 // Format: <enum-id> (<short gloss>). Das LLM muss den exakten Enum-Wert
@@ -910,9 +916,19 @@ export async function runSemanticAnalysis(
   const intentLabel = lang === 'en'
     ? DECLARED_INTENT_LABELS_EN[declaredIntent]
     : DECLARED_INTENT_LABELS_DE[declaredIntent]
+  // Injection-Haertung (Etappe 6): User-Freitext (prompt/context) in benannte
+  // XML-Tags wrappen + escapen, damit ein eingeschleustes </…> nicht aus der
+  // Datenzone ausbricht und als Instruktion gelesen wird. intentLabel ist eine
+  // kontrollierte Enum-Map (kein Freitext) → nicht escapen.
+  const escapeXml = (s: string): string =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  // Nullish-Semantik wie zuvor (Codex-Review A): leerer String bleibt leer,
+  // nur null/undefined -> Platzhalter (keine Verhaltensaenderung ggü. dem alten `??`).
+  const promptField = options?.prompt != null ? escapeXml(options.prompt) : (lang === 'en' ? 'not provided' : 'nicht vorhanden')
+  const contextField = options?.context != null ? escapeXml(options.context) : (lang === 'en' ? 'not provided' : 'nicht vorhanden')
   const userText = lang === 'en'
-    ? `Original prompt: ${options?.prompt ?? 'not provided'}\nUsage context: ${options?.context ?? 'not provided'}\nDeclared editorial intent: ${intentLabel}`
-    : `Original-Prompt: ${options?.prompt ?? 'nicht vorhanden'}\nNutzungskontext: ${options?.context ?? 'nicht vorhanden'}\nErklärte redaktionelle Haltung: ${intentLabel}`
+    ? `Original prompt:\n<original_prompt>${promptField}</original_prompt>\nUsage context:\n<usage_context>${contextField}</usage_context>\nDeclared editorial intent: ${intentLabel}`
+    : `Original-Prompt:\n<original_prompt>${promptField}</original_prompt>\nNutzungskontext:\n<usage_context>${contextField}</usage_context>\nErklärte redaktionelle Haltung: ${intentLabel}`
   const imageBuffer = Buffer.from(imageBase64, 'base64')
   const analysisResolved = resolveModel(options?.model)
   const aestheticResolved = resolveModel(DEFAULT_AESTHETIC_MODEL)
@@ -948,8 +964,16 @@ export async function runSemanticAnalysis(
     try {
       return schema.parse(JSON.parse(raw))
     } catch (e) {
-      console.error(`\n[${parseLabel}] JSON-Parsing fehlgeschlagen. Roher Text (erste 500 Zeichen):`)
-      console.error(text.slice(0, 500))
+      // Log-Filter (Etappe 6): rohen LLM-Text NICHT in Produktion loggen
+      // (Server-Spec: kein LLM-Rohtext im Log). Lokal/CLI/web bleibt er fuers
+      // R-Reihen-Debugging sichtbar; in Prod nur per explizitem Opt-in.
+      const rawLogAllowed = process.env.NODE_ENV !== 'production' || process.env.SEMANTIC_DEBUG_RAW === '1'
+      if (rawLogAllowed) {
+        console.error(`\n[${parseLabel}] JSON-Parsing fehlgeschlagen. Roher Text (erste 500 Zeichen):`)
+        console.error(text.slice(0, 500))
+      } else {
+        console.error(`[${parseLabel}] JSON-Parsing fehlgeschlagen (Rohtext unterdrueckt, ${text.length} Zeichen).`)
+      }
       throw e
     }
   }
@@ -962,6 +986,7 @@ export async function runSemanticAnalysis(
         model: analysisResolved.model,
         system: analysisPrompt + skeleton + suffix,
         ...analysisGenerationSettings,
+        abortSignal: options?.signal,
         messages: [{
           role: 'user',
           content: [
@@ -976,6 +1001,7 @@ export async function runSemanticAnalysis(
       schema: AnalysisSchema,
       system: analysisPrompt,
       ...analysisGenerationSettings,
+      abortSignal: options?.signal,
       messages: [{
         role: 'user',
         content: [
@@ -992,6 +1018,7 @@ export async function runSemanticAnalysis(
         model: aestheticResolved.model,
         system: AESTHETIC_PROMPT + AESTHETIC_JSON_SKELETON + JSON_SUFFIX,
         ...aestheticGenerationSettings,
+        abortSignal: options?.signal,
         messages: [{
           role: 'user',
           content: [
@@ -1005,6 +1032,7 @@ export async function runSemanticAnalysis(
       schema: AestheticSchema,
       system: AESTHETIC_PROMPT,
       ...aestheticGenerationSettings,
+      abortSignal: options?.signal,
       messages: [{
         role: 'user',
         content: [

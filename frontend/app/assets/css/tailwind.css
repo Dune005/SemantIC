@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Variante-C-Design-System wird ueber das nuxt.config css-Array geladen
+   (Reihenfolge: tailwind.css -> tokens.css -> base.css), damit der
+   Tailwind-Preflight zuerst greift und base.css ihn mit Variante C
+   ueberschreibt. tokens.css ist die einzige Token-Quelle. */
