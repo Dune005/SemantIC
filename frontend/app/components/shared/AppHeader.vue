@@ -35,7 +35,9 @@ function closeMenu() {
     <div class="app-header__inner">
       <NuxtLink to="/" class="brand" aria-label="SemantIC – zur Startseite">
         <span class="brand__mark">SemantIC</span>
-        <span class="brand__kicker">AI Visual Integrity Validator</span>
+        <!-- Wortlaut folgt dem Hero-Kicker (F4-Entscheid: «Validator» abgeschwächt);
+             finale Wahl trifft der Bearbeiter im Browser-Review. -->
+        <span class="brand__kicker">AI Visual Integrity Check</span>
       </NuxtLink>
 
       <nav class="nav" aria-label="Hauptnavigation">

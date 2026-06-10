@@ -58,8 +58,9 @@ function onRedeem() {
         <h3>Projekt</h3>
         <p>
           SemantIC ist das Lehrprojekt der Bachelorarbeit „Visual Bias im KI-generierten
-          Bild" (Multimedia-Production, FH Graubünden). Es ist ein Validator für
-          Content-Profis, kein Fake-Detektor.
+          Bild" (Multimedia-Production, FH Graubünden). Es ist ein Prüfassistent für
+          Content-Profis, kein Fake-Detektor – ein Forschungsprototyp, der empirisch
+          weiterentwickelt wird.
         </p>
         <nav class="foot-links" aria-label="Footer-Links">
           <NuxtLink to="/how-it-works">Funktionsweise</NuxtLink>
