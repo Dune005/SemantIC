@@ -5,9 +5,11 @@
 // layouts/default.vue via route.path).
 //
 // Der Hero-Anker ist eine rein ILLUSTRATIVE, seitenlokale Komposition (zwei Marker
-// auf einer Skala + Einmal-Animation). Werte (86/64/+22) sind statisch hartkodiert,
+// auf einer Skala + Einmal-Animation). Werte (86/64) sind statisch hartkodiert,
 // KEIN AnalysisViewModel und NICHT die generische ScoreBar (die kennt nur einen
-// value-Marker) – landing-spec §2/§8, Prototyp-Goldstandard.
+// value-Marker) – landing-spec §2/§8, Prototyp-Goldstandard. Der frühere
+// Differenz-Score (+22 «Maskierungs-Score») wurde entfernt (F1-Rückbau 2026-06-10):
+// Die Spannung Ästhetik↔Integrität wird gezeigt, aber nicht als Kennzahl behauptet.
 import Button from '~/components/ui/Button.vue'
 import Card from '~/components/ui/Card.vue'
 
@@ -51,7 +53,7 @@ useHead({
       <div
         class="anchor anim"
         role="img"
-        aria-label="Schematische Befund-Anzeige: die Ästhetik liegt bei 86 von 100, die inhaltliche Integrität bei 64 von 100. Die Differenz von 22 Punkten ist der Maskierungs-Score, Verdikt: mittlere Tendenz."
+        aria-label="Schematische Befund-Anzeige: die Ästhetik liegt bei 86 von 100, die inhaltliche Integrität bei 64 von 100. Das Bild wirkt stärker, als es inhaltlich hält – in dieser Lücke können Schwächen unbemerkt bleiben."
       >
         <div class="anchor__strip" aria-hidden="true">
           <span>SemantIC · Befund</span>
@@ -88,14 +90,14 @@ useHead({
           </div>
 
           <div class="anchor__result">
-            <span class="label">Maskierungs-Score · Δ</span>
+            <span class="label">Maskierungs-Hinweis</span>
             <span class="anchor__delta">
-              <span class="num">+22</span>
-              <span class="anchor__badge">mittlere Tendenz</span>
+              <span class="anchor__badge">Wirkung über Substanz</span>
             </span>
           </div>
           <p class="anchor__caption">
-            Sieht besser aus, als es ist – die Oberfläche zieht den Blick von den Schwächen weg.
+            Sieht besser aus, als es hält – genau in dieser Lücke können Schwächen unbemerkt
+            bleiben. SemantIC zeigt beide Seiten getrennt und markiert, was du prüfen solltest.
           </p>
         </div>
       </div>
@@ -166,18 +168,19 @@ useHead({
     </div>
   </section>
 
-  <!-- ================= SEKTION 3 – Der Maskierungs-Score ================= -->
+  <!-- ================= SEKTION 3 – Die Maskierung ================= -->
   <section class="section section--surface" aria-labelledby="s3-head">
     <div class="section__inner section__inner--text">
-      <p class="eyebrow">Die Differenz</p>
+      <p class="eyebrow">Die Maskierung</p>
       <h2 id="s3-head" class="section__head">Die Lücke zwischen schön und stimmig.</h2>
       <p class="section__body">
-        Neben den drei Dimensionen rechnet SemantIC eine eigene Kennzahl aus: den
-        Maskierungs-Score. Er ist die Differenz zwischen der visuellen Wirkung eines
-        Bildes und seiner inhaltlichen Integrität. Ein hoher Wert bedeutet: Das Bild
-        sieht besser aus, als es ist – die Oberfläche zieht den Blick weg von den
-        Schwächen. Diese Differenz steht nirgends sonst. Sie ist der Kern dessen, was
-        SemantIC von einem reinen Qualitäts-Check unterscheidet.
+        SemantIC bewertet zwei Dinge strikt getrennt: wie ein Bild <em>wirkt</em> (Ästhetik)
+        und was es inhaltlich <em>hält</em> (Integrität). So wird sichtbar, wenn ein Bild
+        besser aussieht, als es ist – genau dort setzt die Maskierung an: Die perfekte
+        Oberfläche kann Fehler überdecken. Diese Lücke lässt sich nicht seriös als einzelne
+        Zahl messen – das haben wir in der eigenen Validierung geprüft und deshalb bewusst
+        darauf verzichtet. Stattdessen markiert der Befund konkret die Stellen, an denen
+        die Ästhetik einen Befund überdecken könnte – nachprüfbar direkt am Bild.
       </p>
     </div>
   </section>
@@ -509,14 +512,6 @@ useHead({
   display: flex;
   align-items: baseline;
   gap: 10px;
-}
-.anchor__delta .num {
-  font-family: 'IBM Plex Sans', system-ui, sans-serif;
-  font-weight: 700;
-  font-size: 30px;
-  letter-spacing: -0.02em;
-  line-height: 1;
-  color: var(--ink);
 }
 .anchor__badge {
   font-family: 'IBM Plex Mono', ui-monospace, monospace;

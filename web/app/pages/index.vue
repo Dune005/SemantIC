@@ -14,7 +14,6 @@ import type { ContextReviewHint } from '@pipeline/context-hints'
 import {
   buildAnalysisViewModel,
   type DimensionStatus,
-  type MaskingVerdict,
   type NormativeMaskingAspect,
   type NormativeMaskingVerdict,
   type RiskLevel,
@@ -274,13 +273,6 @@ const dimensionDescriptions: Record<'physics' | 'semantics' | 'bias', string> = 
   bias: 'Stereotype, Rollenbesetzung, Repräsentation',
 }
 
-const verdictLabels: Record<MaskingVerdict, string> = {
-  none: 'keine Maskierung erkannt',
-  low: 'geringe Tendenz',
-  medium: 'mittlere Tendenz',
-  high: 'starke Tendenz',
-}
-
 const normativeVerdictLabels: Record<NormativeMaskingVerdict, string> = {
   not_applicable: 'nicht anwendbar',
   low: 'gering',
@@ -337,10 +329,6 @@ function severityLabel(severity: ContextReviewHint['severity']) {
 
 function riskBadgeVariant(risk: RiskLevel | 'none') {
   return risk === 'high' ? 'danger' : risk === 'medium' ? 'warning' : risk === 'low' ? 'success' : 'secondary'
-}
-
-function verdictBadgeVariant(verdict: MaskingVerdict) {
-  return verdict === 'high' ? 'danger' : verdict === 'medium' ? 'warning' : verdict === 'low' ? 'secondary' : 'success'
 }
 
 const VERDICT_RING_CLASS: Record<DimensionStatus, string> = {
@@ -714,18 +702,19 @@ const HINT_SEVERITY_TEXT_CLASS: Record<'high' | 'medium' | 'low', string> = {
                       <button type="button" class="cursor-help underline decoration-dotted underline-offset-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded">Maskierung</button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      Tendenzhinweis: deckt die Ästhetik mögliche Probleme zu?
-                      Aus Codebook-Evidenz und kombinierter Ästhetik abgeleitet — keine zuverlässige Messung.
+                      Beschreibender Hinweis: Stellen, an denen ein ästhetischer Treiber
+                      einen Befund überdecken könnte. Deterministisch komponiert — keine Messung.
                     </TooltipContent>
                   </Tooltip>
                   <Info class="h-4 w-4 text-slate-400" aria-hidden="true" />
                 </CardTitle>
-                <CardDescription>Tendenz, kein Nachweis</CardDescription>
+                <CardDescription>Hinweis, kein Nachweis</CardDescription>
               </CardHeader>
               <CardContent>
-                <Badge :variant="verdictBadgeVariant(view.maskingVerdict)">
-                  {{ verdictLabels[view.maskingVerdict] }}
-                </Badge>
+                <p v-if="view.maskingReviewNote" class="text-sm leading-relaxed">
+                  {{ view.maskingReviewNote.text }}
+                </p>
+                <Badge v-else variant="secondary">kein Maskierungs-Hinweis</Badge>
               </CardContent>
             </Card>
 

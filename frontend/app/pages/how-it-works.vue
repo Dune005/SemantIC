@@ -130,8 +130,9 @@ useHead({
           <p>
             Zuerst siehst du das Gesamturteil als Ampel – unauffällig, auffällig
             oder kritisch – mit einer klaren Empfehlung. Darunter die drei
-            Dimensionen, der Maskierungs-Score und die Leseart. Jeden einzelnen
-            Befund kannst du aufklappen, bis hin zu den Rohdaten.
+            Dimensionen, die Leseart und, wo das Modell Überdeckungs-Stellen
+            markiert hat, ein Maskierungs-Hinweis. Jeden einzelnen Befund kannst
+            du aufklappen, bis hin zu den Rohdaten.
           </p>
         </Card>
       </div>
@@ -217,26 +218,27 @@ useHead({
     </div>
   </section>
 
-  <!-- ================= 4 · MASKIERUNGS-SCORE ================= -->
+  <!-- ================= 4 · MASKIERUNGS-CHECK ================= -->
   <section class="section" aria-labelledby="s4-title">
     <div class="page page--text">
-      <p class="section__index">04 · Der Maskierungs-Score</p>
-      <h2 id="s4-title">Die Kennzahl, die nur SemantIC hat.</h2>
+      <p class="section__index">04 · Der Maskierungs-Check</p>
+      <h2 id="s4-title">Wenn die Oberfläche stärker ist als der Inhalt.</h2>
       <div class="section__body">
         <p>
-          SemantIC bewertet zwei Dinge getrennt: wie gut ein Bild aussieht (die
-          Ästhetik) und wie gut es inhaltlich hält (die Integrität). Der
-          Maskierungs-Score ist die Differenz aus beiden. Liegt die Ästhetik
-          deutlich über der Integrität, ist der Maskierungs-Score hoch – das Bild
-          wirkt überzeugender, als es eigentlich ist. Liegen beide nah beieinander,
-          gibt es wenig zu maskieren.
+          SemantIC bewertet zwei Dinge strikt getrennt: wie gut ein Bild aussieht
+          (die Ästhetik) und wie gut es inhaltlich hält (die Integrität). Liegt
+          die Wirkung deutlich über der Substanz, ist das der Nährboden für
+          Maskierung: Die perfekte Oberfläche kann Fehler überdecken, bevor du
+          sie überhaupt bemerkst.
         </p>
         <p>
-          Diese Differenz ist die direkte Übersetzung der Forschungsthese in eine
-          Zahl. Sie macht etwas messbar, das sonst Bauchgefühl bleibt: das Gefälle
-          zwischen dem, was ein Bild verspricht, und dem, was es einlöst. SemantIC
-          weist diese Tendenz eingeordnet aus – von „keine Maskierung erkannt" über
-          „geringe" und „mittlere" bis „starke Tendenz".
+          Eine einzelne Maskierungs-Kennzahl findest du bei SemantIC bewusst
+          nicht. Wir haben in der eigenen Validierung mehrere Messansätze geprüft
+          – keiner hat der menschlichen Einschätzung standgehalten. Statt einer
+          Scheinpräzision markiert der Befund konkret die Stellen, an denen ein
+          ästhetischer Treiber einen Befund überdecken könnte, und benennt die
+          Leseart, über die das Bild seine Wirkung erzeugt. Das ist am Bild
+          nachprüfbar – eine Zahl wäre es nicht.
         </p>
       </div>
 
@@ -247,7 +249,7 @@ useHead({
         padding="none"
         class="card masking-graphic"
         role="img"
-        aria-label="Beispiel: Ästhetik 86 von 100, Integrität 64 von 100. Die Differenz von 22 Punkten ergibt eine mittlere Maskierungs-Tendenz."
+        aria-label="Beispiel: Ästhetik 86 von 100, Integrität 64 von 100. Das Bild wirkt stärker, als es inhaltlich hält – solche Lücken markiert SemantIC mit einem beschreibenden Hinweis."
       >
         <p class="card__kicker">Beispiel</p>
         <div class="gauge">
@@ -261,9 +263,8 @@ useHead({
           <span class="gauge__val">64 / 100</span>
         </div>
         <div class="masking-delta">
-          <span class="mono">Maskierungs-Score · Δ</span>
-          <span class="masking-delta__num">+22</span>
-          <span class="badge badge--warn">mittlere Tendenz</span>
+          <span class="mono">Maskierungs-Hinweis</span>
+          <span class="badge badge--warn">Wirkung über Substanz</span>
         </div>
         <p class="figure-note">Schematische Darstellung – endgültige Grafik im Bau.</p>
       </Card>
@@ -797,13 +798,6 @@ useHead({
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--muted);
-}
-.masking-delta__num {
-  font-family: 'IBM Plex Sans', system-ui, sans-serif;
-  font-weight: 700;
-  font-size: 26px;
-  letter-spacing: -0.02em;
-  color: var(--ink);
 }
 
 /* ---- Lesearten-Tabelle ---- */

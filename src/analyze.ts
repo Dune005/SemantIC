@@ -7,7 +7,8 @@ import { AestheticSchema, type AestheticOutput } from './schemas/aesthetic.js'
 import { ANALYSIS_PROMPT } from './prompts/analysis.js'
 import { ANALYSIS_PROMPT_EN } from './prompts/analysis.en.js'
 import { AESTHETIC_PROMPT } from './prompts/aesthetic.js'
-import { computeIntegrityScore, computeMaskingScore, deriveMaskingVerdict, type MaskingVerdict } from './scoring.js'
+import { computeIntegrityScore } from './scoring.js'
+import { composeMaskingReviewNote, type MaskingReviewNote } from './masking-note.js'
 import { deriveContextReviewHints, type ContextReviewHint } from './context-hints.js'
 import { runModalAesthetic, type ModalAestheticResult } from './aesthetic-modal.js'
 import {
@@ -53,9 +54,6 @@ export interface EvidenceFilterReport {
 export interface MaskingFilterReport {
   dropped_evidence_count: number
   drop_reasons: string[]
-  verdict_downgraded: boolean
-  verdict_before?: MaskingVerdict
-  verdict_after?: MaskingVerdict
 }
 
 export interface ConsistencyReconcileReport {
@@ -475,7 +473,6 @@ function applyMaskingEvidenceFilter(analysis: AnalysisOutput): MaskingFilterRepo
   const report: MaskingFilterReport = {
     dropped_evidence_count: 0,
     drop_reasons: [],
-    verdict_downgraded: false,
   }
 
   const flagByLink: Record<MaskingEvidence['codebook_link'], boolean> = {
@@ -516,15 +513,6 @@ function applyMaskingEvidenceFilter(analysis: AnalysisOutput): MaskingFilterRepo
 
   report.dropped_evidence_count = before.length - valid.length
   rl.masking_evidence = valid
-
-  const verdictBefore = rl.masking_verdict
-  if (valid.length === 0 && verdictBefore !== 'none') {
-    rl.masking_verdict = 'none'
-    rl.masking_reasoning = 'Verdict per Reconcile auf "none" gesetzt: keine validen Maskierungs-Evidenz-Einträge nach Filterung.'
-    report.verdict_downgraded = true
-    report.verdict_before = verdictBefore
-    report.verdict_after = 'none'
-  }
 
   return report
 }
@@ -714,8 +702,6 @@ Dein JSON-Output MUSS exakt diese Top-Level-Struktur und Feldnamen verwenden:
         "confidence": "low | medium | high"
       }
     ],
-    "masking_verdict": "none | low | medium | high",
-    "masking_reasoning": "...",
     "normative_masking": {
       "verdict": "low | medium | high | not_applicable",
       "aspects": ["beauty_ideal", "status_signaling"],
@@ -808,8 +794,6 @@ Your JSON output MUST use exactly this top-level structure and these field names
         "confidence": "low | medium | high"
       }
     ],
-    "masking_verdict": "none | low | medium | high",
-    "masking_reasoning": "...",
     "normative_masking": {
       "verdict": "low | medium | high | not_applicable",
       "aspects": ["beauty_ideal", "status_signaling"],
@@ -830,7 +814,7 @@ Your JSON output MUST use exactly this top-level structure and these field names
 
 IMPORTANT: use EXACTLY these field names. No renaming, no nesting under "phase1"/"phase2" etc.
 Enum values are English IDs as shown. Free-text fields (finding, observation, reasoning,
-reason_for_relevance, masked_issue, masking_reasoning, intent_assessment.reasoning, etc.)
+reason_for_relevance, masked_issue, intent_assessment.reasoning, etc.)
 must be written in German per the LANGUAGE POLICY.
 "declared_intent" must EXACTLY echo the user-declared value (see "Declared editorial intent"
 in the user input). When unspecified → "declared_intent"="unspecified" + "intent_alignment"="not_assessable".`
@@ -842,10 +826,11 @@ export interface SemanticAnalysisResult {
     integrity_score_local: number
     aesthetic_combined: number
     aesthetic_combined_source: 'sonnet+v25' | 'sonnet_only'
-    masking_score: number
-    masking_verdict: MaskingVerdict
   }
   context_review_hints: ContextReviewHint[]
+  // Beschreibender Maskierungs-Hinweis (deterministisch komponiert, siehe
+  // masking-note.ts) — ersetzt masking_score/masking_verdict (Rückbau 2026-06-10).
+  masking_review_note: MaskingReviewNote | null
   meta: {
     model: string
     aesthetic_model?: string
@@ -1096,9 +1081,6 @@ export async function runSemanticAnalysis(
   if (maskingReport.dropped_evidence_count > 0) {
     console.warn(`[R4.2 Masking-Filter] ${maskingReport.dropped_evidence_count} invalide masking_evidence-Einträge entfernt (${maskingReport.drop_reasons.join('; ')})`)
   }
-  if (maskingReport.verdict_downgraded) {
-    console.warn(`[R4.2 Masking-Filter] masking_verdict downgegradet: ${maskingReport.verdict_before} → ${maskingReport.verdict_after}`)
-  }
 
   const reconcileReport = applyConsistencyReconcile(analysis)
   if (reconcileReport.applied_rules.length > 0) {
@@ -1174,29 +1156,13 @@ export async function runSemanticAnalysis(
   const aestheticCombinedSource: 'sonnet+v25' | 'sonnet_only' = v25Normalized !== null
     ? 'sonnet+v25'
     : 'sonnet_only'
-  const maskingScore = computeMaskingScore(aestheticCombined, localIntegrity)
-  const verdictBeforeReconcile = analysis.research_layer.masking_verdict
-  const maskingVerdict = deriveMaskingVerdict(
+  // Beschreibender Maskierungs-Hinweis statt Score/Verdict (Rückbau 2026-06-10):
+  // läuft nach Masking-Filter und allen Reconciles, basiert nur auf der
+  // gefilterten masking_evidence + Leseart.
+  const maskingReviewNote = composeMaskingReviewNote(
+    analysis.research_layer.reading_mode,
     analysis.research_layer.masking_evidence,
-    maskingScore,
   )
-  if (maskingVerdict !== verdictBeforeReconcile) {
-    analysis.research_layer.masking_verdict = maskingVerdict
-    const sourceLabel = aestheticCombinedSource === 'sonnet+v25'
-      ? `Mittel aus Sonnet ${sonnetAesthetic} und V2.5 ${v25Normalized}`
-      : `Sonnet ${sonnetAesthetic} (V2.5 nicht verfügbar)`
-    analysis.research_layer.masking_reasoning =
-      `Verdict per Reconcile auf "${maskingVerdict}" gesetzt (Vorher: "${verdictBeforeReconcile}"). ` +
-      `Evidenzbasierte Ableitung (${analysis.research_layer.masking_evidence.length} Einträge); ` +
-      `Plausibilitäts-Deckel auf 'low' greift bei Maskierungs-Score ≤ 0. ` +
-      `Hier: Ästhetik ${aestheticCombined}/100 (${sourceLabel}) − Integrität ${localIntegrity} = Maskierungs-Score ${maskingScore}.`
-    if (!maskingReport.verdict_downgraded) {
-      maskingReport.verdict_downgraded = true
-      maskingReport.verdict_before = verdictBeforeReconcile
-    }
-    maskingReport.verdict_after = maskingVerdict
-    console.warn(`[R4.2.2 Masking-Filter] masking_verdict via maskingScore+evidence reconcile: ${verdictBeforeReconcile} → ${maskingVerdict} (maskingScore=${maskingScore}, combined=${aestheticCombined}, source=${aestheticCombinedSource})`)
-  }
   const hints = deriveContextReviewHints({
     readingMode: analysis.research_layer.reading_mode,
     visualDrivers: analysis.research_layer.visual_drivers,
@@ -1224,10 +1190,9 @@ export async function runSemanticAnalysis(
       integrity_score_local: localIntegrity,
       aesthetic_combined: aestheticCombined,
       aesthetic_combined_source: aestheticCombinedSource,
-      masking_score: maskingScore,
-      masking_verdict: maskingVerdict,
     },
     context_review_hints: hints,
+    masking_review_note: maskingReviewNote,
     meta: {
       model: analysisResolved.label,
       aesthetic_model: aestheticResolved.label,

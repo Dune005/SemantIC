@@ -11,9 +11,9 @@
 
 import type { SemanticAnalysisResult } from '@pipeline/analyze'
 import type { ContextReviewHint } from '@pipeline/context-hints'
+import type { MaskingReviewNote } from '@pipeline/masking-note'
 
 export type DimensionStatus = 'green' | 'yellow' | 'red'
-export type MaskingVerdict = 'none' | 'low' | 'medium' | 'high'
 export type RiskLevel = 'low' | 'medium' | 'high'
 export type ReadingModeCode = 'WA' | 'DA' | 'CI' | 'AA' | 'MI'
 export type DeclaredIntent = 'affirmative' | 'critical' | 'illustrative' | 'unspecified'
@@ -88,7 +88,9 @@ export type UsageTier = 'high_bar' | 'standard' | 'informal'
 
 export interface ConcreteFinding {
   text: string
-  severity: 'moderate' | 'severe'
+  // 'minor' nur als F5-Fallback: wenn eine auffällige Dimension ausschliesslich
+  // minor-Findings hat (sonst wäre kein Evidenz-Satz erreichbar).
+  severity: 'minor' | 'moderate' | 'severe'
   dimension: 'physics' | 'semantics' | 'bias'
 }
 
@@ -128,6 +130,15 @@ export interface VisualDriverView {
 export interface BiasAxesSummary {
   count: number
   maxRisk: RiskLevel | 'none'
+}
+
+// Eine vom Modell markierte Stelle aus masking_evidence (dedupliziert wie im
+// Maskierungs-Hinweis gezählt) – macht den Hinweis am Bild prüfbar.
+export interface MaskingMarkedSpot {
+  driverCode: VisualDriverCode
+  driverLabel: string
+  area: string
+  text: string
 }
 
 export interface DebugView {
@@ -180,8 +191,13 @@ export interface AnalysisViewModel {
   visualDrivers: VisualDriverView[]
   hintsSortedBySeverity: ContextReviewHint[]
   hintsCountBySeverity: { high: number; medium: number; low: number }
-  maskingVerdict: MaskingVerdict
-  maskingScore: number
+  // Beschreibender Maskierungs-Hinweis aus der Pipeline (deterministisch
+  // komponiert, ersetzt maskingScore/maskingVerdict – Rückbau 2026-06-10).
+  // null = keine validierten Treiber↔Befund-Verknüpfungen (oder Alt-JSON).
+  maskingReviewNote: MaskingReviewNote | null
+  // Die markierten Stellen hinter dem Hinweis (gleiche Dedupe-Zählung wie
+  // note.basis.link_count) – leer, wenn kein Hinweis.
+  maskingMarkedSpots: MaskingMarkedSpot[]
   inputCompleteness: InputCompleteness
   dominantErrorType: DominantErrorType
   biasAxesSummary: BiasAxesSummary

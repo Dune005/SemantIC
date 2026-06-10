@@ -38,11 +38,6 @@ export const STATUS_WORD = { green: 'unauffällig', yellow: 'auffällig', red: '
 // .hint-sev.low). 'neutral' = surface-2/Ink-Border, keine Ampel.
 export const HINT_SEVERITY_TO_SEVERITY = { high: 'crit', medium: 'warn', low: 'neutral' } as const
 
-// Maskierungs-Verdikt → Render-Farbe. EIGENE Skala (NICHT severityFor): geringe
-// Maskierung ist kein Befund → neutral. medium=warn, high=crit. Wort separat aus
-// MASKING_VERDICT_LABELS (Doppelkodierung). 'neutral' = --muted/Ink-Border, keine Ampel.
-export const MASKING_TO_SEVERITY = { none: 'neutral', low: 'neutral', medium: 'warn', high: 'crit' } as const
-
 // ── Label-Maps (deutsche Render-Uebersetzung) ────────────────────────────────
 export const DIMENSION_LABELS = { physics: 'Physik', semantics: 'Semantik', bias: 'Bias' } as const
 
@@ -52,15 +47,7 @@ export const DIMENSION_DESC = {
   bias: 'Stereotype, Rollenbesetzung, Repräsentation',
 } as const
 
-// Maskierung (faktisch)
-export const MASKING_VERDICT_LABELS = {
-  none: 'keine Maskierung erkannt',
-  low: 'geringe Tendenz',
-  medium: 'mittlere Tendenz',
-  high: 'starke Tendenz',
-} as const
-
-// Normative Maskierung
+// Normative Bildwirkung (Phase 7)
 export const NORMATIVE_VERDICT_LABELS = {
   not_applicable: 'nicht anwendbar',
   low: 'gering',
@@ -77,12 +64,14 @@ export const NORMATIVE_ASPECT_LABELS = {
 } as const
 
 // Leseart – Maskierungslogik-Beschreibung (Halbgeviertstrich –, U+2013).
+// Modal formuliert («kann maskieren») – die Leseart beschreibt ein Potenzial,
+// keine gemessene Wirkung (F4-Leitplanken, Rückbau 2026-06-10).
 export const READING_MODE_DESC = {
-  WA: 'Werbe-Ästhetik – maskiert über Normativität und Idealwelt.',
-  DA: 'Dokumentarisch-Authentisch – maskiert über scheinbare Objektivität.',
-  CI: 'Cinematisch – maskiert affektiv über Filmstimmung.',
-  AA: 'Amateur-Authentisch – maskiert über Vertrautheit und Spontaneität.',
-  MI: 'Magazin/Inszeniert – maskiert über Professionalität und Status.',
+  WA: 'Werbe-Ästhetik – kann über Normativität und Idealwelt maskieren.',
+  DA: 'Dokumentarisch-Authentisch – kann über scheinbare Objektivität maskieren.',
+  CI: 'Cinematisch – kann affektiv über Filmstimmung maskieren.',
+  AA: 'Amateur-Authentisch – kann über Vertrautheit und Spontaneität maskieren.',
+  MI: 'Magazin/Inszeniert – kann über Professionalität und Status maskieren.',
 } as const
 
 // Dominanter Fehlertyp
@@ -104,6 +93,9 @@ export const INPUT_COMPLETENESS_LABELS = {
 
 // Hint-Severity (Akkordeon + Befund-Severity)
 export const HINT_SEVERITY_LABEL = { high: 'hoch', medium: 'mittel', low: 'niedrig' } as const
+
+// Bias-Achsen-Risiko (biasAxesSummary.maxRisk) – Anzeige-Übersetzung
+export const RISK_LEVEL_LABEL = { high: 'hoch', medium: 'mittel', low: 'niedrig', none: 'keines' } as const
 
 // Haltung (declared_intent) – nur fuer IntentPanel-Anzeige
 export const INTENT_LABELS = {

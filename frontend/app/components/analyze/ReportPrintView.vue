@@ -23,8 +23,6 @@ import {
   STATUS_TO_SEVERITY,
   STATUS_WORD,
   DIMENSION_LABELS,
-  MASKING_VERDICT_LABELS,
-  MASKING_TO_SEVERITY,
   READING_MODE_DESC,
   INPUT_COMPLETENESS_LABELS,
   NORMATIVE_VERDICT_LABELS,
@@ -33,6 +31,7 @@ import {
   HINT_SEVERITY_LABEL,
   INTENT_LABELS,
   USAGE_FORM_LABELS,
+  RISK_LEVEL_LABEL,
 } from '~/lib/severity'
 import type { AnalysisViewModel, UsageForm } from '~/types/analysis'
 
@@ -56,12 +55,6 @@ const statusSeverity = computed(() => STATUS_TO_SEVERITY[status.value])
 // Hero: heroScore ist kontraktlich number; Fallback auf integrityScore (Variante A).
 const hero = computed(() => props.heroScore ?? vm.value.integrityScore)
 const heroSeverity = computed(() => severityFor(hero.value))
-
-// Faktische Maskierung – eigene Skala (NICHT severityFor).
-const maskingSign = computed(() =>
-  vm.value.maskingScore >= 0 ? `+${vm.value.maskingScore}` : `−${Math.abs(vm.value.maskingScore)}`,
-)
-const maskingSeverity = computed(() => MASKING_TO_SEVERITY[vm.value.maskingVerdict])
 
 // Block 2: Eingabe-Zusammenfassung – Labels aus dem eingefrorenen Submit-State.
 const intentLabel = computed(() => INTENT_LABELS[vm.value.intentAssessment.declaredIntent])
@@ -176,21 +169,26 @@ const headlineHasDot = computed(() => vm.value.overallVerdict.headline.endsWith(
       </div>
     </section>
 
-    <!-- Block 6: Faktische Maskierung -->
+    <!-- Block 6: Maskierungs-Hinweis (beschreibend; ersetzt den früheren Differenz-Score) -->
     <section class="print-block">
-      <h2 class="print-h2">Faktische Maskierung</h2>
-      <div class="print-masking">
-        <span class="pm-delta" :class="`ink-${maskingSeverity === 'neutral' ? 'muted' : maskingSeverity}`">{{ maskingSign }}</span>
-        <span class="pm-word">
-          {{ MASKING_VERDICT_LABELS[vm.maskingVerdict] }} · Differenz aus Ästhetik ({{ vm.aestheticCombined }})
-          − Integrität ({{ hero }}).
-        </span>
-      </div>
+      <h2 class="print-h2">Maskierungs-Hinweis</h2>
+      <template v-if="vm.maskingReviewNote">
+        <p class="print-line">{{ vm.maskingReviewNote.text }}</p>
+        <ul v-if="vm.maskingMarkedSpots.length" class="print-spot-list">
+          <li v-for="(s, i) in vm.maskingMarkedSpots" :key="`spot-${i}`" class="print-sub">
+            <strong>{{ s.driverLabel }}</strong> könnte den {{ s.area }}-Befund überdecken: {{ s.text }}
+          </li>
+        </ul>
+      </template>
+      <p v-else class="print-sub">
+        Kein Maskierungs-Hinweis – das Modell hat keine Stelle markiert, an der ein ästhetischer
+        Treiber einen Befund überdecken könnte.
+      </p>
     </section>
 
-    <!-- Block 7: Normative Maskierung (immer; getrennt von Block 6; verändert den Status NICHT) -->
+    <!-- Block 7: Normative Bildwirkung (immer; getrennt von Block 6; verändert den Status NICHT) -->
     <section class="print-block">
-      <h2 class="print-h2">Normative Maskierung</h2>
+      <h2 class="print-h2">Normative Bildwirkung</h2>
       <template v-if="vm.normativeMasking.verdict !== 'not_applicable'">
         <p class="print-line">Idealisierende Norm: {{ NORMATIVE_VERDICT_LABELS[vm.normativeMasking.verdict] }}.</p>
         <div v-if="vm.normativeMasking.aspects.length" class="print-chips">
@@ -200,7 +198,7 @@ const headlineHasDot = computed(() => vm.value.overallVerdict.headline.endsWith(
           <NoteBlock :content="vm.normativeMaskingNote" type="masking" />
         </div>
       </template>
-      <p v-else class="print-sub">Keine normative Maskierung erkannt – für dieses Bild nicht einschlägig.</p>
+      <p v-else class="print-sub">Keine normative Bildwirkung erkannt – für dieses Bild nicht einschlägig.</p>
     </section>
 
     <!-- Block 8: Leseart + visuelle Treiber -->
@@ -253,7 +251,8 @@ const headlineHasDot = computed(() => vm.value.overallVerdict.headline.endsWith(
     <section class="print-block">
       <h2 class="print-h2">Bias-Achsen</h2>
       <p class="print-line" v-if="vm.biasAxesSummary.count > 0">
-        {{ vm.biasAxesSummary.count }} Achse(n) erkannt · maximales Risiko: {{ vm.biasAxesSummary.maxRisk }}.
+        {{ vm.biasAxesSummary.count }} {{ vm.biasAxesSummary.count === 1 ? 'Achse' : 'Achsen' }} erkannt
+        · maximales Risiko: {{ RISK_LEVEL_LABEL[vm.biasAxesSummary.maxRisk] }}.
       </p>
       <p class="print-sub" v-else>Keine Bias-Achsen erkannt.</p>
     </section>
@@ -510,27 +509,7 @@ const headlineHasDot = computed(() => vm.value.overallVerdict.headline.endsWith(
   color: var(--ink-soft);
 }
 
-/* Block 6: faktische Maskierung */
-.print-masking {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-.print-masking .pm-delta {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-size: 26px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--ink);
-}
-.print-masking .pm-word {
-  font-size: 14px;
-  color: var(--ink-soft);
-  line-height: 1.5;
-}
-
-/* Block 7/8/11: Zeilen + Chips */
+/* Block 6/7/8/11: Zeilen + Chips */
 .print-line {
   font-size: 15px;
   color: var(--ink);
@@ -541,6 +520,11 @@ const headlineHasDot = computed(() => vm.value.overallVerdict.headline.endsWith(
   color: var(--muted);
   line-height: 1.5;
   margin-top: 6px;
+}
+.print-spot-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 .print-chips {
   display: flex;
