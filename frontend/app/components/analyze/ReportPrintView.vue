@@ -225,7 +225,10 @@ const headlineHasDot = computed(() => vm.value.overallVerdict.headline.endsWith(
           </ul>
         </li>
       </ul>
-      <p v-else class="print-sub">Keine spezifischen Hinweise – das Tool sieht aktuell keine auffälligen Befunde.</p>
+      <p v-else class="print-sub">
+        Keine spezifischen Hinweise – das Tool hat nichts gefunden. Das heisst „nichts
+        gefunden", nicht „fehlerfrei": Die eigene Sichtprüfung ersetzt es nicht.
+      </p>
     </section>
 
     <!-- Block 10: Prüf-Hinweise (flach, je Item Severity + Prüffrage) -->

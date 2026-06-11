@@ -65,7 +65,15 @@ const DIMS: DimRow[] = [
       role="group"
       aria-label="Drei Prüf-Dimensionen mit illustrativen Beispiel-Scores (kein analysiertes Bild)"
     >
-      <details v-for="d in DIMS" :key="d.key" class="dim" :data-sev="d.sev">
+      <!-- data-verdict: Zone für den Dual-State-Cursor (✓/✕). Nur ok/crit —
+           warn kennt die Variante bewusst nicht (neutraler Punkt). -->
+      <details
+        v-for="d in DIMS"
+        :key="d.key"
+        class="dim"
+        :data-sev="d.sev"
+        :data-verdict="d.sev === 'warn' ? undefined : d.sev"
+      >
         <summary>
           <span class="dim__id">
             <span class="dim__name">{{ d.name }}</span>

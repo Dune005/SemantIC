@@ -41,8 +41,9 @@ function onRedeem() {
         <span class="mark">SemantIC</span>
         <p>
           SemantIC prüft KI-generierte Bilder vor der Veröffentlichung auf physikalische
-          Kohärenz, semantische Konsistenz und Bias – und zeigt dir, ob ein Bild auch
-          inhaltlich hält, was sein Eindruck verspricht. Mehr dazu unter
+          Kohärenz, semantische Konsistenz und Bias – und zeigt dir prüfbare Hinweise,
+          wo ein Bild inhaltlich womöglich nicht hält, was sein Eindruck verspricht.
+          Mehr dazu unter
           <NuxtLink to="/how-it-works">Funktionsweise</NuxtLink>.
         </p>
       </div>

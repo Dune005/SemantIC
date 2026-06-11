@@ -51,7 +51,7 @@ useReveal(page, '.reveal')
             Das Problem ist nicht, dass diese Schwächen fehlen. Das Problem ist, dass
             die visuelle Perfektion sie überdeckt. Ein Bild wirkt so überzeugend, dass
             du gar nicht erst hinschaust, ob es auch hält. Genau diesen Effekt nennen
-            wir <em>Maskierung</em> – und genau ihn macht SemantIC sichtbar.
+            wir <em>Maskierung</em> – und genau ihm arbeitet SemantIC entgegen.
           </p>
         </div>
       </div>
@@ -138,8 +138,8 @@ useReveal(page, '.reveal')
             entstanden fünf Lesearten, neun visuelle Treiber und die Fehlerprofile,
             gegen die jedes Bild geprüft wird. Die Prüf-Pipeline wurde über
             dokumentierte Iterationsrunden entwickelt und systematisch gegen die
-            menschliche Codierung geprüft – inklusive ihrer Grenzen: Was das Tool
-            zuverlässig sieht und was nicht, steht offen auf der Erklärseite.
+            menschliche Codierung geprüft – inklusive ihrer Grenzen: Welche Stärken
+            und Grenzen die Tests gezeigt haben, steht offen auf der Erklärseite.
           </p>
 
           <div class="data reveal r2">
@@ -393,6 +393,13 @@ useReveal(page, '.reveal')
 .reveal-ready .reveal.is-in {
   opacity: 1;
   transform: none;
+}
+/* A11y (Codex-Review 2026-06-11): Tastatur-Fokus auf ein noch nicht enthülltes
+   Element (z.B. den Erklärseiten-Link) macht es sofort sichtbar. */
+.reveal-ready .reveal:focus-within {
+  opacity: 1;
+  transform: none;
+  transition: none;
 }
 .reveal-ready .reveal.r1 {
   transition-delay: 0.07s;

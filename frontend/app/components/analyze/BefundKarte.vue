@@ -198,8 +198,11 @@ onBeforeUnmount(() => {
       <ul v-if="vm.userHints.length" class="hint-list">
         <HintItem v-for="(h, i) in vm.userHints" :key="i" :hint="h" />
       </ul>
+      <!-- F2-Transparenz: grün = «nichts gefunden», nicht «fehlerfrei» (validierte
+           Grenze, s. how-it-works «Validierte Grenzen»). -->
       <p v-else class="no-finding">
-        Keine spezifischen Auffälligkeiten – das Tool sieht aktuell keine kritischen Befunde.
+        Keine spezifischen Auffälligkeiten – das Tool hat nichts gefunden. Das heisst
+        „nichts gefunden", nicht „fehlerfrei": Deine eigene Sichtprüfung ersetzt es nicht.
       </p>
     </div>
     <div class="disclosure-wrap">

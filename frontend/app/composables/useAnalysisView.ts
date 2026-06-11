@@ -346,16 +346,6 @@ function truncateFinding(text: string): string {
   return `${base.trimEnd()}…`
 }
 
-// Dimension-weiter Check für den minor-Fallback (Codex-Review): minor nur,
-// wenn die GANZE Dimension keine substantiellen moderate/severe-Findings hat —
-// nicht nur der jeweilige Topic-Filter (sonst ergänzt z.B. das physics-Topic
-// minor-Findings, obwohl die Dimension einen moderaten Anatomie-Befund trägt).
-function lacksStrongFindings(findings: Finding[]): boolean {
-  return !findings.some(
-    f => (f.severity === 'moderate' || f.severity === 'severe') && hasSubstance(f),
-  )
-}
-
 function pickConcreteFindings(
   findings: Finding[],
   dimension: 'physics' | 'semantics' | 'bias',
@@ -370,9 +360,15 @@ function pickConcreteFindings(
       return true
     })
   let candidates = pick(['moderate', 'severe'])
-  // F5-Fallback: Hat eine auffällige (nicht-grüne) Dimension nur minor-Findings,
-  // wären sonst gar keine Evidenz-Sätze erreichbar — der Prüfauftrag verlöre
-  // seine Ortsangabe. minor nur als Fallback, nie zusätzlich.
+  // F5-Fallback: Hat ein Topic nur minor-Findings, wären sonst gar keine
+  // Evidenz-Sätze erreichbar — der Prüfauftrag verlöre seine Ortsangabe.
+  // minor nur als Fallback, nie zusätzlich zu moderate/severe im selben Topic.
+  // Gate-Historie (Codex-Reviews 2026-06-10/11): zuerst dimensionsweit gegatet
+  // (lacksStrongFindings über alle Dimension-Findings); das unterdrückte aber
+  // die Ortsangabe eines maskierungs-verknüpften Anatomie-Befunds, sobald die
+  // Dimension irgendeinen anderen moderaten Befund trug. Jetzt topic-lokal:
+  // candidates.length === 0 IST der Strong-Check auf dem gefilterten Pool —
+  // Strong-Findings anderer Topics bleiben über deren eigene Hints sichtbar.
   if (candidates.length === 0 && allowMinorFallback) {
     candidates = pick(['minor'])
   }
@@ -583,8 +579,7 @@ function evaluateTopic(
         dim.physics.findings,
         'physics',
         f => !matchesKeyword(`${f.category} ${f.finding}`, 'anatomy'),
-        (dim.physics.status !== 'green' || ctx.maskingLinkedTopics.has('physics'))
-          && lacksStrongFindings(dim.physics.findings),
+        dim.physics.status !== 'green' || ctx.maskingLinkedTopics.has('physics'),
       )
       break
     case 'anatomy':
@@ -592,8 +587,7 @@ function evaluateTopic(
         dim.physics.findings,
         'physics',
         f => matchesKeyword(`${f.category} ${f.finding}`, 'anatomy'),
-        (dim.physics.status !== 'green' || ctx.maskingLinkedTopics.has('anatomy'))
-          && lacksStrongFindings(dim.physics.findings),
+        dim.physics.status !== 'green' || ctx.maskingLinkedTopics.has('anatomy'),
       )
       break
     case 'context_logic':
@@ -601,8 +595,7 @@ function evaluateTopic(
         dim.semantics.findings,
         'semantics',
         undefined,
-        (dim.semantics.status !== 'green' || ctx.maskingLinkedTopics.has('context_logic'))
-          && lacksStrongFindings(dim.semantics.findings),
+        dim.semantics.status !== 'green' || ctx.maskingLinkedTopics.has('context_logic'),
       )
       break
     case 'role_stereotype':
@@ -610,7 +603,7 @@ function evaluateTopic(
         dim.bias.findings,
         'bias',
         f => matchesKeyword(`${f.category} ${f.finding}`, 'role'),
-        dim.bias.status !== 'green' && lacksStrongFindings(dim.bias.findings),
+        dim.bias.status !== 'green',
       )
       break
     case 'body_stereotype':
@@ -618,7 +611,7 @@ function evaluateTopic(
         dim.bias.findings,
         'bias',
         f => matchesKeyword(`${f.category} ${f.finding}`, 'body'),
-        dim.bias.status !== 'green' && lacksStrongFindings(dim.bias.findings),
+        dim.bias.status !== 'green',
       )
       break
     case 'gender_bias':
@@ -626,7 +619,7 @@ function evaluateTopic(
         dim.bias.findings,
         'bias',
         f => matchesKeyword(`${f.category} ${f.finding}`, 'gender'),
-        dim.bias.status !== 'green' && lacksStrongFindings(dim.bias.findings),
+        dim.bias.status !== 'green',
       )
       break
     case 'hallucination':
@@ -634,7 +627,7 @@ function evaluateTopic(
         dim.semantics.findings,
         'semantics',
         f => matchesKeyword(`${f.category} ${f.finding}`, 'hallucination'),
-        dim.semantics.status !== 'green' && lacksStrongFindings(dim.semantics.findings),
+        dim.semantics.status !== 'green',
       )
       break
     case 'masking':

@@ -86,21 +86,33 @@ onMounted(() => {
 
   if (!animate) return
 
-  const loop = () => {
-    draw(w, h, dotBase, dotInk, accent, true)
-    raf = requestAnimationFrame(loop)
+  // Kein Dauer-rAF-Loop (Codex-Review 2026-06-11): Das Raster ist rein
+  // pointer-getrieben — neu gezeichnet wird nur bei Pointer-Bewegung (max. 1×
+  // pro Frame) und einmal beim Verlassen (Reset auf den Grundzustand). Ohne
+  // Bewegung oder ausserhalb des Viewports fällt damit keine Arbeit an.
+  let framePending = false
+  const scheduleDraw = () => {
+    if (framePending) return
+    framePending = true
+    raf = requestAnimationFrame(() => {
+      framePending = false
+      draw(w, h, dotBase, dotInk, accent, true)
+    })
   }
   onMove = (e: PointerEvent) => {
     const rect = el.getBoundingClientRect()
     pointer.x = e.clientX - rect.left
     pointer.y = e.clientY - rect.top
     pointer.active = true
+    scheduleDraw()
   }
-  onLeave = () => { pointer.active = false }
+  onLeave = () => {
+    pointer.active = false
+    scheduleDraw()
+  }
   parentEl = el.parentElement
   parentEl?.addEventListener('pointermove', onMove)
   parentEl?.addEventListener('pointerleave', onLeave)
-  raf = requestAnimationFrame(loop)
 })
 
 onBeforeUnmount(() => {
