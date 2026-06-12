@@ -22,11 +22,10 @@ import {
   STATUS_WORD,
   DIMENSION_LABELS,
   DIMENSION_DESC,
-  MASKING_VERDICT_LABELS,
-  MASKING_TO_SEVERITY,
   READING_MODE_DESC,
   NORMATIVE_VERDICT_LABELS,
   NORMATIVE_ASPECT_LABELS,
+  RISK_LEVEL_LABEL,
 } from '~/lib/severity'
 import type { AnalysisViewModel, UsageForm } from '~/types/analysis'
 
@@ -55,13 +54,6 @@ const headlineHasDot = computed(() => props.vm.overallVerdict.headline.endsWith(
 const dimMarkers = computed(() =>
   (['physics', 'semantics', 'bias'] as const).map((d) => STATUS_TO_SEVERITY[props.vm.dimensions[d].status]),
 )
-
-// Faktische Maskierung (eigene Skala, NICHT severityFor) – kompakte Daten-Zeile.
-const maskingSign = computed(() =>
-  props.vm.maskingScore >= 0 ? `+${props.vm.maskingScore}` : `−${Math.abs(props.vm.maskingScore)}`,
-)
-const maskingSeverity = computed(() => MASKING_TO_SEVERITY[props.vm.maskingVerdict])
-const maskingWord = computed(() => MASKING_VERDICT_LABELS[props.vm.maskingVerdict])
 
 const dims = computed(() =>
   (['physics', 'semantics', 'bias'] as const).map((d) => ({
@@ -168,10 +160,6 @@ onBeforeUnmount(() => {
               <span class="val">{{ vm.aestheticCombined }} / 100</span>
             </div>
             <div class="l">
-              <span class="prompt">&gt;</span><span class="key">masking · Δ</span>
-              <span class="val">{{ maskingSign }} <span class="tag" :class="maskingSeverity">[{{ maskingWord }}]</span></span>
-            </div>
-            <div class="l">
               <span class="prompt">&gt;</span><span class="key">reading</span>
               <span class="val">{{ vm.readingMode.label }} ({{ vm.readingMode.code }})</span>
             </div>
@@ -186,6 +174,11 @@ onBeforeUnmount(() => {
       <p class="diag-note">
         Der Score ist ein <strong>Messwert</strong> – das Gesamturteil berücksichtigt zusätzlich
         Kontext und Risiken. Ein hoher Score bedeutet daher nicht automatisch „unkritisch".
+      </p>
+      <!-- Beschreibender Maskierungs-Hinweis (ersetzt den früheren masking·Δ-Score).
+           Erscheint nur, wenn die Pipeline validierte Treiber↔Befund-Verknüpfungen markiert hat. -->
+      <p v-if="vm.maskingReviewNote" class="diag-note">
+        <strong>Maskierungs-Hinweis:</strong> {{ vm.maskingReviewNote.text }}
       </p>
     </div>
 
@@ -203,16 +196,19 @@ onBeforeUnmount(() => {
     <div class="why">
       <div class="block-head">Warum dieses Urteil?</div>
       <ul v-if="vm.userHints.length" class="hint-list">
-        <HintItem v-for="(h, i) in vm.userHints" :key="i" :hint="h" concise />
+        <HintItem v-for="(h, i) in vm.userHints" :key="i" :hint="h" />
       </ul>
+      <!-- F2-Transparenz: grün = «nichts gefunden», nicht «fehlerfrei» (validierte
+           Grenze, s. how-it-works «Validierte Grenzen»). -->
       <p v-else class="no-finding">
-        Keine spezifischen Auffälligkeiten – das Tool sieht aktuell keine kritischen Befunde.
+        Keine spezifischen Auffälligkeiten – das Tool hat nichts gefunden. Das heisst
+        „nichts gefunden", nicht „fehlerfrei": Deine eigene Sichtprüfung ersetzt es nicht.
       </p>
     </div>
     <div class="disclosure-wrap">
       <Disclosure v-model:open="open.deep" title="Analyse vertiefen">
         <div class="deep">
-          <p class="deep-label">Normative Maskierung</p>
+          <p class="deep-label">Normative Bildwirkung</p>
           <template v-if="vm.normativeMasking.verdict !== 'not_applicable'">
             <p class="deep-text">
               Idealisierende Norm: {{ NORMATIVE_VERDICT_LABELS[vm.normativeMasking.verdict] }}.
@@ -223,17 +219,38 @@ onBeforeUnmount(() => {
             </div>
             <p v-if="vm.normativeMaskingNote" class="deep-text">{{ vm.normativeMaskingNote }}</p>
           </template>
-          <p v-else class="deep-text">Keine normative Maskierung erkannt – für dieses Bild nicht einschlägig.</p>
+          <p v-else class="deep-text">Keine normative Bildwirkung erkannt – für dieses Bild nicht einschlägig.</p>
 
           <template v-if="vm.biasAxesSummary.count > 0">
             <p class="deep-label">Bias-Achsen</p>
             <p class="deep-text">
-              {{ vm.biasAxesSummary.count }} Achse(n) erkannt · maximales Risiko: {{ vm.biasAxesSummary.maxRisk }}.
+              {{ vm.biasAxesSummary.count }} {{ vm.biasAxesSummary.count === 1 ? 'Achse' : 'Achsen' }} erkannt
+              · maximales Risiko: {{ RISK_LEVEL_LABEL[vm.biasAxesSummary.maxRisk] }}.
             </p>
           </template>
 
           <p class="deep-label">Leseart</p>
           <p class="deep-text">{{ READING_MODE_DESC[vm.readingMode.code] }}</p>
+
+          <!-- Die Stellen hinter dem Maskierungs-Hinweis – «prüfbarer Hinweis»
+               heisst: hier steht, WO und WAS am Bild nachgeschaut werden kann. -->
+          <template v-if="vm.maskingMarkedSpots.length">
+            <p class="deep-label">Markierte Stellen (Maskierungs-Hinweis)</p>
+            <ul class="spot-list">
+              <li v-for="(s, i) in vm.maskingMarkedSpots" :key="`spot-${i}`" class="deep-text">
+                <strong>{{ s.driverLabel }}</strong> könnte den {{ s.area }}-Befund überdecken: {{ s.text }}
+              </li>
+            </ul>
+          </template>
+
+          <!-- F5: Befunde unterhalb der Sichtbarkeits-Schwelle – ein Klick entfernt
+               statt unsichtbar (Print zeigte sie schon immer). -->
+          <template v-if="vm.hiddenHints.length">
+            <p class="deep-label">Weitere Befunde</p>
+            <ul class="hint-list">
+              <HintItem v-for="(h, i) in vm.hiddenHints" :key="`hidden-${i}`" :hint="h" />
+            </ul>
+          </template>
         </div>
       </Disclosure>
     </div>
@@ -468,23 +485,6 @@ onBeforeUnmount(() => {
   font-weight: 600;
   color: var(--ink);
 }
-.lines .tag {
-  display: inline-block;
-  margin-left: 8px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-}
-.lines .tag.warn {
-  color: var(--warn-ink);
-}
-.lines .tag.crit {
-  color: var(--crit-ink);
-}
-.lines .tag.neutral {
-  color: var(--muted);
-}
-
 /* Dim-Strip (drei Dimensionen) */
 .dims {
   display: grid;
@@ -590,6 +590,14 @@ onBeforeUnmount(() => {
   flex-wrap: wrap;
   gap: 7px;
   margin-top: 8px;
+}
+.spot-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 .card-footnote {
   padding: 16px 32px;

@@ -1,9 +1,9 @@
 import { computed, type Ref, type ComputedRef } from 'vue'
 import type { SemanticAnalysisResult } from '@pipeline/analyze'
 import type { ContextReviewHint } from '@pipeline/context-hints'
+import { composeMaskingReviewNote } from '@pipeline/masking-note'
 
 export type DimensionStatus = 'green' | 'yellow' | 'red'
-export type MaskingVerdict = 'none' | 'low' | 'medium' | 'high'
 export type RiskLevel = 'low' | 'medium' | 'high'
 export type ReadingModeCode = 'WA' | 'DA' | 'CI' | 'AA' | 'MI'
 export type DeclaredIntent = 'affirmative' | 'critical' | 'illustrative' | 'unspecified'
@@ -163,8 +163,9 @@ export interface AnalysisViewModel {
   visualDrivers: VisualDriverView[]
   hintsSortedBySeverity: ContextReviewHint[]
   hintsCountBySeverity: { high: number; medium: number; low: number }
-  maskingVerdict: MaskingVerdict
-  maskingScore: number
+  // Beschreibender Maskierungs-Hinweis (ersetzt maskingScore/maskingVerdict,
+  // Rückbau 2026-06-10). null = keine validierten Verknüpfungen oder Alt-JSON.
+  maskingReviewNote: SemanticAnalysisResult['masking_review_note']
   inputCompleteness: InputCompleteness
   dominantErrorType: DominantErrorType
   biasAxesSummary: BiasAxesSummary
@@ -370,24 +371,17 @@ const NORMATIVE_HIGH_INTENT_NOTES: Record<DeclaredIntent, string> = {
     'Bild propagiert eine idealisierte Norm. Vor Verwendung prüfen, ob das in den Kontext passt.',
 }
 
-const NORMATIVE_HIGH_DOUBLE_MASKING_SUFFIX =
-  ' Zusätzlich wirkt die Ästhetik als Maskierung von Befunden – doppelt maskierender Effekt.'
-
 const NORMATIVE_MEDIUM_NOTE =
   'Bild zeigt erkennbare idealisierende Ästhetik mit normativer Wirkung – im Begleittext bewusst rahmen.'
 
+// Der frühere Doppel-Maskierungs-Suffix hing am faktischen masking_verdict —
+// mit dem Score-Rückbau (2026-06-10) entfernt.
 function computeNormativeMaskingNote(
   verdict: NormativeMaskingVerdict,
-  factualMaskingVerdict: MaskingVerdict,
   declaredIntent: DeclaredIntent,
 ): string | null {
   if (verdict === 'high') {
-    const baseText = NORMATIVE_HIGH_INTENT_NOTES[declaredIntent]
-    // Doppel-Maskierungs-Suffix nur bei faktischem Verdict 'high' (Codex-Review #2:
-    // 'medium' ist methodisch vertretbar, aber der Suffix zu hart für eine
-    // mittlere Maskierungs-Tendenz).
-    const isDoubleMasked = factualMaskingVerdict === 'high'
-    return baseText + (isDoubleMasked ? NORMATIVE_HIGH_DOUBLE_MASKING_SUFFIX : '')
+    return NORMATIVE_HIGH_INTENT_NOTES[declaredIntent]
   }
   if (verdict === 'medium') {
     return NORMATIVE_MEDIUM_NOTE
@@ -642,18 +636,20 @@ function evaluateTopic(
       break
     }
     case 'masking': {
+      // F1-Gate (Codex-Review 2026-06-10): ohne validierte Treiber↔Befund-Verknüpfung
+      // kein Maskierungs-Topic — «Dimension auffällig + hohe Ästhetik» allein war die
+      // widerlegte Score-Logik. Der Rule-Hint masking_attention_risk wurde aus
+      // src/context-hints.ts entfernt.
+      if (ctx.maskingEvidenceCount === 0) break
+      signals.push({ text: `masking_evidence×${ctx.maskingEvidenceCount}`, group: 'gemini_research' })
       const anyDimAuffaellig =
         dim.physics.status !== 'green' || dim.semantics.status !== 'green' || dim.bias.status !== 'green'
       if (anyDimAuffaellig) {
         signals.push({ text: 'any_dim.status≠green', group: 'gemini_dimension' })
       }
-      if (ctx.maskingEvidenceCount >= 2) {
-        signals.push({ text: `masking_evidence×${ctx.maskingEvidenceCount}`, group: 'gemini_research' })
-      }
       if (ctx.aestheticCombined >= 75) {
         signals.push({ text: `aesthetic_combined=${ctx.aestheticCombined}`, group: 'external_aesthetic' })
       }
-      addRule('masking_attention_risk')
       break
     }
     case 'style_mismatch': {
@@ -1174,7 +1170,6 @@ export function buildAnalysisViewModel(
   }
   const normativeMaskingNote = computeNormativeMaskingNote(
     normativeMasking.verdict,
-    result.computed.masking_verdict,
     declaredIntent,
   )
 
@@ -1196,8 +1191,14 @@ export function buildAnalysisViewModel(
     visualDrivers,
     hintsSortedBySeverity,
     hintsCountBySeverity,
-    maskingVerdict: result.computed.masking_verdict,
-    maskingScore: result.computed.masking_score,
+    // Alt-JSON-Fallback: Outputs vor dem Rückbau haben das Feld nicht (undefined) —
+    // dann aus der vorhandenen masking_evidence mit derselben Pipeline-Funktion komponieren.
+    maskingReviewNote: result.masking_review_note !== undefined
+      ? result.masking_review_note
+      : composeMaskingReviewNote(
+          analysis.research_layer.reading_mode,
+          analysis.research_layer.masking_evidence ?? [],
+        ),
     inputCompleteness,
     dominantErrorType: analysis.research_layer.dominant_error_type,
     biasAxesSummary,

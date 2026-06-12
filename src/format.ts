@@ -1,20 +1,5 @@
 import type { SemanticAnalysisResult } from './analyze.js'
 
-function maskingLabel(score: number): string {
-  if (score > 0) return `+${score} (Maskierungsrisiko, kombiniertes Aesthetic − Integrity)`
-  if (score < 0) return `${score} (Integrity überwiegt, kombiniertes Aesthetic − Integrity)`
-  return '0 (ausgeglichen, kombiniertes Aesthetic − Integrity)'
-}
-
-function verdictLabel(verdict: 'none' | 'low' | 'medium' | 'high'): string {
-  switch (verdict) {
-    case 'none': return 'keine Maskierung (per Definition)'
-    case 'low': return 'gering'
-    case 'medium': return 'mittel'
-    case 'high': return 'hoch'
-  }
-}
-
 export function formatResult(result: SemanticAnalysisResult): string {
   const { analysis, aesthetic, computed, meta } = result
   const { dimension_analysis: dim, research_layer: rl, bias_axis_analysis: baa, integrity_score_llm } = analysis
@@ -38,8 +23,6 @@ export function formatResult(result: SemanticAnalysisResult): string {
     ? '(Mittel aus Sonnet + V2.5)'
     : '(nur Sonnet — V2.5 nicht verfügbar)'
   lines.push(`  Ästhetik kombiniert: ${computed.aesthetic_combined}/100  ${combinedNote}`)
-  lines.push(`  Maskierungs-Verdict: ${verdictLabel(computed.masking_verdict)}`)
-  lines.push(`  Maskierungs-Diff (Diagnose): ${maskingLabel(computed.masking_score)}`)
   if (aesthetic.aesthetic_reasoning) {
     lines.push(`  Begründung Ästhetik (Sonnet): ${aesthetic.aesthetic_reasoning}`)
   }
@@ -79,30 +62,24 @@ export function formatResult(result: SemanticAnalysisResult): string {
   }
   lines.push('')
 
-  lines.push('Maskierungs-Evidenz (Hinweis, kein Nachweis)')
-  lines.push(`  Verdict: ${verdictLabel(computed.masking_verdict)}`)
-  if (rl.masking_reasoning) {
-    lines.push(`  Begründung: ${rl.masking_reasoning}`)
-  }
-  if (rl.masking_evidence.length === 0) {
-    lines.push('  Keine Maskierungs-Einträge.')
-  } else {
+  lines.push('Maskierungs-Hinweis (beschreibend, deterministisch komponiert – kein Score)')
+  if (result.masking_review_note) {
+    const note = result.masking_review_note
+    lines.push(`  ${note.text}`)
+    lines.push(`  Basis: Leseart ${note.basis.reading_mode} · Treiber ${note.basis.visual_drivers.join(', ')} · ${note.basis.link_count} Verknüpfung(en)`)
     rl.masking_evidence.forEach((e, i) => {
       const salience = e.salient_region ? 'salient' : 'peripher'
-      lines.push(`  ${i + 1}. Treiber ${e.driver} überdeckt ${e.codebook_link} (${salience}, conf=${e.confidence})`)
+      lines.push(`  ${i + 1}. Treiber ${e.driver} könnte ${e.codebook_link}-Befund überdecken (${salience}, conf=${e.confidence})`)
       lines.push(`     Region: ${formatBox(e.region_box_2d)}`)
       lines.push(`     ${e.masked_issue}`)
     })
+  } else {
+    lines.push('  Kein Maskierungs-Hinweis: keine validen Treiber↔Befund-Verknüpfungen markiert.')
   }
-  if (meta.masking_filter && (meta.masking_filter.dropped_evidence_count > 0 || meta.masking_filter.verdict_downgraded)) {
+  if (meta.masking_filter && meta.masking_filter.dropped_evidence_count > 0) {
     lines.push('')
     lines.push('  [R4.2 Masking-Filter]')
-    if (meta.masking_filter.dropped_evidence_count > 0) {
-      lines.push(`    ${meta.masking_filter.dropped_evidence_count} invalide Einträge entfernt (${meta.masking_filter.drop_reasons.join('; ')})`)
-    }
-    if (meta.masking_filter.verdict_downgraded) {
-      lines.push(`    Verdict reconciled: ${meta.masking_filter.verdict_before} → ${meta.masking_filter.verdict_after}`)
-    }
+    lines.push(`    ${meta.masking_filter.dropped_evidence_count} invalide Einträge entfernt (${meta.masking_filter.drop_reasons.join('; ')})`)
   }
   lines.push('')
 
@@ -126,7 +103,7 @@ export function formatResult(result: SemanticAnalysisResult): string {
   }
   lines.push('')
 
-  lines.push('Normative Maskierung (analytische Einordnung, keine Bewertung)')
+  lines.push('Normative Bildwirkung (analytische Einordnung, keine Bewertung)')
   lines.push(`  Verdict: ${rl.normative_masking.verdict}`)
   if (rl.normative_masking.aspects.length > 0) {
     lines.push(`  Aspekte: ${rl.normative_masking.aspects.join(', ')}`)

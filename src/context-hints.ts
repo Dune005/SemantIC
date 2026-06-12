@@ -49,19 +49,10 @@ export function deriveContextReviewHints(input: HintInput): ContextReviewHint[] 
     })
   }
 
-  if (input.aestheticScore >= 80 && (input.physicsScore < 60 || input.semanticsScore < 60 || input.biasScore < 60)) {
-    const weakDims: string[] = []
-    if (input.physicsScore < 60) weakDims.push(`physics:${input.physicsScore}`)
-    if (input.semanticsScore < 60) weakDims.push(`semantics:${input.semanticsScore}`)
-    if (input.biasScore < 60) weakDims.push(`bias:${input.biasScore}`)
-    hints.push({
-      id: 'masking_attention_risk',
-      severity: 'high',
-      triggeredBy: [`aesthetic_combined:${input.aestheticScore}`, ...weakDims],
-      hint: 'Die visuelle Oberfläche ist stark, während einzelne Integritätsdimensionen auffällig sind. Die Ästhetik könnte vorhandene Fehler überdecken.',
-      reviewQuestion: 'Fallen die identifizierten Probleme beim normalen Betrachten auf, oder werden sie durch die visuelle Qualität maskiert?',
-    })
-  }
+  // Der frühere Hint 'masking_attention_risk' (aesthetic >= 80 + Dimension < 60)
+  // wurde entfernt (2026-06-10, Codex-Review): Schwellen-Differenz Ästhetik vs.
+  // Integrität war genau die widerlegte Score-Logik. Maskierung kommuniziert
+  // jetzt ausschliesslich das evidenz-gegatete masking_review_note (masking-note.ts).
 
   if (input.biasFlags.hasGenderBias || input.biasFlags.hasRoleStereotype || input.biasFlags.hasBodyStereotype) {
     const triggers: string[] = []

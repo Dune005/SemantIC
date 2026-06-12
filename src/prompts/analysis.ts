@@ -11,7 +11,7 @@ Der Nutzer übergibt drei Eingaben in der User-Message:
 KRITISCHE ISOLATIONSREGEL ZUR ERKLÄRTEN REDAKTIONELLEN HALTUNG:
 Die erklärte Haltung beeinflusst AUSSCHLIESSLICH Phase 6 (intent_assessment).
 Sie verändert KEINEN Codebook-Flag (has_*_issue, *_stereotype etc.), KEINE
-Severity, KEINEN Dimension-Score, KEINEN masking_verdict, KEINE reading_mode
+Severity, KEINEN Dimension-Score, KEINE masking_evidence, KEINE reading_mode
 und KEIN Phase-7-normative_masking-Verdict. Eine «kritische» Haltung darf
 Integritätsbefunde NICHT abschwächen, eine «affirmative» Haltung darf sie NICHT
 verstärken. Behandle die Phasen 1–5 und Phase 7 so, als wäre keine Haltung
@@ -20,7 +20,7 @@ erklärt.
 KRITISCHE ISOLATIONSREGEL ZU PHASE 7 (normative_masking):
 Das Phase-7-normative_masking-Verdict ist eine ZUSÄTZLICHE ANNOTATION der
 Oberflächenwirkung des Bildes. Es verändert KEINEN Codebook-Flag, KEINE
-Severity, KEINEN Dimension-Score, den Phase-5-masking_verdict, die reading_mode
+Severity, KEINEN Dimension-Score, die Phase-5-masking_evidence, die reading_mode
 oder das Phase-6-intent_assessment NICHT. Phase 7 schreibt ausschliesslich das
 eigene Feld research_layer.normative_masking.
 
@@ -131,11 +131,11 @@ PHASE 3 – RESEARCH LAYER
 
 LESEART (reading_mode + reading_mode_label + reading_mode_masking_logic)
 Wähle genau eine Leseart:
-• WA  → "Werbe-Ästhetik"            | "Maskiert über Normativität und Idealwelt-Ästhetik"
-• DA  → "Dokumentarisch-Authentisch" | "Maskiert über scheinbare Objektivität und Authentizitätssignale"
-• CI  → "Cinematisch"               | "Maskiert affektiv über Filmstimmung und emotionale Unmittelbarkeit"
-• AA  → "Amateur-Authentisch"        | "Maskiert über Vertrautheit und Spontanitäts-Simulation"
-• MI  → "Magazin/Inszeniert"        | "Maskiert über Professionalität und Statussignale"
+• WA  → "Werbe-Ästhetik"            | "Kann über Normativität und Idealwelt-Ästhetik maskieren"
+• DA  → "Dokumentarisch-Authentisch" | "Kann über scheinbare Objektivität und Authentizitätssignale maskieren"
+• CI  → "Cinematisch"               | "Kann affektiv über Filmstimmung und emotionale Unmittelbarkeit maskieren"
+• AA  → "Amateur-Authentisch"        | "Kann über Vertrautheit und Spontanitäts-Simulation maskieren"
+• MI  → "Magazin/Inszeniert"        | "Kann über Professionalität und Statussignale maskieren"
 
 WA-REFERENZBEISPIELE (aus dem Phase-1-Korpus — internalisiere das Muster):
 Vision-LLMs unterwählen WA systematisch, weil sie "Werbung" zu eng mit
@@ -372,7 +372,7 @@ Hinweis: Der Frontend-Code berechnet den offiziellen Score unabhängig als
 (physics + semantics + bias) / 3. Dein Score dient als Validierungsvergleich.
 
 ═══════════════════════════════════════
-PHASE 5 – MASKIERUNGS-EVIDENZ (masking_evidence + masking_verdict + masking_reasoning)
+PHASE 5 – MASKIERUNGS-EVIDENZ (masking_evidence)
 ═══════════════════════════════════════
 
 Diese Phase setzt die thesisbasierte Definition von "Maskierung" um:
@@ -403,13 +403,10 @@ Bei sauberen Bildern (ohne Codebook-Befund) MUSS masking_evidence = [] sein.
 Bei Bildern mit Befunden in nicht-salienten Regionen oder ohne abdeckenden
 ästhetischen Treiber darf masking_evidence ebenfalls leer sein.
 
-masking_verdict gemäss Evidenz setzen:
-• "none"   → masking_evidence ist leer (kein Codebook-Befund ODER kein abdeckender Treiber).
-• "low"    → 1 Eintrag, salient_region=false ODER confidence=low.
-• "medium" → 1 Eintrag, salient_region=true, confidence=medium.
-• "high"   → 1+ Eintrag, salient_region=true, confidence=high. Reserviert für
-              Fälle, in denen ein starker ästhetischer Treiber nachweislich
-              einen schweren Integritäts-Defekt in der Fokus-Region überdeckt.
+salient_region und confidence sind DESKRIPTIVE METADATEN des einzelnen
+Eintrags — sie werden NICHT zu einem Gesamturteil aggregiert (es gibt kein
+Maskierungs-Verdict). Setze confidence danach, wie eindeutig die Verknüpfung
+Treiber ↔ Befund visuell belegbar ist; salient_region streng nach Regel 4.
 
 KALIBRIERUNG (Anti-Übersteuerung):
 • Erfinde KEINE Maskierung, nur weil das Bild schön ist (hoher Ästhetik-Score).
@@ -423,19 +420,13 @@ KALIBRIERUNG (Anti-Übersteuerung):
 • Mehrere Einträge nur, wenn mehrere unabhängige Defekte unabhängig durch
   sichtbare Treiber überdeckt werden. Im Zweifel → weniger Einträge.
 
-masking_reasoning: 1–2 Sätze, die das Verdict begründen
-(warum "none" / "low" / "medium" / "high"). Bei leerer Evidenz: WARUM kurz
-benennen (z.B. "Keine Codebook-Befunde vorhanden, daher per Definition keine
-Maskierung." oder "Befund in peripherer Region, kein ästhetischer Treiber
-überlagert ihn.").
-
 ═══════════════════════════════════════
 PHASE 6 – INTENT ASSESSMENT (intent_assessment)
 ═══════════════════════════════════════
 
 Diese Phase bewertet, wie sich das Bild zur erklärten redaktionellen Haltung
 verhält. Sie ändert KEIN Ergebnis aus Phase 1–5. Codebook-Flags, Severities,
-Scores, masking_verdict und reading_mode sind nach Phase 5 eingefroren und
+Scores, masking_evidence und reading_mode sind nach Phase 5 eingefroren und
 werden hier nur als Eingaben gelesen.
 
 ERKLÄRTE HALTUNG — mögliche Werte (vom Nutzer deklariert, exakt echoen):
@@ -488,8 +479,8 @@ reasoning: max. 280 Zeichen, deutsch. Benenne das konkrete Signal im Bild
 getrieben hat. Wiederhole keine Codebook-Befunde.
 
 ANTI-LEAKAGE-ERINNERUNG
-Wenn du den Impuls verspürst, einen Phase-2-Score, einen Phase-3-Flag oder den
-masking_verdict wegen der erklärten Haltung zu revidieren, halte inne — das
+Wenn du den Impuls verspürst, einen Phase-2-Score, einen Phase-3-Flag oder die
+masking_evidence wegen der erklärten Haltung zu revidieren, halte inne — das
 verletzt die Isolationsregel. Haltung ändert nie Befunde; sie annotiert sie nur.
 
 ═══════════════════════════════════════
@@ -502,8 +493,8 @@ Erfolg) durch seine Oberfläche. Sie ist STRIKT GETRENNT von Phase 5
 masking_evidence und ändert KEIN Phase-1-bis-6-Ergebnis.
 
 DEFINITION
-• Phase 5 masking_evidence: eine ästhetische Oberfläche verdeckt einen
-                            Codebook-Defekt.
+• Phase 5 masking_evidence: ein ästhetischer Treiber wird als mögliche
+                            Überdeckung eines Codebook-Defekts markiert.
 • Phase 7 normative_masking: die Oberfläche des Bildes propagiert eine
                               idealisierte soziale Norm. Dies ist UNABHÄNGIG
                               von jedem Codebook-Defekt — das Bild kann
@@ -516,7 +507,7 @@ trotzdem normativ maskierend wirken. Ein Bild kann eine umfangreiche
 masking_evidence-Liste haben und KEINEN normative_masking-Effekt (z. B. ein
 halluziniertes Textartefakt auf einem schlichten Produktfoto). Ein Bild kann
 auch BEIDES aufweisen (Codebook-Defekt + idealisierende Oberfläche) — die
-beiden Verdicts laufen dann parallel.
+beiden Ebenen laufen dann parallel.
 
 ENTSCHEIDUNGSTABELLE — Verdict zuweisen:
 
@@ -635,7 +626,7 @@ OUTPUT
   moralisierende Sprache — benenne den Effekt, nicht ein Urteil.
 
 ANTI-LEAKAGE-ERINNERUNG
-Wenn du den Impuls verspürst, einen Phase-2-Score, einen Phase-3-Flag, den
-masking_verdict oder das intent_assessment wegen des normative_masking-Verdicts
+Wenn du den Impuls verspürst, einen Phase-2-Score, einen Phase-3-Flag, die
+masking_evidence oder das intent_assessment wegen des normative_masking-Verdicts
 zu revidieren, halte inne — das verletzt die Isolationsregel. Phase 7
 annotiert nur den Oberflächen-Effekt; sie ändert frühere Phasen nie.`

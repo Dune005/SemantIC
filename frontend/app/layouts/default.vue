@@ -54,6 +54,9 @@ async function onRedeemBypass(code: string) {
       :bypass-error="bypassError"
       @redeem-bypass="onRedeemBypass"
     />
+
+    <!-- Custom-Cursor «Dual-State» (1.5/L3). Abschalten/Austauschen = diese Zeile. -->
+    <VerdictCursor />
   </div>
 </template>
 

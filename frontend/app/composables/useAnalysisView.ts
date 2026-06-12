@@ -12,9 +12,9 @@
 import { computed, type Ref, type ComputedRef } from 'vue'
 import type { SemanticAnalysisResult } from '@pipeline/analyze'
 import type { ContextReviewHint } from '@pipeline/context-hints'
+import { composeMaskingReviewNote, dedupeMaskingLinks, LINK_AREA_LABEL } from '@pipeline/masking-note'
 import type {
   DimensionStatus,
-  MaskingVerdict,
   RiskLevel,
   ReadingModeCode,
   DeclaredIntent,
@@ -38,6 +38,7 @@ import type {
   ReadingModeView,
   VisualDriverView,
   BiasAxesSummary,
+  MaskingMarkedSpot,
   AnalysisViewModel,
 } from '~/types/analysis'
 
@@ -117,7 +118,7 @@ const RECOMMENDATION_TABLE: Record<
     null: 'Kritische Hinweise – bitte vor der Publikation klären.',
     image_integrity: 'Sichtbare Bildfehler – anderes Bild wählen oder neu generieren.',
     bias_representation: 'Kritische Bias-Hinweise – Personendarstellung überprüfen oder anderes Bild wählen.',
-    masking_style: 'Bild wirkt täuschend überzeugend, mehrere Auffälligkeiten – bitte nicht in dieser Form verwenden.',
+    masking_style: 'Bild wirkt sehr überzeugend, trägt aber mehrere Auffälligkeiten – bitte nicht in dieser Form verwenden.',
     hallucination: 'Bildinhalte weichen vom Prompt ab – bitte nicht in dieser Form verwenden.',
   },
 }
@@ -172,7 +173,7 @@ const RECOMMENDATION_BY_INTENT: Record<
       null: 'Kritische Befunde – auch in kritischer Rahmung vor Publikation klären.',
       image_integrity: 'Sichtbare Bildfehler – auch eine kritische Bildunterschrift macht diese Fehler nicht zur Botschaft. Anderes Bild wählen.',
       bias_representation: 'Befund ist substantiell – als kritischer Beleg potenziell verwendbar, aber NUR mit eindeutiger Distanzierung im Begleittext. Ohne diese Distanzierung verstärkt das Bild das Muster.',
-      masking_style: 'Bild wirkt täuschend überzeugend – im kritischen Kontext muss die Distanzierung sehr explizit sein, sonst wirkt es affirmativ.',
+      masking_style: 'Bild wirkt sehr überzeugend – im kritischen Kontext muss die Distanzierung sehr explizit sein, sonst wirkt es affirmativ.',
       hallucination: 'Bildinhalte weichen vom Prompt ab – auch in kritischer Rahmung Faktentreue gefährdet.',
     },
   },
@@ -191,7 +192,7 @@ const RECOMMENDATION_BY_INTENT: Record<
       null: 'Kritische Befunde – als neutrales Beispiel nicht geeignet.',
       image_integrity: 'Sichtbare Bildfehler – eignet sich nicht als illustratives Beispiel.',
       bias_representation: 'Trotz illustrativer Absicht: Befund ist substantiell. Bild eignet sich nicht als neutrales Beispiel.',
-      masking_style: 'Bild wirkt täuschend überzeugend – als illustratives Beispiel würde es die thematische Neutralität untergraben.',
+      masking_style: 'Bild wirkt sehr überzeugend – als illustratives Beispiel würde es die thematische Neutralität untergraben.',
       hallucination: 'Bildinhalte weichen vom Prompt ab – als illustratives Beispiel ungeeignet.',
     },
   },
@@ -220,24 +221,18 @@ const NORMATIVE_HIGH_INTENT_NOTES: Record<DeclaredIntent, string> = {
     'Bild propagiert eine idealisierte Norm. Vor Verwendung prüfen, ob das in den Kontext passt.',
 }
 
-const NORMATIVE_HIGH_DOUBLE_MASKING_SUFFIX =
-  ' Zusätzlich wirkt die Ästhetik als Maskierung von Befunden – doppelt maskierender Effekt.'
-
 const NORMATIVE_MEDIUM_NOTE =
   'Bild zeigt erkennbare idealisierende Ästhetik mit normativer Wirkung – im Begleittext bewusst rahmen.'
 
+// Der frühere Doppel-Maskierungs-Suffix hing am faktischen masking_verdict —
+// mit dem Score-Rückbau (2026-06-10) entfernt; die Note ist jetzt rein
+// Phase-7-getrieben.
 function computeNormativeMaskingNote(
   verdict: NormativeMaskingVerdict,
-  factualMaskingVerdict: MaskingVerdict,
   declaredIntent: DeclaredIntent,
 ): string | null {
   if (verdict === 'high') {
-    const baseText = NORMATIVE_HIGH_INTENT_NOTES[declaredIntent]
-    // Doppel-Maskierungs-Suffix nur bei faktischem Verdict 'high' (Codex-Review #2:
-    // 'medium' ist methodisch vertretbar, aber der Suffix zu hart für eine
-    // mittlere Maskierungs-Tendenz).
-    const isDoubleMasked = factualMaskingVerdict === 'high'
-    return baseText + (isDoubleMasked ? NORMATIVE_HIGH_DOUBLE_MASKING_SUFFIX : '')
+    return NORMATIVE_HIGH_INTENT_NOTES[declaredIntent]
   }
   if (verdict === 'medium') {
     return NORMATIVE_MEDIUM_NOTE
@@ -355,21 +350,34 @@ function pickConcreteFindings(
   findings: Finding[],
   dimension: 'physics' | 'semantics' | 'bias',
   filter?: (f: Finding) => boolean,
+  allowMinorFallback = false,
 ): ConcreteFinding[] {
-  const candidates = findings.filter(f => {
-    if (f.severity !== 'moderate' && f.severity !== 'severe') return false
-    if (!hasSubstance(f)) return false
-    if (filter && !filter(f)) return false
-    return true
-  })
-  // severe vor moderate, dann ursprüngliche Reihenfolge erhalten
-  candidates.sort((a, b) => {
-    if (a.severity === b.severity) return 0
-    return a.severity === 'severe' ? -1 : 1
-  })
+  const pick = (severities: ReadonlyArray<Finding['severity']>) =>
+    findings.filter(f => {
+      if (!severities.includes(f.severity)) return false
+      if (!hasSubstance(f)) return false
+      if (filter && !filter(f)) return false
+      return true
+    })
+  let candidates = pick(['moderate', 'severe'])
+  // F5-Fallback: Hat ein Topic nur minor-Findings, wären sonst gar keine
+  // Evidenz-Sätze erreichbar — der Prüfauftrag verlöre seine Ortsangabe.
+  // minor nur als Fallback, nie zusätzlich zu moderate/severe im selben Topic.
+  // Gate-Historie (Codex-Reviews 2026-06-10/11): zuerst dimensionsweit gegatet
+  // (lacksStrongFindings über alle Dimension-Findings); das unterdrückte aber
+  // die Ortsangabe eines maskierungs-verknüpften Anatomie-Befunds, sobald die
+  // Dimension irgendeinen anderen moderaten Befund trug. Jetzt topic-lokal:
+  // candidates.length === 0 IST der Strong-Check auf dem gefilterten Pool —
+  // Strong-Findings anderer Topics bleiben über deren eigene Hints sichtbar.
+  if (candidates.length === 0 && allowMinorFallback) {
+    candidates = pick(['minor'])
+  }
+  // severe vor moderate (vor minor), dann ursprüngliche Reihenfolge erhalten
+  const rank: Record<Finding['severity'], number> = { severe: 0, moderate: 1, minor: 2 }
+  candidates.sort((a, b) => rank[a.severity] - rank[b.severity])
   return candidates.slice(0, CONCRETE_FINDING_MAX_PER_TOPIC).map(f => ({
     text: truncateFinding(f.finding),
-    severity: f.severity as 'moderate' | 'severe',
+    severity: f.severity,
     dimension,
   }))
 }
@@ -492,18 +500,19 @@ function evaluateTopic(
       break
     }
     case 'masking': {
+      // F1-Gate (Codex-Review 2026-06-10): ohne validierte Treiber↔Befund-Verknüpfung
+      // kein Maskierungs-Topic. «Dimension auffällig + hohe Ästhetik» allein war die
+      // widerlegte Score-Logik und darf den Hinweis nicht mehr auslösen.
+      if (ctx.maskingEvidenceCount === 0) break
+      signals.push({ text: `masking_evidence×${ctx.maskingEvidenceCount}`, group: 'gemini_research' })
       const anyDimAuffaellig =
         dim.physics.status !== 'green' || dim.semantics.status !== 'green' || dim.bias.status !== 'green'
       if (anyDimAuffaellig) {
         signals.push({ text: 'any_dim.status≠green', group: 'gemini_dimension' })
       }
-      if (ctx.maskingEvidenceCount >= 2) {
-        signals.push({ text: `masking_evidence×${ctx.maskingEvidenceCount}`, group: 'gemini_research' })
-      }
       if (ctx.aestheticCombined >= 75) {
         signals.push({ text: `aesthetic_combined=${ctx.aestheticCombined}`, group: 'external_aesthetic' })
       }
-      addRule('masking_attention_risk')
       break
     }
     case 'style_mismatch': {
@@ -559,7 +568,8 @@ function evaluateTopic(
   )
     severity = 'medium'
 
-  // Concrete findings — gefiltert nach Topic, nur moderate+/severe substantielle Texte,
+  // Concrete findings — gefiltert nach Topic, moderate/severe substantielle Texte
+  // (bei auffälliger Dimension notfalls minor als Fallback, s. pickConcreteFindings),
   // max 2 pro Topic. WICHTIG: das beeinflusst die Sichtbarkeits-Regel NICHT — Findings
   // erscheinen nur als Subtext unter Topics, die ohnehin schon sichtbar sind.
   let concreteFindings: ConcreteFinding[] | undefined
@@ -569,6 +579,7 @@ function evaluateTopic(
         dim.physics.findings,
         'physics',
         f => !matchesKeyword(`${f.category} ${f.finding}`, 'anatomy'),
+        dim.physics.status !== 'green' || ctx.maskingLinkedTopics.has('physics'),
       )
       break
     case 'anatomy':
@@ -576,16 +587,23 @@ function evaluateTopic(
         dim.physics.findings,
         'physics',
         f => matchesKeyword(`${f.category} ${f.finding}`, 'anatomy'),
+        dim.physics.status !== 'green' || ctx.maskingLinkedTopics.has('anatomy'),
       )
       break
     case 'context_logic':
-      concreteFindings = pickConcreteFindings(dim.semantics.findings, 'semantics')
+      concreteFindings = pickConcreteFindings(
+        dim.semantics.findings,
+        'semantics',
+        undefined,
+        dim.semantics.status !== 'green' || ctx.maskingLinkedTopics.has('context_logic'),
+      )
       break
     case 'role_stereotype':
       concreteFindings = pickConcreteFindings(
         dim.bias.findings,
         'bias',
         f => matchesKeyword(`${f.category} ${f.finding}`, 'role'),
+        dim.bias.status !== 'green',
       )
       break
     case 'body_stereotype':
@@ -593,6 +611,7 @@ function evaluateTopic(
         dim.bias.findings,
         'bias',
         f => matchesKeyword(`${f.category} ${f.finding}`, 'body'),
+        dim.bias.status !== 'green',
       )
       break
     case 'gender_bias':
@@ -600,6 +619,7 @@ function evaluateTopic(
         dim.bias.findings,
         'bias',
         f => matchesKeyword(`${f.category} ${f.finding}`, 'gender'),
+        dim.bias.status !== 'green',
       )
       break
     case 'hallucination':
@@ -607,6 +627,7 @@ function evaluateTopic(
         dim.semantics.findings,
         'semantics',
         f => matchesKeyword(`${f.category} ${f.finding}`, 'hallucination'),
+        dim.semantics.status !== 'green',
       )
       break
     case 'masking':
@@ -639,6 +660,11 @@ interface AnalysisContext {
   axes: SemanticAnalysisResult['analysis']['bias_axis_analysis']['axes']
   ruleHints: ContextReviewHint[]
   maskingEvidenceCount: number
+  // Topics, auf deren Bereich der Maskierungs-Hinweis verweist (aus den
+  // deduplizierten masking_evidence-Links; leer ohne Note). Erlaubt dort den
+  // minor-Fallback für Evidenz-Sätze auch bei grüner Dimension — der Hinweis
+  // referenziert den Befund ja explizit.
+  maskingLinkedTopics: Set<HintTopic>
   aestheticCombined: number
   readingMode: ReadingModeCode
 }
@@ -710,10 +736,10 @@ function mergeBiasTopics(hints: ConsolidatedHint[], biasFindings: Finding[]): Co
       dimension: 'bias',
     })
   }
-  mergedFindings.sort((a, b) => {
-    if (a.severity === b.severity) return 0
-    return a.severity === 'severe' ? -1 : 1
-  })
+  // Antisymmetrischer Comparator inkl. 'minor' (Codex-Review: der frühere
+  // Zwei-Stufen-Vergleich konnte minor vor moderate einsortieren).
+  const mergeRank: Record<ConcreteFinding['severity'], number> = { severe: 0, moderate: 1, minor: 2 }
+  mergedFindings.sort((a, b) => mergeRank[a.severity] - mergeRank[b.severity])
 
   const merged: ConsolidatedHint = {
     topic: 'bias_combined',
@@ -874,6 +900,34 @@ export function buildAnalysisViewModel(
     maxRisk: maxRiskRank === 3 ? 'high' : maxRiskRank === 2 ? 'medium' : maxRiskRank === 1 ? 'low' : 'none',
   }
 
+  // Alt-JSON-Fallback (Codex-Review): Outputs vor dem Rückbau haben das Feld
+  // nicht (undefined) — dann aus der vorhandenen masking_evidence mit derselben
+  // Pipeline-Funktion komponieren statt fälschlich «keine Stelle markiert» zu
+  // behaupten. Single Source bleibt: identische Funktion via @pipeline.
+  const maskingReviewNote = result.masking_review_note !== undefined
+    ? result.masking_review_note
+    : composeMaskingReviewNote(
+        analysis.research_layer.reading_mode,
+        analysis.research_layer.masking_evidence ?? [],
+      )
+
+  // Die Stellen hinter dem Hinweis, am Bild prüfbar (Treiber + Beobachtung +
+  // Bereich). Gleiche Dedupe-Zählung wie note.basis.link_count; leer ohne Note.
+  const maskingLinks = maskingReviewNote === null
+    ? []
+    : dedupeMaskingLinks(analysis.research_layer.masking_evidence ?? [])
+  const driverLabelByCode = new Map(visualDrivers.map(d => [d.code, d.label]))
+  const maskingMarkedSpots: MaskingMarkedSpot[] = maskingLinks.map(e => ({
+    driverCode: e.driver,
+    driverLabel: driverLabelByCode.get(e.driver) ?? e.driver,
+    area: LINK_AREA_LABEL[e.codebook_link],
+    text: e.masked_issue,
+  }))
+  // Bereiche, auf die der Hinweis verweist, als Hint-Topics (anatomy bleibt
+  // eigenes Topic, Kontextbrüche laufen über context_logic).
+  const MASKING_LINK_TOPIC = { physics: 'physics', anatomy: 'anatomy', context: 'context_logic' } as const
+  const maskingLinkedTopics = new Set<HintTopic>(maskingLinks.map(e => MASKING_LINK_TOPIC[e.codebook_link]))
+
   const ctx: AnalysisContext = {
     dim: {
       physics: { status: dim.physics.status, findings: dim.physics.findings },
@@ -884,6 +938,7 @@ export function buildAnalysisViewModel(
     axes,
     ruleHints: result.context_review_hints,
     maskingEvidenceCount: analysis.research_layer.masking_evidence?.length ?? 0,
+    maskingLinkedTopics,
     aestheticCombined,
     readingMode: readingMode.code,
   }
@@ -932,9 +987,45 @@ export function buildAnalysisViewModel(
 
   const visible = sortedHints.filter(isVisible).slice(0, 3)
   const visibleIds = new Set(visible.map(h => h.topic))
-  const hidden = sortedHints.filter(h => !visibleIds.has(h.topic))
 
   const { status, dominantCluster } = aggregateVerdict(sortedHints, visible, ctx.dim)
+
+  // F5-Coverage-Garantie (NACH aggregateVerdict — verändert das Urteil nicht,
+  // nur die Sichtbarkeit): Jede nicht-grüne Dimension bekommt mindestens einen
+  // sichtbaren Hint. Sonst zeigt Block 4 «keine spezifischen Auffälligkeiten»,
+  // während die Dim-Kachel darüber gelb/rot ist (anat-ko-06-Inkonsistenz).
+  // Max. eine Ergänzung pro Dimension → höchstens 3 (Codex-Review: ein harter
+  // Cap < 3 würde die Garantie brechen, wenn dimensionslose Hints die regulären
+  // Plätze belegen).
+  const coverageAdds: ConsolidatedHint[] = []
+  for (const dimKey of ['physics', 'semantics', 'bias'] as const) {
+    if (dim[dimKey].status === 'green') continue
+    const covered = visible.some(h => h.dimension === dimKey)
+      || coverageAdds.some(h => h.dimension === dimKey)
+    if (covered) continue
+    const candidate = sortedHints.find(
+      h => h.dimension === dimKey && !visibleIds.has(h.topic)
+        && !coverageAdds.some(c => c.topic === h.topic),
+    )
+    if (candidate) coverageAdds.push(candidate)
+  }
+
+  // Maskierungs-Verknüpfungs-Promotion (User-Feedback 2026-06-10): Verweist der
+  // Maskierungs-Hinweis auf einen markierten Bereich (z.B. Anatomie), muss der
+  // zugehörige Prüfauftrag vorne in «Warum dieses Urteil?» stehen — sonst
+  // referenziert die Karte einen Befund, der erst in der Vertiefung auffindbar
+  // ist (und ein «auffällig»-Urteil über drei grünen Dimensionen wirkt
+  // unbegründet). Evidenz-gegatet (nur bei vorhandener Note), läuft NACH
+  // aggregateVerdict und verändert das Urteil nicht.
+  for (const topic of maskingLinkedTopics) {
+    if (visible.some(h => h.topic === topic) || coverageAdds.some(c => c.topic === topic)) continue
+    const candidate = sortedHints.find(h => h.topic === topic && !visibleIds.has(h.topic))
+    if (candidate) coverageAdds.push(candidate)
+  }
+
+  const visibleFinal = [...visible, ...coverageAdds]
+  const visibleFinalIds = new Set(visibleFinal.map(h => h.topic))
+  const hidden = sortedHints.filter(h => !visibleFinalIds.has(h.topic))
 
   // Backwards-Fallback: ältere API-Outputs (vor Intent-Konzept) oder gecachte
   // Spike-JSONs ohne intent_assessment-Feld nicht crashen lassen. Default ist
@@ -1024,7 +1115,6 @@ export function buildAnalysisViewModel(
   }
   const normativeMaskingNote = computeNormativeMaskingNote(
     normativeMasking.verdict,
-    result.computed.masking_verdict,
     declaredIntent,
   )
 
@@ -1036,7 +1126,7 @@ export function buildAnalysisViewModel(
     // Hero-Score-Quelle der BefundKarte – identischer Wert wie debug.integrityScore
     // (das absichtlich erhalten bleibt). NUR Darstellung, NIE Verdict-Logik.
     integrityScore: result.computed.integrity_score_local,
-    userHints: visible,
+    userHints: visibleFinal,
     hiddenHints: hidden,
     intentRecommendationNote,
     usageFormNote,
@@ -1050,8 +1140,8 @@ export function buildAnalysisViewModel(
     visualDrivers,
     hintsSortedBySeverity,
     hintsCountBySeverity,
-    maskingVerdict: result.computed.masking_verdict,
-    maskingScore: result.computed.masking_score,
+    maskingReviewNote,
+    maskingMarkedSpots,
     inputCompleteness,
     dominantErrorType: analysis.research_layer.dominant_error_type,
     biasAxesSummary,

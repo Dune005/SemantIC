@@ -50,9 +50,10 @@ useHead({
           Der entscheidende Punkt ist, was daraus folgt. Ein Bild, das visuell
           überzeugt, lädt nicht dazu ein, genauer hinzusehen. Die Oberfläche
           beruhigt das Auge, und die Schwächen rutschen durch. Genau diesen
-          Mechanismus nennen wir <strong>Maskierung</strong>: Visuelle Perfektion
-          maskiert inhaltliche und ethische Schwächen. Je überzeugender ein Bild,
-          desto grösser die Gefahr, dass du seine Probleme übersiehst.
+          Mechanismus nennen wir <strong>Maskierung</strong> – die Arbeitsthese
+          hinter SemantIC: Visuelle Perfektion kann inhaltliche und ethische
+          Schwächen maskieren. Je überzeugender ein Bild, desto grösser die
+          Gefahr, dass du seine Probleme übersiehst.
         </p>
       </div>
 
@@ -129,9 +130,10 @@ useHead({
           <h3>Du bekommst ein Gesamturteil und die Details</h3>
           <p>
             Zuerst siehst du das Gesamturteil als Ampel – unauffällig, auffällig
-            oder kritisch – mit einer klaren Empfehlung. Darunter die drei
-            Dimensionen, der Maskierungs-Score und die Leseart. Jeden einzelnen
-            Befund kannst du aufklappen, bis hin zu den Rohdaten.
+            oder kritisch – mit einer Empfehlung. Darunter die drei
+            Dimensionen, die Leseart und, wo das Modell Überdeckungs-Stellen
+            markiert hat, ein Maskierungs-Hinweis. Jeden einzelnen Befund kannst
+            du aufklappen, bis hin zu den Rohdaten.
           </p>
         </Card>
       </div>
@@ -217,26 +219,27 @@ useHead({
     </div>
   </section>
 
-  <!-- ================= 4 · MASKIERUNGS-SCORE ================= -->
+  <!-- ================= 4 · MASKIERUNGS-CHECK ================= -->
   <section class="section" aria-labelledby="s4-title">
     <div class="page page--text">
-      <p class="section__index">04 · Der Maskierungs-Score</p>
-      <h2 id="s4-title">Die Kennzahl, die nur SemantIC hat.</h2>
+      <p class="section__index">04 · Der Maskierungs-Check</p>
+      <h2 id="s4-title">Wenn die Oberfläche stärker ist als der Inhalt.</h2>
       <div class="section__body">
         <p>
-          SemantIC bewertet zwei Dinge getrennt: wie gut ein Bild aussieht (die
-          Ästhetik) und wie gut es inhaltlich hält (die Integrität). Der
-          Maskierungs-Score ist die Differenz aus beiden. Liegt die Ästhetik
-          deutlich über der Integrität, ist der Maskierungs-Score hoch – das Bild
-          wirkt überzeugender, als es eigentlich ist. Liegen beide nah beieinander,
-          gibt es wenig zu maskieren.
+          SemantIC bewertet zwei Dinge strikt getrennt: wie gut ein Bild aussieht
+          (die Ästhetik) und wie gut es inhaltlich hält (die Integrität). Liegt
+          die Wirkung deutlich über der Substanz, ist das der Nährboden für
+          Maskierung: Die perfekte Oberfläche kann Fehler überdecken, bevor du
+          sie überhaupt bemerkst.
         </p>
         <p>
-          Diese Differenz ist die direkte Übersetzung der Forschungsthese in eine
-          Zahl. Sie macht etwas messbar, das sonst Bauchgefühl bleibt: das Gefälle
-          zwischen dem, was ein Bild verspricht, und dem, was es einlöst. SemantIC
-          weist diese Tendenz eingeordnet aus – von „keine Maskierung erkannt" über
-          „geringe" und „mittlere" bis „starke Tendenz".
+          Eine einzelne Maskierungs-Kennzahl findest du bei SemantIC bewusst
+          nicht. Wir haben in der eigenen Validierung mehrere Messansätze geprüft
+          – keiner hat der menschlichen Einschätzung standgehalten. Statt einer
+          Scheinpräzision markiert der Befund konkret die Stellen, an denen ein
+          ästhetischer Treiber einen Befund überdecken könnte, und benennt die
+          Leseart, über die das Bild seine Wirkung erzeugt. Das ist am Bild
+          nachprüfbar – eine Zahl wäre es nicht.
         </p>
       </div>
 
@@ -247,7 +250,7 @@ useHead({
         padding="none"
         class="card masking-graphic"
         role="img"
-        aria-label="Beispiel: Ästhetik 86 von 100, Integrität 64 von 100. Die Differenz von 22 Punkten ergibt eine mittlere Maskierungs-Tendenz."
+        aria-label="Beispiel: Ästhetik 86 von 100, Integrität 64 von 100. Das Bild wirkt stärker, als es inhaltlich hält – solche Lücken markiert SemantIC mit einem beschreibenden Hinweis."
       >
         <p class="card__kicker">Beispiel</p>
         <div class="gauge">
@@ -261,9 +264,8 @@ useHead({
           <span class="gauge__val">64 / 100</span>
         </div>
         <div class="masking-delta">
-          <span class="mono">Maskierungs-Score · Δ</span>
-          <span class="masking-delta__num">+22</span>
-          <span class="badge badge--warn">mittlere Tendenz</span>
+          <span class="mono">Maskierungs-Hinweis</span>
+          <span class="badge badge--warn">Wirkung über Substanz</span>
         </div>
         <p class="figure-note">Schematische Darstellung – endgültige Grafik im Bau.</p>
       </Card>
@@ -389,30 +391,111 @@ useHead({
     </div>
   </section>
 
-  <!-- ================= 8 · WOHER DIE KRITERIEN STAMMEN ================= -->
-  <section class="section" aria-labelledby="s8-title">
+  <!-- ================= 8 · VALIDIERTE GRENZEN (F2) =================
+       Grenzen als Qualitätsmerkmal: jede Aussage hier ist empirisch geprüft
+       (Anatomie-Batch + verblindeter Zweitmodell-Vergleich, dokumentierte
+       Testreihen gegen die menschliche Phase-1-Codierung). -->
+  <section class="section" aria-labelledby="s-limits-title">
     <div class="page page--text">
-      <p class="section__index">08 · Woher die Kriterien stammen</p>
-      <h2 id="s8-title">Forschung, kein generisches Modellwissen.</h2>
+      <p class="section__index">08 · Validierte Grenzen</p>
+      <h2 id="s-limits-title">Wir kennen die Grenzen – und legen sie offen.</h2>
       <div class="section__body">
         <p>
-          Die Prüflogik von SemantIC speist sich aus einer eigenen empirischen
-          Grundlage: einer qualitativen Inhaltsanalyse von 144 KI-generierten
-          Bildern. Daraus sind die Lesearten, die wiederkehrenden Fehlerprofile und
-          die visuellen Treiber entstanden, mit denen das Tool arbeitet. Diese
-          Heuristik ist der praktische Teil der Bachelorarbeit „Visual Bias im
-          KI-generierten Bild" im Studiengang Multimedia-Production an der FH
-          Graubünden. SemantIC stützt sich also nicht auf beliebiges Modellwissen,
-          sondern auf eine nachvollziehbare, dokumentierte Forschungsbasis.
+          Jede Grenze, die hier steht, ist kein juristisches Kleingedrucktes,
+          sondern empirisch geprüft: in dokumentierten Testreihen gegen die
+          menschliche Codierung, bei der Anatomie zusätzlich verblindet mit einem
+          zweiten Vision-Modell. Diese Offenheit ist Teil des Forschungsanspruchs –
+          du sollst wissen, wann du dich auf einen Befund verlassen kannst und wann
+          dein eigener Blick gefragt ist.
+        </p>
+      </div>
+
+      <div class="limits-grid">
+        <Card tone="paper" border="hair" padding="none" class="card card--paper">
+          <p class="card__kicker">Verlässlich</p>
+          <h3>Die rote Ampel</h3>
+          <p>
+            In der Validierung gab es keinen einzigen unbegründet roten Befund.
+            Zeigt SemantIC rot, gibt es etwas zu klären – nimm es ernst.
+          </p>
+        </Card>
+        <Card tone="paper" border="hair" padding="none" class="card card--paper">
+          <p class="card__kicker">Richtig lesen</p>
+          <h3>Grün heisst: nichts gefunden</h3>
+          <p>
+            Ein grünes Ergebnis heisst, dass das Tool nichts gefunden hat – nicht,
+            dass das Bild fehlerfrei ist. Es ersetzt deine Sichtprüfung nicht,
+            es fokussiert sie.
+          </p>
+        </Card>
+        <Card tone="paper" border="hair" padding="none" class="card card--paper">
+          <p class="card__kicker">Bekannte Lücke</p>
+          <h3>Anatomie: Flag = Prüfauftrag</h3>
+          <p>
+            In den Tests fand das Tool lokale Hand- und Finger-Artefakte
+            zuverlässig. Strukturelle Körperfehler – Kopforientierung, Anzahl
+            Gliedmassen, Beinstellung – kann es übersehen; das ist über zwei
+            verschiedene Vision-Modelle hinweg validiert. Ein Anatomie-Flag ist
+            deshalb ein manueller Prüfauftrag an dich, keine abschliessende Diagnose.
+          </p>
+        </Card>
+        <Card tone="paper" border="hair" padding="none" class="card card--paper">
+          <p class="card__kicker">Einordnung</p>
+          <h3>Schwere ist eine Einschätzung</h3>
+          <p>
+            Die Stufen an einzelnen Befunden – schwer, moderat, gering – sind eine
+            Einschätzung des Vision-Modells, keine Messung. Gerade bei Anatomie ist
+            die Schwere nicht verlässlich: Ob ein markierter Punkt
+            publikationskritisch ist, entscheidet dein Blick aufs Bild.
+          </p>
+        </Card>
+      </div>
+
+      <div class="section__body">
+        <p>
+          Die andere Seite derselben Tests: SemantIC fand darin auch Befunde, die
+          ein menschlicher Blick übersehen hatte. Die Hinweise ergänzen deine
+          Sichtprüfung – ersetzen sie nicht. Genau dafür ist jeder Befund mit
+          Markierung und Beobachtung am Bild nachprüfbar gebaut.
         </p>
       </div>
     </div>
   </section>
 
-  <!-- ================= 9 · DATENSCHUTZ IN EINEM SATZ ================= -->
+  <!-- ================= 9 · WOHER DIE KRITERIEN STAMMEN ================= -->
+  <section class="section" aria-labelledby="s8-title">
+    <div class="page page--text">
+      <p class="section__index">09 · Woher die Kriterien stammen</p>
+      <h2 id="s8-title">Forschung, kein generisches Modellwissen.</h2>
+      <div class="section__body">
+        <p>
+          Die Prüflogik von SemantIC speist sich aus einer eigenen empirischen
+          Grundlage: einer qualitativen Inhaltsanalyse von 144 KI-generierten
+          Bildern. Daraus sind die fünf Lesearten, die wiederkehrenden Fehlerprofile
+          und die neun visuellen Treiber entstanden, mit denen das Tool arbeitet.
+          Diese Heuristik ist der praktische Teil der Bachelorarbeit „Visual Bias im
+          KI-generierten Bild" im Studiengang Multimedia-Production an der FH
+          Graubünden. Die Bildanalyse selbst führt ein Vision-Modell aus – aber
+          nach welchen Kriterien es prüft und was als Befund zählt, bestimmt diese
+          nachvollziehbare, dokumentierte Forschungsbasis.
+        </p>
+        <p>
+          Die Pipeline dahinter wurde über dokumentierte Iterationsrunden entwickelt
+          und systematisch gegen die menschliche Codierung geprüft – die validierten
+          Grenzen oben stammen aus genau diesen Tests. Und sie ist bewusst
+          modellagnostisch gebaut: Die Kriterien, die Evidenz-Pflicht und die
+          deterministischen Prüfregeln hängen nicht an einem bestimmten KI-Modell.
+          Werden die Vision-Modelle besser, wird die Prüfung besser – am Prüfraster
+          ändert das nichts.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 10 · DATENSCHUTZ IN EINEM SATZ ================= -->
   <section class="section" aria-labelledby="s9-title">
     <div class="page page--text">
-      <p class="section__index">09 · Datenschutz</p>
+      <p class="section__index">10 · Datenschutz</p>
       <h2 id="s9-title">Was mit deinem Bild passiert.</h2>
       <div class="section__body">
         <p>
@@ -798,13 +881,6 @@ useHead({
   text-transform: uppercase;
   color: var(--muted);
 }
-.masking-delta__num {
-  font-family: 'IBM Plex Sans', system-ui, sans-serif;
-  font-weight: 700;
-  font-size: 26px;
-  letter-spacing: -0.02em;
-  color: var(--ink);
-}
 
 /* ---- Lesearten-Tabelle ---- */
 .table {
@@ -912,6 +988,14 @@ useHead({
   gap: 16px;
   margin-top: 24px;
 }
+
+/* ---- Validierte Grenzen (F2) – vier Panels, gleiche Sprache wie input-frames ---- */
+.limits-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 24px;
+}
 .important-note {
   margin-top: 16px;
 }
@@ -977,7 +1061,8 @@ useHead({
   .steps,
   .dims,
   .contrast,
-  .input-frames {
+  .input-frames,
+  .limits-grid {
     grid-template-columns: 1fr;
   }
   .gauge {

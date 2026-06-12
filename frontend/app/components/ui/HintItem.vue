@@ -6,9 +6,11 @@ import { computed } from 'vue'
 import { HINT_SEVERITY_LABEL, DIMENSION_LABELS } from '~/lib/severity'
 import type { ConsolidatedHint } from '~/types/analysis'
 
-// `concise` (Frontend 1.1): unterdrückt die aufklappbaren concreteFindings – die schlanke
-// Befundkarte zeigt nur den Topic-Text (keine zusätzlichen Detail-Disclosures neben „Analyse vertiefen").
-const props = defineProps<{ hint: ConsolidatedHint; concise?: boolean }>()
+// F5 (Frontend 1.5): Der frühere `concise`-Modus unterdrückte die concreteFindings
+// komplett – damit waren die Evidenz-Sätze (die am besten validierte Stärke des Tools)
+// in der UI unerreichbar. Jetzt sind sie immer als ZUGEKLAPPTES <details> dabei:
+// einen Klick entfernt, ohne die Karte zu füllen.
+const props = defineProps<{ hint: ConsolidatedHint }>()
 
 // Severity-Farbe (Prototyp .hint-sev): high=crit, medium=warn, low=neutral (surface-2).
 const SEV = {
@@ -33,7 +35,7 @@ const findings = computed(() => (props.hint.concreteFindings ?? []).slice(0, 2))
       <div class="flex-1">
         <span class="text-[14px] leading-normal text-ink">{{ hint.text }}</span>
         <span v-if="dimLabel" class="ml-2 font-mono text-[10px] uppercase tracking-[0.08em] text-subtle">{{ dimLabel }}</span>
-        <details v-if="findings.length && !concise" class="hint-details mt-2">
+        <details v-if="findings.length" class="hint-details mt-2">
           <summary>Details</summary>
           <ul class="mt-2 flex flex-col gap-[7px]">
             <li
@@ -44,7 +46,7 @@ const findings = computed(() => (props.hint.concreteFindings ?? []).slice(0, 2))
             >
               {{ f.text }}
               <span class="ml-[6px] font-mono text-[10px] uppercase tracking-[0.08em] text-subtle">
-                {{ f.severity === 'severe' ? 'schwer' : 'moderat' }}
+                {{ f.severity === 'severe' ? 'schwer' : f.severity === 'moderate' ? 'moderat' : 'gering' }}
               </span>
             </li>
           </ul>
@@ -97,5 +99,9 @@ const findings = computed(() => (props.hint.concreteFindings ?? []).slice(0, 2))
 .concrete-item[data-sev='moderate']::before {
   background: var(--warn);
   border-color: var(--warn);
+}
+.concrete-item[data-sev='minor']::before {
+  background: var(--surface-2);
+  border-color: var(--ink-soft);
 }
 </style>

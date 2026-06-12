@@ -31,7 +31,10 @@
   --ink:      #23251d;   /* Hauptfarbe - Headlines, Werte, tragender Text */
   --ink-soft: #33342d;   /* leicht abgesetzt - sekundaere Werte, Labels */
   --muted:    #5c5e54;   /* sekundaerer Text (AA-Kontrast auf canvas/surface) */
-  --subtle:   #7c7e72;   /* NUR Captions/Kicker - nie tragender Text */
+  --subtle:   #63655b;   /* NUR Captions/Kicker - nie tragender Text.
+                            1.5: von #7c7e72 abgedunkelt (WCAG-AA-Fix, Codex-Befund
+                            am Landing-Mockup F): erreicht jetzt >=4.5:1 auch auf
+                            --page-bg, der kritischsten hellen Flaeche. */
 
   /* ---------------------------------------------------------- */
   /* LINIEN (flache, bordered Karten - keine Schatten)          */
@@ -62,6 +65,22 @@
   --paper:  var(--canvas);           /* = #eeefe9 */
   --accent: var(--crit);             /* = #cd4239 (Verdikt-Punkt am Satzende) */
   --soft:   rgba(35, 37, 29, 0.55);  /* Ink bei 55% - Schraffuren, Hauchlinien */
+
+  /* ---------------------------------------------------------- */
+  /* DUNKLE FLAECHEN (Ink-Inversion) · neu Frontend 1.5         */
+  /* Fuer bewusst dunkle Landing-Sektionen (Maskierung, Schluss-*/
+  /* CTA). Tiefe weiterhin ueber Flaechenwechsel, kein Schatten.*/
+  /* REGEL: KEINE Severity-Woerter/Kleintext auf dunklen        */
+  /* Flaechen - --crit erreicht auf --ink-surface nur ~3.3:1.   */
+  /* Der rote Verdikt-Punkt ist als Grafik ok (3:1-Schwelle     */
+  /* fuer Nicht-Text), als Textfarbe nicht.                     */
+  /* ---------------------------------------------------------- */
+  --ink-surface:    #23251d;  /* = --ink; dunkler Sektionsgrund */
+  --ink-surface-2:  #2c2e25;  /* abgesetzte Tafel auf dunkel (Flaechenwechsel) */
+  --ink-line:       #44463c;  /* Hairlines auf dunkel */
+  --ink-text:       #eeefe9;  /* = --canvas; Haupttext auf dunkel (~13:1) */
+  --ink-text-soft:  #c8cabd;  /* Sekundaertext auf dunkel (~9:1) */
+  --ink-text-muted: #9a9c8e;  /* Captions/Mono-Kleindruck auf dunkel (~5.6:1, AA) */
 
   /* ---------------------------------------------------------- */
   /* GEOMETRIE / GLOBAL                                         */

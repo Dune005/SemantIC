@@ -11,7 +11,7 @@ The user provides three inputs in the user message:
 CRITICAL ISOLATION RULE FOR DECLARED EDITORIAL INTENT:
 The declared editorial intent informs ONLY Phase 6 (intent_assessment). It does
 NOT change any Codebook flag (has_*_issue, *_stereotype, etc.), any severity, any
-dimension score, any masking verdict, any reading_mode, or the Phase 7
+dimension score, any masking_evidence entry, any reading_mode, or the Phase 7
 normative_masking verdict. A "critical" intent must NOT downgrade integrity
 findings, and an "affirmative" intent must NOT inflate them. Treat Phases 1–5
 and Phase 7 as if no intent were declared.
@@ -19,7 +19,7 @@ and Phase 7 as if no intent were declared.
 CRITICAL ISOLATION RULE FOR PHASE 7 (normative_masking):
 The Phase 7 normative_masking verdict is an additional ANNOTATION on the image's
 surface effect. It does NOT change any Codebook flag, any severity, any dimension
-score, the Phase 5 masking_verdict, the reading_mode, or the Phase 6
+score, the Phase 5 masking_evidence, the reading_mode, or the Phase 6
 intent_assessment. Phase 7 only writes its own field
 research_layer.normative_masking.
 
@@ -34,7 +34,6 @@ LANGUAGE POLICY (IMPORTANT):
   • dimension_analysis.{physics,semantics,bias}.findings[].category
   • research_layer.codebook.*_evidence[].specific_observation
   • research_layer.masking_evidence[].masked_issue
-  • research_layer.masking_reasoning
   • research_layer.normative_masking.reasoning
   • research_layer.reading_mode_label (use exact German strings below)
   • research_layer.reading_mode_masking_logic (use exact German strings below)
@@ -197,11 +196,11 @@ PHASE 3 – RESEARCH LAYER
 
 READING MODE (reading_mode + reading_mode_label + reading_mode_masking_logic)
 Pick exactly one reading mode. Use the German labels exactly as written:
-• WA  → "Werbe-Ästhetik"             | "Maskiert über Normativität und Idealwelt-Ästhetik"
-• DA  → "Dokumentarisch-Authentisch" | "Maskiert über scheinbare Objektivität und Authentizitätssignale"
-• CI  → "Cinematisch"                | "Maskiert affektiv über Filmstimmung und emotionale Unmittelbarkeit"
-• AA  → "Amateur-Authentisch"        | "Maskiert über Vertrautheit und Spontanitäts-Simulation"
-• MI  → "Magazin/Inszeniert"         | "Maskiert über Professionalität und Statussignale"
+• WA  → "Werbe-Ästhetik"             | "Kann über Normativität und Idealwelt-Ästhetik maskieren"
+• DA  → "Dokumentarisch-Authentisch" | "Kann über scheinbare Objektivität und Authentizitätssignale maskieren"
+• CI  → "Cinematisch"                | "Kann affektiv über Filmstimmung und emotionale Unmittelbarkeit maskieren"
+• AA  → "Amateur-Authentisch"        | "Kann über Vertrautheit und Spontanitäts-Simulation maskieren"
+• MI  → "Magazin/Inszeniert"         | "Kann über Professionalität und Statussignale maskieren"
 
 WA REFERENCE EXAMPLES (from the Phase-1 corpus — internalize the pattern):
 Vision-LLMs systematically underuse WA because they associate "advertising"
@@ -452,7 +451,7 @@ Note: the frontend code calculates the official score independently as
 (physics + semantics + bias) / 3. Your score serves as a validation comparison.
 
 ═══════════════════════════════════════
-PHASE 5 – MASKING EVIDENCE (masking_evidence + masking_verdict + masking_reasoning)
+PHASE 5 – MASKING EVIDENCE (masking_evidence)
 ═══════════════════════════════════════
 
 This phase implements the thesis-grounded definition of "masking":
@@ -481,13 +480,10 @@ For clean images (no codebook findings) masking_evidence MUST be [].
 For images with findings outside salient regions or without a covering
 aesthetic driver, masking_evidence may also be [].
 
-Set masking_verdict according to evidence:
-• "none"   → masking_evidence is empty (no codebook finding OR no covering driver).
-• "low"    → 1 entry, salient_region=false OR confidence=low.
-• "medium" → 1 entry, salient_region=true, confidence=medium.
-• "high"   → 1+ entry, salient_region=true, confidence=high. Reserved for
-              cases where a strong aesthetic driver demonstrably overlays a
-              severe integrity defect in the image's focal region.
+salient_region and confidence are DESCRIPTIVE PER-ENTRY METADATA — they are
+NOT aggregated into any overall masking verdict (there is none). Set
+confidence by how clearly the driver ↔ finding link is visually supported;
+set salient_region strictly per rule 4.
 
 CALIBRATION (anti-overreach):
 • Do NOT invent masking just because the image is beautiful (high aesthetic).
@@ -501,19 +497,13 @@ CALIBRATION (anti-overreach):
 • Multiple entries only when several independent defects are independently
   covered by visible drivers. When in doubt → fewer entries.
 
-masking_reasoning: 1–2 sentences in GERMAN explaining the verdict
-(why "none" / "low" / "medium" / "high"). For empty evidence, state briefly
-WHY (e.g. "Keine Codebook-Befunde vorhanden, daher per Definition keine
-Maskierung." or "Befund in peripherer Region, kein ästhetischer Treiber
-überlagert ihn.").
-
 ═══════════════════════════════════════
 PHASE 6 – INTENT ASSESSMENT (intent_assessment)
 ═══════════════════════════════════════
 
 This phase evaluates how the image relates to the editorial intent declared by
 the user. It does NOT change any Phase 1–5 result. Codebook flags, severities,
-scores, masking verdict, and reading_mode are all frozen after Phase 5 and are
+scores, masking_evidence, and reading_mode are all frozen after Phase 5 and are
 only read here as inputs.
 
 DECLARED INTENT — possible values (user-declared, echo exactly):
@@ -565,7 +555,7 @@ values. Do not restate the Codebook findings.
 
 ANTI-LEAKAGE REMINDER
 If you find yourself wanting to revise a Phase 2 score, a Phase 3 flag, or the
-masking verdict because of the declared intent, stop — you are violating the
+masking_evidence because of the declared intent, stop — you are violating the
 isolation rule. Intent never changes findings; it only annotates them.
 
 ═══════════════════════════════════════
@@ -578,7 +568,8 @@ through its surface. It is DISTINCT from Phase 5 masking_evidence and does NOT
 change any Phase 1–6 result.
 
 DEFINITION
-• Phase 5 masking_evidence: an aesthetic surface hides a Codebook flaw.
+• Phase 5 masking_evidence: an aesthetic driver is marked as possibly
+                            covering a Codebook flaw.
 • Phase 7 normative_masking: the image's surface propagates an idealised social
                               norm. This is independent of any Codebook flaw —
                               the image may be flag-free or flagged; what
@@ -589,7 +580,7 @@ The two phases are independent. An image can be flag-free in Phase 3 and still
 be normatively masking. An image can have a heavy masking_evidence list and
 have no normative_masking effect (e.g. a hallucinated text artefact on a plain
 product photo). An image can also exhibit BOTH (Codebook flaw + idealising
-surface) — the two verdicts then run in parallel.
+surface) — the two layers then run in parallel.
 
 DECISION TABLE — assign verdict:
 
@@ -700,6 +691,6 @@ OUTPUT
 
 ANTI-LEAKAGE REMINDER
 If you find yourself wanting to revise a Phase 2 score, a Phase 3 flag, the
-masking verdict, or the intent assessment because of the normative_masking
+masking_evidence, or the intent assessment because of the normative_masking
 verdict, stop — you are violating the isolation rule. Phase 7 only annotates
 the image's surface effect; it never modifies earlier phases.`

@@ -24,6 +24,11 @@ const CodebookEvidenceSchema = z.object({
 
 export type CodebookEvidence = z.infer<typeof CodebookEvidenceSchema>
 
+// Modellmarkierte mögliche Überdeckungs-Stellen (Treiber ↔ Befund), deterministisch
+// validiert in applyMaskingEvidenceFilter. Kein Nachweis und keine Messung —
+// das frühere masking_verdict/masking_score wurde entfernt (Beschluss 2026-06-07,
+// spike-test/MASKIERUNG-GESAMTBEFUND.md). salient_region und confidence sind
+// deskriptive Metadaten je Eintrag und werden nirgends zu einer Stufe aggregiert.
 const MaskingEvidenceSchema = z.object({
   driver: z.enum(['CL', 'BK', 'WCG', 'HDT', 'MO', 'GF', 'DS', 'NL', 'MH']),
   masked_issue: z.string(),
@@ -85,6 +90,8 @@ export const AnalysisSchema = z.object({
     dominant_error_type: z.enum(['physics', 'anatomy', 'context', 'mixed', 'none']),
     codebook: z.object({
       visual_realism_level: z.enum(['low', 'medium', 'high']),
+      // Historische Codebook-Variable (Phase-1-Parität). Wird von keinem
+      // Konsumenten ausgewertet und ist KEINE kommunizierte Maskierungs-Stufe.
       masking_potential: z.enum(['low', 'medium', 'high']).optional(),
       has_physics_issue: z.boolean(),
       physics_evidence: z.array(CodebookEvidenceSchema),
@@ -100,8 +107,6 @@ export const AnalysisSchema = z.object({
       stereotype_intensity: z.enum(['none', 'low', 'medium', 'high']),
     }),
     masking_evidence: z.array(MaskingEvidenceSchema),
-    masking_verdict: z.enum(['none', 'low', 'medium', 'high']),
-    masking_reasoning: z.string(),
     normative_masking: z.object({
       verdict: z.enum(['low', 'medium', 'high', 'not_applicable']).describe(
         'Whether the image propagates an idealised norm. ' +
@@ -134,7 +139,7 @@ export const AnalysisSchema = z.object({
       'have flaws or be flag-free; the verdict here only describes whether ' +
       'the surface propagates an idealised norm. The two are independent and ' +
       'the verdict here MUST NOT influence Codebook flags, severities, scores, ' +
-      'masking_verdict or reading_mode.',
+      'masking_evidence or reading_mode.',
     ),
   }),
   integrity_score_llm: z.object({
