@@ -4,6 +4,10 @@
 // Bereich (Demo-Badge bei aktivem Bypass, optionaler Rate-Limit-Hinweis) + CTA.
 // Nav als NuxtLink (Nuxt-Routing statt navigate-Emit – idiomatischer Port).
 // Mobile: Hamburger-Disclosure (aria-expanded, Label wechselt). Kein v-html.
+// 1.5b: dunkle Kopfzeile (Ink-Inversion, --ink-*-Tokens) als Kontrast zur hellen
+// Hero – Severity-Wörter/Kleintext sind hier tabu (tokens.css-Regel); Badge/Hint
+// sind neutral. Fokus-Ring lokal auf --ink-text umgestellt (base.css-Ink wäre
+// auf dunkler Fläche unsichtbar).
 import { ref, computed } from 'vue'
 import { Menu, X } from 'lucide-vue-next'
 import Button from '~/components/ui/Button.vue'
@@ -47,8 +51,9 @@ function closeMenu() {
 
       <div class="header-actions">
         <span v-if="rateLimitHint" class="rate-hint">{{ rateLimitHint }}</span>
-        <Badge v-if="bypassActive" mode="neutral" label="Demo-Zugang aktiv" />
-        <Button v-if="showCta" as="a" href="/analyze" variant="secondary" size="md" class="whitespace-nowrap">
+        <Badge v-if="bypassActive" mode="neutral" label="Demo-Zugang aktiv" class="badge-on-dark" />
+        <!-- variant="inverse" = vorhandene Button-Variante für dunkle Flächen (Landing-Closer). -->
+        <Button v-if="showCta" as="a" href="/analyze" variant="inverse" size="md" class="whitespace-nowrap">
           Bild prüfen →
         </Button>
       </div>
@@ -79,7 +84,7 @@ function closeMenu() {
         >
           Funktionsweise
         </NuxtLink>
-        <Button v-if="showCta" as="a" href="/analyze" variant="secondary" size="md" class="mt-[14px] w-full" @click="closeMenu">
+        <Button v-if="showCta" as="a" href="/analyze" variant="inverse" size="md" class="mt-[14px] w-full" @click="closeMenu">
           Bild prüfen →
         </Button>
       </div>
@@ -92,8 +97,12 @@ function closeMenu() {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
+  background: var(--ink-surface);
+  border-bottom: 1px solid var(--ink-line);
+}
+/* base.css setzt den Fokus-Ring in Ink – auf der dunklen Fläche unsichtbar. */
+.app-header :deep(:focus-visible) {
+  outline-color: var(--ink-text);
 }
 .app-header__inner {
   max-width: var(--container);
@@ -118,7 +127,7 @@ function closeMenu() {
   font-weight: 700;
   font-size: 21px;
   letter-spacing: -0.02em;
-  color: var(--ink);
+  color: var(--ink-text);
   line-height: 1;
 }
 .brand__kicker {
@@ -127,10 +136,10 @@ function closeMenu() {
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--subtle);
+  color: var(--ink-text-muted);
   white-space: nowrap;
   padding-left: 12px;
-  border-left: 1px solid var(--line);
+  border-left: 1px solid var(--ink-line);
 }
 
 /* Primärnavigation: aktiver Zustand = Unterstrich, KEINE Severity-Farbe. */
@@ -145,18 +154,18 @@ function closeMenu() {
   font-family: 'IBM Plex Sans', system-ui, sans-serif;
   font-weight: 500;
   font-size: 14px;
-  color: var(--muted);
+  color: var(--ink-text-soft);
   text-decoration: none;
   padding-bottom: 4px;
   border-bottom: 2px solid transparent;
   transition: color 0.12s ease, border-color 0.12s ease;
 }
 .nav :deep(a:hover) {
-  color: var(--ink);
+  color: var(--ink-text);
 }
 .nav :deep(a[aria-current='page']) {
-  color: var(--ink);
-  border-bottom-color: var(--ink);
+  color: var(--ink-text);
+  border-bottom-color: var(--ink-text);
 }
 
 /* Rechte Gruppe: Rate-Hinweis + Demo-Badge + CTA. */
@@ -170,30 +179,37 @@ function closeMenu() {
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
   font-size: 11px;
   letter-spacing: 0.04em;
-  color: var(--subtle);
+  color: var(--ink-text-muted);
   white-space: nowrap;
 }
+/* Badge-Neutral (helle Tokens) auf die dunkle Fläche umgelegt – nur hier im
+   Header, die Badge-Komponente selbst bleibt unverändert. */
+.header-actions :deep(.badge-on-dark) {
+  background: var(--ink-surface-2);
+  color: var(--ink-text-soft);
+  border-color: var(--ink-line);
+}
 
-/* Hamburger – nur Mobile. */
+/* Hamburger – nur Mobile. 44px = Touch-Target-Minimum (Codex-Review 1.5b). */
 .nav-toggle {
   display: none;
   margin-left: auto;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   align-items: center;
   justify-content: center;
-  background: var(--canvas);
-  border: 1.5px solid var(--ink);
+  background: var(--ink-surface-2);
+  border: 1.5px solid var(--ink-text);
   border-radius: var(--r);
   cursor: pointer;
-  color: var(--ink);
+  color: var(--ink-text);
 }
 
 /* Mobile-Disclosure-Panel. */
 .mobile-nav {
   display: none;
-  border-bottom: 1px solid var(--line);
-  background: var(--surface);
+  border-bottom: 1px solid var(--ink-line);
+  background: var(--ink-surface-2);
 }
 .mobile-nav__inner {
   max-width: var(--container);
@@ -207,12 +223,12 @@ function closeMenu() {
   font-family: 'IBM Plex Sans', system-ui, sans-serif;
   font-weight: 500;
   font-size: 16px;
-  color: var(--ink);
+  color: var(--ink-text);
   text-decoration: none;
   min-height: 44px;
   display: flex;
   align-items: center;
-  border-bottom: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--ink-line);
 }
 /* Mobile-Aktivzustand bewusst nur font-weight (header.html Z.132) – kein Unterstrich. */
 .mobile-nav :deep(.mobile-nav__link[aria-current='page']) {

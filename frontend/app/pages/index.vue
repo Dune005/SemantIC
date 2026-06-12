@@ -97,9 +97,42 @@ useReveal(page, '.reveal')
             wenn ein Bild besser aussieht, als es ist – genau dort setzt die Maskierung
             an: Die perfekte Oberfläche kann Fehler überdecken. Diese Lücke lässt sich
             nicht seriös als einzelne Zahl messen – das haben wir in der eigenen
-            Validierung geprüft und deshalb bewusst darauf verzichtet. Stattdessen
-            markiert der Befund konkret die Stellen, an denen die Ästhetik einen Befund
-            überdecken könnte – nachprüfbar direkt am Bild.
+            Validierung geprüft und deshalb bewusst darauf verzichtet.
+          </p>
+
+          <!-- Wirkung vs. Detail (Lab-D-Übernahme): dasselbe Bild zweimal — Gesamt-
+               eindruck und der Crop, der im Gesamteindruck untergeht. Labels neutral
+               (Mono), keine Severity-Wörter auf dunkler Fläche (tokens.css-Regel). -->
+          <div class="pair reveal r2">
+            <figure class="pair__item">
+              <div class="pair__frame">
+                <img
+                  src="/landing/masking-press.webp"
+                  width="1616"
+                  height="1024"
+                  loading="lazy"
+                  alt="KI-generiertes Beispielbild in der Gesamtansicht: Frau spricht an einer Pressekonferenz in mehrere Mikrofone."
+                />
+              </div>
+              <figcaption>Gesamtwirkung – überzeugend</figcaption>
+            </figure>
+            <figure class="pair__item">
+              <div class="pair__frame pair__frame--zoom">
+                <img
+                  src="/landing/masking-press.webp"
+                  width="1616"
+                  height="1024"
+                  loading="lazy"
+                  alt="Detailausschnitt desselben Bildes: Die Senderlogos auf den Mikrofonen sind unleserlicher Zeichensalat."
+                />
+              </div>
+              <figcaption>Detail – die Mikrofon-Logos sind Zeichensalat</figcaption>
+            </figure>
+          </div>
+          <p class="pair__note reveal r3">
+            Im Gesamteindruck kann untergehen, was das Detail zeigt. Der Befund markiert
+            die Stellen, an denen die Ästhetik einen Befund überdecken könnte –
+            nachprüfbar direkt am Bild.
           </p>
         </div>
       </div>
@@ -290,6 +323,50 @@ useReveal(page, '.reveal')
   color: var(--ink-text);
 }
 
+/* ---- Wirkung/Detail-Paar in der Maskierungs-Tafel (Lab-D-Übernahme) ---- */
+.pair {
+  margin-top: clamp(28px, 4.5vw, 42px);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(14px, 2.5vw, 24px);
+}
+.pair__item {
+  margin: 0;
+}
+.pair__frame {
+  border: 1px solid var(--ink-line);
+  border-radius: var(--r);
+  overflow: hidden;
+  background: var(--ink-surface);
+  aspect-ratio: 4 / 3;
+}
+.pair__frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* Detail-Crop: derselbe Druck, ausschnitthaft auf die Mikrofon-Zeile gezoomt */
+.pair__frame--zoom img {
+  transform: scale(2.6);
+  transform-origin: 32% 86%;
+}
+.pair__item figcaption {
+  margin-top: 10px;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-text-muted);
+}
+.pair__note {
+  margin: clamp(18px, 3vw, 26px) auto 0;
+  max-width: 52ch;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-text-soft);
+}
+
 /* ---- Forschungs-Datenfeld (Mono, drei neutrale Einträge) ---- */
 .data {
   margin-top: clamp(30px, 4.5vw, 44px);
@@ -424,6 +501,9 @@ useReveal(page, '.reveal')
   .lead {
     text-align: center;
   }
+  .pair {
+    grid-template-columns: 1fr;
+  }
 }
 @media print {
   .closer {
@@ -438,6 +518,17 @@ useReveal(page, '.reveal')
   .wall--ink .lead,
   .wall--ink .eyebrow {
     color: var(--ink);
+  }
+  /* dunkle Bildsektion: helle Ink-Inversion-Texte auf Weiss nachführen */
+  .pair__item {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .pair__item figcaption {
+    color: var(--muted);
+  }
+  .pair__note {
+    color: var(--ink-soft);
   }
 }
 </style>
