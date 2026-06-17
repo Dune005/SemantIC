@@ -39,6 +39,7 @@ function closeMenu() {
     <div class="app-header__inner">
       <NuxtLink to="/" class="brand" aria-label="SemantIC – zur Startseite">
         <span class="brand__mark">SemantIC</span>
+        <span class="brand__divider" aria-hidden="true" />
         <!-- Wortlaut folgt dem Hero-Kicker (F4-Entscheid: «Validator» abgeschwächt);
              finale Wahl trifft der Bearbeiter im Browser-Review. -->
         <span class="brand__kicker">AI Visual Integrity Check</span>
@@ -52,10 +53,10 @@ function closeMenu() {
       <div class="header-actions">
         <span v-if="rateLimitHint" class="rate-hint">{{ rateLimitHint }}</span>
         <Badge v-if="bypassActive" mode="neutral" label="Demo-Zugang aktiv" class="badge-on-dark" />
-        <!-- variant="inverse" = vorhandene Button-Variante für dunkle Flächen (Landing-Closer). -->
-        <Button v-if="showCta" as="a" href="/analyze" variant="inverse" size="md" class="whitespace-nowrap">
-          Bild prüfen →
-        </Button>
+        <!-- CTA wie v16-g: Mess-Punkt + Text statt weisser Kachel (kein Pfeil). -->
+        <NuxtLink v-if="showCta" to="/analyze" class="header-cta">
+          <span class="header-cta__dot" aria-hidden="true" />Bild prüfen
+        </NuxtLink>
       </div>
 
       <button
@@ -115,11 +116,18 @@ function closeMenu() {
 }
 
 /* Brand: Wortmarke + Mono-Kicker (neutraler Inline-Divider, keine Karte). */
+/* Brand-Zone wie v16-g: Wortmarke · vertikale Hairline · Claim, vertikal zentriert. */
 .brand {
   display: flex;
-  align-items: baseline;
-  gap: 12px;
+  align-items: center;
+  gap: 16px;
   text-decoration: none;
+  flex: 0 0 auto;
+}
+.brand__divider {
+  width: 1px;
+  height: 18px;
+  background: var(--ink-line);
   flex: 0 0 auto;
 }
 .brand__mark {
@@ -138,24 +146,28 @@ function closeMenu() {
   text-transform: uppercase;
   color: var(--ink-text-muted);
   white-space: nowrap;
-  padding-left: 12px;
-  border-left: 1px solid var(--ink-line);
 }
 
 /* Primärnavigation: aktiver Zustand = Unterstrich, KEINE Severity-Farbe. */
+/* Nav rechtsbündig (v16-g): margin-left:auto schiebt Nav + Aktionen als eine
+   Gruppe nach rechts; der Brand bleibt links. */
 .nav {
   display: flex;
   align-items: center;
   gap: 24px;
-  margin-left: 8px;
+  margin-left: auto;
 }
 /* :deep(), weil NuxtLink die <a> rendert (Konsistenz mit AppFooter). */
 .nav :deep(a) {
   font-family: 'IBM Plex Sans', system-ui, sans-serif;
   font-weight: 500;
   font-size: 14px;
+  line-height: 1;
   color: var(--ink-text-soft);
   text-decoration: none;
+  /* Unterstrich-Reserve unten (4px + 2px Border) oben spiegeln, damit der Text
+     vertikal mittig sitzt und mit dem CTA «Bild prüfen» auf einer Linie liegt. */
+  padding-top: 6px;
   padding-bottom: 4px;
   border-bottom: 2px solid transparent;
   transition: color 0.12s ease, border-color 0.12s ease;
@@ -168,12 +180,37 @@ function closeMenu() {
   border-bottom-color: var(--ink-text);
 }
 
-/* Rechte Gruppe: Rate-Hinweis + Demo-Badge + CTA. */
+/* Rechte Gruppe: Rate-Hinweis + Demo-Badge + CTA. Sitzt direkt nach der Nav
+   (margin-left:auto liegt jetzt auf .nav → Nav + Aktionen bilden den rechten Block). */
 .header-actions {
-  margin-left: auto;
   display: flex;
   align-items: center;
   gap: 14px;
+}
+/* CTA wie v16-g: Mess-Punkt + Text, Underline on hover, kein Button-Kasten. */
+.header-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--ink-text);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.header-cta:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: var(--ink-text);
+}
+.header-cta__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--crit);
+  flex: 0 0 auto;
 }
 .rate-hint {
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
@@ -239,7 +276,8 @@ function closeMenu() {
   .app-header__inner {
     height: 56px;
   }
-  .brand__kicker {
+  .brand__kicker,
+  .brand__divider {
     display: none;
   }
   .nav,
