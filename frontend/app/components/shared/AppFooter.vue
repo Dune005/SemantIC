@@ -71,7 +71,7 @@ function onRedeem() {
     </div>
 
     <div class="app-footer__bottom">
-      <div class="inner">© 2026 Claudio Riz · FH Graubünden · Lehrprojekt · Version 1.0</div>
+      <div class="inner">© 2026 Claudio Riz · FH Graubünden · Lehrprojekt · Version 1.6</div>
     </div>
   </footer>
 </template>
