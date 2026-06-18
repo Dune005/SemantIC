@@ -44,7 +44,9 @@
   --line-strong: #a9aa9f;   /* kraeftigere Inner-Karten-Trennlinien (Dim-Spalten) */
 
   /* ---------------------------------------------------------- */
-  /* SEVERITY-AMPEL - der EINZIGE chromatische Akzent           */
+  /* SEVERITY-AMPEL - chromatischer Akzent fuer BEFUNDE/Verdikte */
+  /* (Produkt-UI). Einzige Ausnahme: die DIMENSIONSFARBEN unten, */
+  /* allein den Erklaergrafiken auf /how-it-works vorbehalten.   */
   /* Paar je Stufe: Punktfarbe (Indikator/Flaeche) + dunkler    */
   /* *-ink-Ton (Text, AA-Kontrast). Nie flaechiger Hintergrund. */
   /* Doppelkodierung: Farbe IMMER zusammen mit Severity-Wort.   */
@@ -65,6 +67,21 @@
   --paper:  var(--canvas);           /* = #eeefe9 */
   --accent: var(--crit);             /* = #cd4239 (Verdikt-Punkt am Satzende) */
   --soft:   rgba(35, 37, 29, 0.55);  /* Ink bei 55% - Schraffuren, Hauchlinien */
+
+  /* ---------------------------------------------------------- */
+  /* DIMENSIONSFARBEN (Inhalt <-> Aesthetik) · neu Frontend 1.7 */
+  /* NUR fuer die Erklaergrafiken auf /how-it-works (dataviz/):  */
+  /* kategoriale Kodierung der zwei Achsen - KEIN Severity-/     */
+  /* Verdikt-Signal, nie in der Produkt-/Befund-UI verwenden.    */
+  /* Volltoene sind AA-tauglich als Text NUR auf hellen Flaechen */
+  /* (>=4.5:1 auf --surface). Die *-soft-Toene sind kontrast-    */
+  /* schwach -> ausschliesslich Flaechen/Linien/Akzentstreifen,  */
+  /* NIE als Textfarbe.                                          */
+  /* ---------------------------------------------------------- */
+  --substance:      #b34a2a;   /* Inhalt / Integritaet - warm (Terrakotta) */
+  --substance-soft: #d97757;   /* nur Flaeche/Linie - NICHT Text */
+  --appeal:         #2a6d80;   /* Aesthetik / Wirkung - kuehl (Petrol) */
+  --appeal-soft:    #6fb0c2;   /* nur Flaeche/Linie - NICHT Text */
 
   /* ---------------------------------------------------------- */
   /* DUNKLE FLAECHEN (Ink-Inversion) · neu Frontend 1.5         */

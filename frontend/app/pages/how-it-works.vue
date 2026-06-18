@@ -4,10 +4,10 @@
 // AppFooter liefert das default-Layout; diese Seite liefert NUR den Inhalt (kein eigenes
 // <main>, keinen aktiven Nav-Zustand – das regelt layouts/default.vue via route.path).
 //
-// Die drei Schema-Grafiken sind seitenlokale CSS-Skizzen (kein ViewModel, keine Daten-
-// bindung); Werte (86/64/+22) sind statisch hartkodiert. Das Maskierungs-Beispiel ist
-// bewusst NICHT die ScoreBar-Komponente, sondern zwei Gauge-Balken + Δ + lokales Badge
-// (Spec §2: ScoreBar/Chip/DimBadge/NoteBlock hier explizit weggelassen).
+// Frontend 1.7: Die Erklär-Grafiken in §2/§2b/§4 sind eigene Komponenten unter
+// components/dataviz/ (PipelineDiagram, GuardrailList, MaskingQuadrant) – datenlos,
+// rein illustrativ. Der Quadrant-Beispielpunkt (Ästhetik 86 / Integrität 64) ist als
+// „Beispiel/Schema" gekennzeichnet, keine Messzahl.
 import Button from '~/components/ui/Button.vue'
 import Card from '~/components/ui/Card.vue'
 
@@ -68,30 +68,6 @@ useHead({
           Lücke: Es schaut dorthin, wo das Auge zu schnell zufrieden ist.
         </p>
       </Card>
-
-      <!-- Schematische Grafik: schöne Oberfläche vs. inhaltliche Schwäche -->
-      <Card
-        tone="surface"
-        border="hair"
-        padding="none"
-        class="card flow-graphic theory"
-        role="img"
-        aria-label="Schema: Ein Bild hat eine überzeugende visuelle Oberfläche, darunter aber eine inhaltliche Schwäche. Die Oberfläche maskiert die Schwäche."
-      >
-        <p class="flow-graphic__title">Oberfläche vs. Inhalt</p>
-        <div class="flow">
-          <div class="flow__node">
-            <span class="mono">Oberfläche</span>
-            <strong>überzeugend</strong>
-          </div>
-          <div class="flow__arrow" aria-hidden="true">maskiert →</div>
-          <div class="flow__node">
-            <span class="mono">Inhalt</span>
-            <strong>schwächer</strong>
-          </div>
-        </div>
-        <p class="figure-note">Schematische Darstellung – endgültige Grafik im Bau.</p>
-      </Card>
     </div>
   </section>
 
@@ -101,62 +77,53 @@ useHead({
       <p class="section__index">02 · Der Ablauf</p>
       <h2 id="s2-title">Vom Bild zum Befund.</h2>
 
-      <div class="steps">
-        <Card as="article" tone="surface" border="hair" padding="none" class="step">
-          <p class="step__label">01 · Eingabe</p>
-          <p class="step__num">1</p>
-          <h3>Du legst ein Bild ab und ordnest es ein</h3>
-          <p>
-            Du lädst dein KI-generiertes Bild hoch und sagst uns zwei Dinge: welche
-            Haltung das Bild im Beitrag einnimmt und in welcher Form du es verwenden
-            willst. Optional kannst du den Nutzungskontext und den ursprünglichen
-            Prompt ergänzen – beides schärft die Einschätzung, ist aber kein Muss.
-          </p>
-        </Card>
-        <Card as="article" tone="surface" border="hair" padding="none" class="step">
-          <p class="step__label">02 · Analyse</p>
-          <p class="step__num">2</p>
-          <h3>SemantIC prüft entlang von drei Dimensionen</h3>
-          <p>
-            Das Bild wird auf physikalische Kohärenz, semantische Konsistenz und
-            Bias untersucht. Parallel dazu bewerten wir getrennt seine rein visuelle
-            Wirkung – bewusst getrennt, damit die Ästhetik den inhaltlichen Befund
-            nicht beschönigt. Das dauert in der Regel zehn bis dreissig Sekunden.
-          </p>
-        </Card>
-        <Card as="article" tone="surface" border="hair" padding="none" class="step">
-          <p class="step__label">03 · Befund</p>
-          <p class="step__num">3</p>
-          <h3>Du bekommst ein Gesamturteil und die Details</h3>
-          <p>
-            Zuerst siehst du das Gesamturteil als Ampel – unauffällig, auffällig
-            oder kritisch – mit einer Empfehlung. Darunter die drei
-            Dimensionen, die Leseart und, wo das Modell Überdeckungs-Stellen
-            markiert hat, ein Maskierungs-Hinweis. Jeden einzelnen Befund kannst
-            du aufklappen, bis hin zu den Rohdaten.
-          </p>
-        </Card>
+      <div class="section__body">
+        <p>
+          Ein Bildmodell allein lässt sich von der schönen Oberfläche leiten.
+          SemantIC trennt deshalb Inhalt und Ästhetik in zwei eigenständige
+          Durchläufe – bewusst, damit die Wirkung das inhaltliche Urteil nicht
+          beschönigt. Erst danach werden beide Ergebnisse zusammengeführt.
+        </p>
       </div>
 
-      <!-- Schematischer Drei-Schritt-Fluss -->
-      <Card
-        tone="surface"
-        border="hair"
-        padding="none"
-        class="card flow-graphic"
-        role="img"
-        aria-label="Ablauf in drei Schritten: Eingabe, dann Analyse, dann Befund."
-      >
-        <p class="flow-graphic__title">Eingabe → Analyse → Befund</p>
-        <div class="flow">
-          <div class="flow__node"><span class="mono">01</span><strong>Eingabe</strong></div>
-          <div class="flow__arrow" aria-hidden="true">→</div>
-          <div class="flow__node"><span class="mono">02</span><strong>Analyse</strong></div>
-          <div class="flow__arrow" aria-hidden="true">→</div>
-          <div class="flow__node"><span class="mono">03</span><strong>Befund</strong></div>
-        </div>
-        <p class="figure-note">Schematische Darstellung – endgültige Grafik im Bau.</p>
-      </Card>
+      <div class="section__figure">
+        <PipelineDiagram />
+      </div>
+      <p class="figure-note">
+        Modellagnostisch – Gemini &amp; Claude sind die aktuellen Standard-Modelle,
+        austauschbar. Die Symbole sind stilisierte Platzhalter.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ 2·b · LEITPLANKEN DER BEWERTUNG ============ -->
+  <section class="section" aria-labelledby="s2b-title">
+    <div class="page">
+      <p class="section__index">02 · b · Die Leitplanken</p>
+      <h2 id="s2b-title">Die Leitplanken der Bewertung.</h2>
+      <div class="section__body">
+        <p>
+          Ein Bildmodell allein neigt dazu, sich von visueller Perfektion leiten zu
+          lassen – genau der Maskierungseffekt. SemantIC legt der Bewertung deshalb
+          Leitplanken an, die auf belegte, nachvollziehbare Urteile hinwirken.
+        </p>
+      </div>
+
+      <div class="section__figure">
+        <GuardrailList />
+      </div>
+      <div class="section__body">
+        <p>
+          Diese Leitplanken machen die Bewertung disziplinierter und nachvollziehbarer
+          – sie sollen dem Maskierungseffekt entgegenwirken. Wo das Tool an Grenzen
+          stösst, legt SemantIC das offen (Abschnitt „Wir kennen die Grenzen").
+        </p>
+      </div>
+      <p class="figure-note">
+        „Maskiert → klar": Tendenz hinter Schleier, Leitplanke scharf, Hover hebt den
+        Schleier. Grösstenteils hart erzwungen (festes Schema &amp; Prüfregeln); die
+        Kriterien stammen aus 144 codierten Bildern.
+      </p>
     </div>
   </section>
 
@@ -221,7 +188,7 @@ useHead({
 
   <!-- ================= 4 · MASKIERUNGS-CHECK ================= -->
   <section class="section" aria-labelledby="s4-title">
-    <div class="page page--text">
+    <div class="page">
       <p class="section__index">04 · Der Maskierungs-Check</p>
       <h2 id="s4-title">Wenn die Oberfläche stärker ist als der Inhalt.</h2>
       <div class="section__body">
@@ -243,32 +210,13 @@ useHead({
         </p>
       </div>
 
-      <!-- Grafik: Ästhetik-Balken vs. Integritäts-Balken, Differenz markiert -->
-      <Card
-        tone="surface"
-        border="hair"
-        padding="none"
-        class="card masking-graphic"
-        role="img"
-        aria-label="Beispiel: Ästhetik 86 von 100, Integrität 64 von 100. Das Bild wirkt stärker, als es inhaltlich hält – solche Lücken markiert SemantIC mit einem beschreibenden Hinweis."
-      >
-        <p class="card__kicker">Beispiel</p>
-        <div class="gauge">
-          <span class="gauge__lab">Ästhetik</span>
-          <span class="gauge__track"><span class="gauge__fill gauge__fill--aesthetic" style="width:86%" /></span>
-          <span class="gauge__val">86 / 100</span>
-        </div>
-        <div class="gauge">
-          <span class="gauge__lab">Integrität</span>
-          <span class="gauge__track"><span class="gauge__fill gauge__fill--integrity" style="width:64%" /></span>
-          <span class="gauge__val">64 / 100</span>
-        </div>
-        <div class="masking-delta">
-          <span class="mono">Maskierungs-Hinweis</span>
-          <span class="badge badge--warn">Wirkung über Substanz</span>
-        </div>
-        <p class="figure-note">Schematische Darstellung – endgültige Grafik im Bau.</p>
-      </Card>
+      <div class="section__figure">
+        <MaskingQuadrant :aesthetic="86" :integrity="64" />
+      </div>
+      <p class="figure-note">
+        Bewusst illustratives Schema, keine Messzahl – es zeigt das Prinzip, nicht das
+        Resultat einer einzelnen Prüfung.
+      </p>
     </div>
   </section>
 
@@ -286,19 +234,21 @@ useHead({
         </p>
       </div>
 
-      <table class="table">
-        <caption class="table__caption mono">Die fünf Lesearten</caption>
-        <thead>
-          <tr><th scope="col">Code</th><th scope="col">Leseart</th><th scope="col">Wie sie wirkt</th></tr>
-        </thead>
-        <tbody>
-          <tr><td class="code">WA</td><td class="name">Werbe-Ästhetik</td><td>Überzeugt über eine ideale, makellose Bildwelt</td></tr>
-          <tr><td class="code">DA</td><td class="name">Dokumentarisch-Authentisch</td><td>Überzeugt über den Anschein von Objektivität</td></tr>
-          <tr><td class="code">CI</td><td class="name">Cinematisch</td><td>Überzeugt über Filmstimmung und Atmosphäre</td></tr>
-          <tr><td class="code">AA</td><td class="name">Amateur-Authentisch</td><td>Überzeugt über Vertrautheit und scheinbare Spontaneität</td></tr>
-          <tr><td class="code">MI</td><td class="name">Magazin/Inszeniert</td><td>Überzeugt über Professionalität und Status</td></tr>
-        </tbody>
-      </table>
+      <div class="table-scroll">
+        <table class="table">
+          <caption class="table__caption mono">Die fünf Lesearten</caption>
+          <thead>
+            <tr><th scope="col">Code</th><th scope="col">Leseart</th><th scope="col">Wie sie wirkt</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="code">WA</td><td class="name">Werbe-Ästhetik</td><td>Überzeugt über eine ideale, makellose Bildwelt</td></tr>
+            <tr><td class="code">DA</td><td class="name">Dokumentarisch-Authentisch</td><td>Überzeugt über den Anschein von Objektivität</td></tr>
+            <tr><td class="code">CI</td><td class="name">Cinematisch</td><td>Überzeugt über Filmstimmung und Atmosphäre</td></tr>
+            <tr><td class="code">AA</td><td class="name">Amateur-Authentisch</td><td>Überzeugt über Vertrautheit und scheinbare Spontaneität</td></tr>
+            <tr><td class="code">MI</td><td class="name">Magazin/Inszeniert</td><td>Überzeugt über Professionalität und Status</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </section>
 
@@ -643,110 +593,9 @@ useHead({
   margin-top: 28px;
 }
 
-/* ---- Ablauf in drei Schritten (Card-Reihe, kein Links-Streifen) ---- */
-.steps {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+/* ---- Eingebettete Datengrafik (dataviz/*) – einheitlicher Abstand ---- */
+.section__figure {
   margin-top: 28px;
-}
-.step {
-  padding: 22px;
-  display: flex;
-  flex-direction: column;
-}
-.step__label {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-weight: 600;
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.step__num {
-  font-family: 'IBM Plex Sans', system-ui, sans-serif;
-  font-weight: 700;
-  font-size: 34px;
-  line-height: 1;
-  letter-spacing: -0.03em;
-  color: var(--ink);
-  margin: 14px 0 12px;
-}
-.step h3 {
-  font-family: 'IBM Plex Sans', system-ui, sans-serif;
-  font-weight: 600;
-  font-size: 16px;
-  line-height: 1.25;
-  color: var(--ink);
-}
-.step p {
-  font-size: 14px;
-  line-height: 1.55;
-  color: var(--muted);
-  margin-top: 10px;
-}
-
-/* Schematischer Drei-Schritt-Fluss (CSS-Grafik, in Card eingebettet) */
-.flow-graphic {
-  margin-top: 20px;
-  padding: 22px;
-}
-.flow-graphic__title {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-weight: 600;
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--subtle);
-  margin-bottom: 18px;
-}
-.flow {
-  display: flex;
-  align-items: stretch;
-  gap: 0;
-  flex-wrap: wrap;
-}
-.flow__node {
-  flex: 1 1 0;
-  min-width: 120px;
-  background: var(--canvas);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  padding: 14px 12px;
-  text-align: center;
-}
-.flow__node .mono {
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.flow__node strong {
-  display: block;
-  font-family: 'IBM Plex Sans', system-ui, sans-serif;
-  font-weight: 600;
-  font-size: 14px;
-  margin-top: 6px;
-  color: var(--ink);
-}
-.flow__arrow {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-weight: 600;
-  color: var(--subtle);
-  padding-inline: 10px;
-}
-@media (max-width: 639px) {
-  .flow {
-    flex-direction: column;
-  }
-  .flow__arrow {
-    padding-block: 8px;
-    transform: rotate(90deg);
-  }
 }
 
 /* ---- Drei Dimensionen im Detail (Cards mit Severity-Marker oben) ---- */
@@ -802,87 +651,11 @@ useHead({
   margin-top: 12px;
 }
 
-/* ---- Badge (Demo, Primitive §4) ---- */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-weight: 600;
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  border: 1px solid var(--ink);
-  border-radius: 3px;
-  padding: 4px 9px;
-  line-height: 1;
-}
-.badge--warn {
-  background: var(--warn);
-  color: var(--ink);
-}
-
-/* ---- Maskierungs-Grafik (Ästhetik vs. Integrität, CSS) ---- */
-.masking-graphic {
-  margin-top: 24px;
-}
-.gauge {
-  display: grid;
-  grid-template-columns: 88px 1fr 56px;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 14px;
-}
-.gauge__lab {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-weight: 600;
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.gauge__track {
-  position: relative;
-  height: 14px;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: 2px;
-  overflow: hidden;
-}
-.gauge__fill {
-  position: absolute;
-  inset: 0 auto 0 0;
-}
-.gauge__fill--aesthetic {
-  background: var(--ink-soft);
-}
-.gauge__fill--integrity {
-  background: var(--muted);
-}
-.gauge__val {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-weight: 600;
-  font-size: 13px;
-  color: var(--ink);
-  text-align: right;
-}
-.masking-delta {
-  margin-top: 6px;
-  padding-top: 16px;
-  border-top: 1px solid var(--line);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-}
-.masking-delta .mono {
-  font-size: 12px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
 /* ---- Lesearten-Tabelle ---- */
+.table-scroll {
+  max-width: 100%;
+  overflow-x: auto; /* Sicherheitsnetz: Tabelle scrollt intern, nie die ganze Seite */
+}
 .table {
   width: 100%;
   border-collapse: collapse;
@@ -929,6 +702,21 @@ useHead({
   font-weight: 600;
   color: var(--ink);
   white-space: nowrap;
+}
+/* Mobil: lange Lesearten-Namen umbrechen lassen, kompaktere Zellen – so passt die
+   Tabelle ohne Seiten-Scroll; der .table-scroll-Wrapper bleibt als Sicherheitsnetz. */
+@media (max-width: 520px) {
+  .table {
+    font-size: 14px;
+  }
+  .table th,
+  .table td {
+    padding: 9px 10px;
+  }
+  .table td.name {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
 }
 
 /* ---- „Was es nicht ist" – Kontrastliste (kein Severity-Farbton) ---- */
@@ -1045,7 +833,7 @@ useHead({
   display: inline-block;
 }
 
-/* ---- Grafik-Hinweis (im-Bau-Vermerk, dezent) ---- */
+/* ---- Figure-Note / Bildunterschrift (dezent) ---- */
 .figure-note {
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
   font-size: 11px;
@@ -1058,15 +846,11 @@ useHead({
 /* RESPONSIVE                                                    */
 /* ============================================================ */
 @media (max-width: 719px) {
-  .steps,
   .dims,
   .contrast,
   .input-frames,
   .limits-grid {
     grid-template-columns: 1fr;
-  }
-  .gauge {
-    grid-template-columns: 72px 1fr 48px;
   }
   .page-head {
     padding: 40px 0 28px;
@@ -1074,7 +858,6 @@ useHead({
   }
 }
 @media (min-width: 720px) and (max-width: 959px) {
-  .steps,
   .dims {
     grid-template-columns: 1fr;
   }
