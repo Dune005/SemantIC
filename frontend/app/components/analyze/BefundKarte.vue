@@ -171,15 +171,34 @@ onBeforeUnmount(() => {
           <DimBadge :label="d.label" :desc="d.desc" :score="d.score" :status="d.status" />
         </li>
       </ul>
-      <p class="diag-note">
-        Der Score ist ein <strong>Messwert</strong> – das Gesamturteil berücksichtigt zusätzlich
-        Kontext und Risiken. Ein hoher Score bedeutet daher nicht automatisch „unkritisch".
-      </p>
-      <!-- Beschreibender Maskierungs-Hinweis (ersetzt den früheren masking·Δ-Score).
-           Erscheint nur, wenn die Pipeline validierte Treiber↔Befund-Verknüpfungen markiert hat. -->
-      <p v-if="vm.maskingReviewNote" class="diag-note">
-        <strong>Maskierungs-Hinweis:</strong> {{ vm.maskingReviewNote.text }}
-      </p>
+      <!-- F1 (1.8): Verortung (kompakter Quadrant, rahmenlos) LINKS, die Score-/Maskierungs-
+           Hinweise RECHTS daneben – asymmetrisch, spart Blockhöhe (Codex + Nutzer). Mobil
+           gestapelt. Bewusst „Verortung/Tendenz", KEINE Maskierungs-Messzahl. -->
+      <div class="locate">
+        <p class="locate__cap">Verortung dieser Analyse – Tendenz, keine geeichte Messung.</p>
+        <div class="locate__row">
+          <div class="locate__quad">
+            <MaskingQuadrant
+              :aesthetic="vm.aestheticCombined"
+              :integrity="vm.integrityScore"
+              point-label="Dieses Bild"
+              variant="compact"
+            />
+          </div>
+          <div class="locate__notes">
+            <p class="locate__note">
+              Der Score ist ein <strong>Messwert</strong> – das Gesamturteil berücksichtigt
+              zusätzlich Kontext und Risiken. Ein hoher Score bedeutet daher nicht automatisch
+              „unkritisch".
+            </p>
+            <!-- Maskierungs-Hinweis nur, wenn die Pipeline validierte Treiber↔Befund-
+                 Verknüpfungen markiert hat. -->
+            <p v-if="vm.maskingReviewNote" class="locate__note">
+              <strong>Maskierungs-Hinweis:</strong> {{ vm.maskingReviewNote.text }}
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Block 3 · Was jetzt zu tun ist (Empfehlung + flache Bedingungen) -->
@@ -221,16 +240,47 @@ onBeforeUnmount(() => {
           </template>
           <p v-else class="deep-text">Keine normative Bildwirkung erkannt – für dieses Bild nicht einschlägig.</p>
 
-          <template v-if="vm.biasAxesSummary.count > 0">
+          <template v-if="vm.biasAxesDetails.length">
             <p class="deep-label">Bias-Achsen</p>
             <p class="deep-text">
               {{ vm.biasAxesSummary.count }} {{ vm.biasAxesSummary.count === 1 ? 'Achse' : 'Achsen' }} erkannt
               · maximales Risiko: {{ RISK_LEVEL_LABEL[vm.biasAxesSummary.maxRisk] }}.
             </p>
+            <!-- F3 (1.8): pro Achse Beobachtung (deskriptiv) vs. Lesart (interpretativ)
+                 sichtbar getrennt; nicht-stützende Evidenz wird abgesetzt (kein Box-Aktivismus). -->
+            <ul class="axis-list">
+              <li v-for="ax in vm.biasAxesDetails" :key="ax.axisId" class="axis">
+                <p class="axis__head">
+                  <span class="axis__name">{{ ax.label }}</span>
+                  <span class="axis__risk">Risiko {{ RISK_LEVEL_LABEL[ax.riskLevel] }}</span>
+                </p>
+                <ul class="ev-list">
+                  <li
+                    v-for="(e, i) in ax.evidence"
+                    :key="`ev-${i}`"
+                    class="ev"
+                    :class="{ 'ev--nonbias': !e.supportsBiasFinding }"
+                  >
+                    <p class="ev__row">
+                      <span class="ev__tag ev__tag--obs">Beobachtung</span>{{ e.observation }}
+                    </p>
+                    <p class="ev__row">
+                      <span class="ev__tag ev__tag--int">Lesart</span>{{ e.interpretation }}
+                    </p>
+                    <p v-if="!e.supportsBiasFinding" class="ev__note">
+                      Beschreibung – stützt keinen Bias-Befund.
+                    </p>
+                  </li>
+                </ul>
+              </li>
+            </ul>
           </template>
 
           <p class="deep-label">Leseart</p>
           <p class="deep-text">{{ READING_MODE_DESC[vm.readingMode.code] }}</p>
+          <p v-if="vm.readingModeMaskingLogic" class="deep-text">
+            <span class="ev__tag ev__tag--int">Maskierungs-Logik</span>{{ vm.readingModeMaskingLogic }}
+          </p>
 
           <!-- Die Stellen hinter dem Maskierungs-Hinweis – «prüfbarer Hinweis»
                heisst: hier steht, WO und WAS am Bild nachgeschaut werden kann. -->
@@ -510,14 +560,44 @@ onBeforeUnmount(() => {
   background: rgba(205, 66, 57, 0.09);
 }
 
-/* Fixer Entkopplungs-Hinweis */
-.diag-note {
-  padding: 13px 32px 16px;
+/* F1 (1.8): Verortungs-Zeile – Quadrant links (~320px), Score-/Maskierungs-Hinweise rechts
+   daneben (asymmetrisch). Spart Blockhöhe ggü. Vollbreite + Texten darunter. Mobil gestapelt. */
+.locate {
+  padding: 22px 32px;
   background: var(--canvas);
   border-top: 1px solid var(--line);
+}
+/* Caption über die VOLLE Breite (oben) -> passt auf eine Zeile, statt in der schmalen
+   linken Spalte umzubrechen. padding-left = Plot-Offset des Quadranten (x=16 im 320er-
+   viewBox), damit die Zeile an der Gitter-Kante anschlägt statt links überzustehen. */
+.locate__cap {
   font-size: 12.5px;
   line-height: 1.5;
   color: var(--muted);
+  margin-bottom: 16px;
+  padding-left: 16px;
+}
+.locate__row {
+  display: grid;
+  grid-template-columns: minmax(0, 320px) 1fr;
+  gap: clamp(20px, 3vw, 40px);
+  align-items: center;
+}
+.locate__notes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.locate__note {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+@media (max-width: 880px) {
+  .locate__row {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
 }
 
 /* Block 3 · Was jetzt zu tun ist */
@@ -590,6 +670,87 @@ onBeforeUnmount(() => {
   flex-wrap: wrap;
   gap: 7px;
   margin-top: 8px;
+}
+
+/* F3 (1.8): Bias-Achsen-Details (Beobachtung/Lesart-Trennung) in der Vertiefung. */
+.axis-list {
+  list-style: none;
+  margin: 8px 0 4px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.axis {
+  border-top: 1px solid var(--line-soft);
+  padding-top: 12px;
+}
+.axis__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.axis__name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink);
+}
+.axis__risk {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--subtle);
+  white-space: nowrap;
+}
+.ev-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ev__row {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  margin: 0 0 3px;
+}
+.ev__tag {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-right: 7px;
+  vertical-align: 1px;
+}
+/* Beobachtung = deskriptiv, zurueckhaltend (outline); Lesart = interpretativ, betont
+   (gefuellt). Macht die „Fakt vs. Deutung"-Trennung sichtbar – ohne neue Farben. */
+.ev__tag--obs {
+  color: var(--subtle);
+  border: 1px solid var(--line-strong);
+}
+.ev__tag--int {
+  color: var(--surface);
+  background: var(--ink-soft);
+}
+/* Nicht-stuetzende Evidenz: in einen dezenten Kasten abgesetzt (Text bleibt voll lesbar,
+   kein opacity-Dimmen) – damit eine reine Beobachtung nicht wie ein Bias-Beleg wirkt. */
+.ev--nonbias {
+  background: var(--canvas);
+  border-radius: var(--r);
+  padding: 8px 10px;
+}
+.ev__note {
+  font-size: 12px;
+  color: var(--subtle);
+  margin: 4px 0 0;
 }
 .spot-list {
   list-style: none;

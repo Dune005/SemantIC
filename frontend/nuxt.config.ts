@@ -12,7 +12,24 @@ export default defineNuxtConfig({
     // Eigener Port, damit frontend/ nicht mit web/ (3400) kollidiert.
     port: 3500,
   },
-  modules: ['@nuxtjs/tailwindcss'],
+  modules: ['@nuxtjs/tailwindcss', '@nuxtjs/i18n'],
+  // Mehrsprachigkeit DE/EN – Mechanik (Frontend 1.8). EN ist waehlbar, faellt aber
+  // bis zur Textmigration auf DE zurueck (en.json leer). Default DE, keine URL-Praefixe.
+  i18n: {
+    defaultLocale: 'de',
+    strategy: 'no_prefix',
+    vueI18n: 'i18n.config.ts',
+    // Cookie-Persistenz der MANUELLEN Wahl loesen wir selbst (plugins/i18n-persist.client.ts
+    // + composables/useLanguageSwitch.ts), NICHT ueber detectBrowserLanguage: dessen
+    // Browser-Erkennung wuerde den Erstbesuch je nach Accept-Language auf EN schicken.
+    // detectBrowserLanguage:false => Erstbesuch IMMER de (defaultLocale), Wahl persistiert
+    // ueber unseren Cookie. (Codex-P1: false deaktiviert die eingebaute Cookie-Persistenz.)
+    detectBrowserLanguage: false,
+    locales: [
+      { code: 'de', name: 'Deutsch', language: 'de-CH', file: 'de.json' },
+      { code: 'en', name: 'English', language: 'en-US', file: 'en.json' },
+    ],
+  },
   // Reihenfolge wichtig: tailwind.css (Preflight) zuerst, dann das
   // Variante-C-Design-System (tokens -> base), damit base.css den Preflight
   // ueberschreibt. tokens.css ist die einzige Token-Quelle.

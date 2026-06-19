@@ -206,6 +206,9 @@ const headlineHasDot = computed(() => vm.value.overallVerdict.headline.endsWith(
       <h2 class="print-h2">Leseart &amp; visuelle Treiber</h2>
       <p class="print-line">{{ vm.readingMode.label }} ({{ vm.readingMode.code }})</p>
       <p class="print-sub">{{ READING_MODE_DESC[vm.readingMode.code] }}</p>
+      <p v-if="vm.readingModeMaskingLogic" class="print-sub">
+        <strong>Maskierungs-Logik:</strong> {{ vm.readingModeMaskingLogic }}
+      </p>
       <div v-if="vm.visualDrivers.length" class="print-chips">
         <Chip v-for="(drv, i) in vm.visualDrivers" :key="`${drv.code}-${i}`" :code="drv.code" :label="drv.label" />
       </div>
@@ -258,6 +261,17 @@ const headlineHasDot = computed(() => vm.value.overallVerdict.headline.endsWith(
         · maximales Risiko: {{ RISK_LEVEL_LABEL[vm.biasAxesSummary.maxRisk] }}.
       </p>
       <p class="print-sub" v-else>Keine Bias-Achsen erkannt.</p>
+      <!-- F3 (1.8): Beobachtung/Lesart je Achse – damit die Trennung auch im PDF erhalten
+           bleibt (Print-Leitplanke: kein Befund verschwindet beim Export). -->
+      <div v-for="ax in vm.biasAxesDetails" :key="ax.axisId" class="print-axis">
+        <p class="print-line">{{ ax.label }} · Risiko {{ RISK_LEVEL_LABEL[ax.riskLevel] }}</p>
+        <template v-for="(e, i) in ax.evidence" :key="`ev-${i}`">
+          <p class="print-sub"><strong>Beobachtung:</strong> {{ e.observation }}</p>
+          <p class="print-sub">
+            <strong>Lesart:</strong> {{ e.interpretation }}<template v-if="!e.supportsBiasFinding"> – stützt keinen Bias-Befund</template>
+          </p>
+        </template>
+      </div>
     </section>
 
     <!-- Block 12: Methoden-Fussnote (nicht-technisch, ohne Debug/Modell-Versionen) -->
@@ -523,6 +537,10 @@ const headlineHasDot = computed(() => vm.value.overallVerdict.headline.endsWith(
   color: var(--muted);
   line-height: 1.5;
   margin-top: 6px;
+}
+/* F3 (1.8): Achsen-Block im PDF (Beobachtung/Lesart), dezent abgesetzt. */
+.print-axis {
+  margin-top: 10px;
 }
 .print-spot-list {
   list-style: none;

@@ -38,6 +38,7 @@ import type {
   ReadingModeView,
   VisualDriverView,
   BiasAxesSummary,
+  BiasAxisDetail,
   MaskingMarkedSpot,
   AnalysisViewModel,
 } from '~/types/analysis'
@@ -899,6 +900,22 @@ export function buildAnalysisViewModel(
     count: axes.length,
     maxRisk: maxRiskRank === 3 ? 'high' : maxRiskRank === 2 ? 'medium' : maxRiskRank === 1 ? 'low' : 'none',
   }
+  // F3 (1.8): Achsen-Details fuer die Vertiefung (Beobachtung = deskriptiv, Lesart =
+  // interpretativ). supportsBiasFinding durchgereicht, damit nicht-stuetzende Evidenz in
+  // der UI abgesetzt werden kann. Reine Lese-Schicht – kein Pipeline-Eingriff.
+  const biasAxesDetails: BiasAxisDetail[] = axes.map((a) => ({
+    axisId: a.axis_id,
+    label: a.label,
+    riskLevel: a.risk_level,
+    confidence: a.confidence,
+    evidence: a.observed_evidence.map((e) => ({
+      observation: e.observation,
+      interpretation: e.interpretation,
+      supportsBiasFinding: e.supports_bias_finding,
+    })),
+  }))
+  // Globale Maskierungs-Logik der Leseart (research_layer) – gehoert zum Leseart-Block.
+  const readingModeMaskingLogic = analysis.research_layer.reading_mode_masking_logic ?? null
 
   // Alt-JSON-Fallback (Codex-Review): Outputs vor dem Rückbau haben das Feld
   // nicht (undefined) — dann aus der vorhandenen masking_evidence mit derselben
@@ -1145,6 +1162,8 @@ export function buildAnalysisViewModel(
     inputCompleteness,
     dominantErrorType: analysis.research_layer.dominant_error_type,
     biasAxesSummary,
+    biasAxesDetails,
+    readingModeMaskingLogic,
     intentAssessment,
     normativeMasking,
     normativeMaskingNote,

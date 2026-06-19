@@ -132,6 +132,24 @@ export interface BiasAxesSummary {
   maxRisk: RiskLevel | 'none'
 }
 
+// F3 (1.8): Achsen-Detail fuer die deskriptiv/interpretativ-Trennung in der Vertiefung.
+export interface BiasAxisObservation {
+  // deskriptiv: was im Bild zu sehen ist.
+  observation: string
+  // interpretativ: was es (laut Modell) bedeuten koennte – als Lesart markiert.
+  interpretation: string
+  // false = beschreibt das Bild, stuetzt aber KEINEN Bias-Befund. Wird in der UI klar
+  // abgesetzt, damit nicht jede Beobachtung wie ein Bias-Beleg wirkt (Box-Aktivismus-Schutz).
+  supportsBiasFinding: boolean
+}
+export interface BiasAxisDetail {
+  axisId: string
+  label: string
+  riskLevel: RiskLevel
+  confidence: RiskLevel
+  evidence: BiasAxisObservation[]
+}
+
 // Eine vom Modell markierte Stelle aus masking_evidence (dedupliziert wie im
 // Maskierungs-Hinweis gezählt) – macht den Hinweis am Bild prüfbar.
 export interface MaskingMarkedSpot {
@@ -201,6 +219,11 @@ export interface AnalysisViewModel {
   inputCompleteness: InputCompleteness
   dominantErrorType: DominantErrorType
   biasAxesSummary: BiasAxesSummary
+  // F3 (1.8): pro Achse die Beobachtung/Lesart-Paare (Vertiefung). Leer = keine Achsen.
+  biasAxesDetails: BiasAxisDetail[]
+  // F3 (1.8): globale Maskierungs-Logik der Leseart (research_layer) – gehoert zum
+  // Leseart-Block, NICHT zu einzelnen Bias-Achsen. null = nicht vorhanden (Alt-JSON).
+  readingModeMaskingLogic: string | null
   intentAssessment: IntentAssessmentView
   // Kurzer Hinweis-Text neben der Empfehlung, wenn der declared_intent die
   // Empfehlungs-Rahmung verändert hat (Transparenz: User soll sehen, dass die
