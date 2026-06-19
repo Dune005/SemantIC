@@ -93,31 +93,24 @@
   padding: 0;
   position: relative;
 }
-/* Durchgehender Stamm hinter den zentrierten Knoten (Verbindung, kein Pfeil).
-   Als ::before statt span-Kind, damit das <ol> nur <li> direkt enthält. */
-.flow::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 8px;
-  bottom: 8px;
-  width: 2px;
-  transform: translateX(-50%);
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    var(--line-strong) 8%,
-    var(--line-strong) 92%,
-    transparent
-  );
-  z-index: 0;
-}
 .flow__step {
   position: relative;
-  z-index: 1;
 }
 .flow__step + .flow__step {
   margin-top: 26px;
+}
+/* Connector NUR in den Lücken zwischen den Schritten – nie hinter Text (Codex):
+   kurze Mittellinie im 26px-Abstand statt eines durchgehenden Stamms, der sonst
+   hinter Split-Label und Merge-Text läge. */
+.flow__step + .flow__step::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -26px;
+  width: 2px;
+  height: 26px;
+  transform: translateX(-50%);
+  background: var(--line-strong);
 }
 
 .flow__node {
@@ -175,24 +168,10 @@
 }
 .lane {
   position: relative;
-  overflow: hidden;
   padding: 20px 20px 22px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r);
-}
-/* Akzent OBEN (nie links) – Dimensionsfarbe je Spur. */
-.lane::after {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 3px;
-}
-.lane--warm::after {
-  background: var(--substance);
-}
-.lane--cool::after {
-  background: var(--appeal);
 }
 .lane__tag {
   display: flex;
@@ -228,17 +207,14 @@
   gap: 10px;
   margin-bottom: 10px;
 }
-/* Logo = stilisierter Platzhalter, erbt die Spur-Dimensionsfarbe (kein Markenlogo). */
+/* Logo = stilisierter Platzhalter, neutral (kein Markenlogo). Die Dimensions-
+   Zuordnung (warm = Inhalt, kühl = Ästhetik) tragen Dot + Tag, nicht das Logo –
+   so wirken die Modelle nicht „rot/grün umrandet". */
 .lane__logo {
   width: 22px;
   height: 22px;
   flex: 0 0 auto;
-}
-.lane--warm .lane__logo {
-  color: var(--substance);
-}
-.lane--cool .lane__logo {
-  color: var(--appeal);
+  color: var(--ink-soft);
 }
 .lane__name {
   font-family: 'IBM Plex Sans', system-ui, sans-serif;

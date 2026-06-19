@@ -108,27 +108,16 @@ withDefaults(defineProps<{ pairs?: readonly Pair[] }>(), {
   border: 1px dashed var(--line-strong);
   color: var(--muted);
 }
-/* Schleier = rein dekoratives, neutrales Diagonalraster (kein --warn, kein blur).
-   Liegt UNTER dem Content (z-index 0). Hover/Focus hebt es – nur ein Bonbon. */
-.rail__cell--was::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background-image: repeating-linear-gradient(
-    -45deg,
-    var(--soft) 0,
-    var(--soft) 0.5px,
-    transparent 0.5px,
-    transparent 8px
-  );
-  opacity: 0.32;
-  transition: opacity 0.5s ease;
+/* „maskiert → klar" OHNE Raster über dem Text (Codex): die Verdeckung trägt ein
+   textfreier Hatch-Marker im Tag (siehe .rail__dot--was) plus die gedämpfte Fläche.
+   Hover „klärt" die Tendenz-Zelle – Kante wird durchgezogen, Text kräftiger. */
+.rail__cell--was {
+  transition: color 0.35s ease, border-color 0.35s ease;
 }
-.rail:hover .rail__cell--was::before,
-.rail:focus-within .rail__cell--was::before {
-  opacity: 0.06;
+.rail:hover .rail__cell--was,
+.rail:focus-within .rail__cell--was {
+  border-style: solid;
+  color: var(--ink-soft);
 }
 
 /* Leitplanke „klar" – präsente weisse Fläche, kräftige Kante. */
@@ -158,16 +147,27 @@ withDefaults(defineProps<{ pairs?: readonly Pair[] }>(), {
   color: var(--substance);
 }
 .rail__dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
   flex: 0 0 auto;
 }
+/* „maskiert": kleiner schraffierter Marker (textfrei) – dieselbe Hatch-Sprache wie
+   die Maskierungs-Zone im Quadranten, nur neutral statt warn. */
 .rail__dot--was {
-  background: var(--line-strong);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--muted) 0,
+    var(--muted) 1px,
+    transparent 1px,
+    transparent 5px
+  );
+  border: 1px solid var(--line-strong);
 }
+/* „klar": solider Akzentpunkt. */
 .rail__dot--now {
   background: var(--substance);
+  border-radius: 50%;
 }
 .rail__text {
   margin: 0;
@@ -218,7 +218,7 @@ withDefaults(defineProps<{ pairs?: readonly Pair[] }>(), {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .rail__cell--was::before,
+  .rail__cell--was,
   .rail__arrow :is(line, path) {
     transition: none;
   }

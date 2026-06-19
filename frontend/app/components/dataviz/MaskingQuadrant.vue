@@ -4,15 +4,21 @@
 // Zone ist das schraffierte Dreieck OBERHALB der Diagonale (Ästhetik übersteigt
 // Integrität) – nicht die Ecke. Bewusst KEINE Messzahl, nur das Prinzip.
 // A11y (Codex): Wrapper role="img" + aria-label, inneres SVG aria-hidden (kein Doppel-
-// Announce). Achsentitel + Wert-Labels als HTML-Overlay (SVG-<text> wäre auf 360px zu klein).
-// Farben: Zone = --warn-Schraffur (Risiko); Diagonale/Punkt/Gitter NEUTRAL; die warm/kühl-
-// Dimensionsfarben erscheinen NUR an den beiden Wert-Labels (Codex: Quadrant sonst zu laut).
-import { computed } from 'vue'
+// Announce). Achsentitel jetzt IM SVG (vorlagentreu, overflow: visible); Wert-Labels als
+// HTML-Overlay. Farben: Zone = --warn-Schraffur/Verlauf (Risiko); Diagonale/Punkt/Gitter
+// NEUTRAL; warm/kühl-Dimensionsfarben NUR an den beiden Wert-Labels (Quadrant sonst zu laut).
+import { computed, useId } from 'vue'
 
 const props = withDefaults(
   defineProps<{ aesthetic?: number; integrity?: number; pointLabel?: string }>(),
   { aesthetic: 86, integrity: 64, pointLabel: 'Beispiel' },
 )
+
+// Eindeutige SVG-IDs pro Instanz (Codex: harte IDs kollidieren bei Mehrfach-Einsatz).
+const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '')
+const hatchId = `mq-hatch-${uid}`
+const fadeId = `mq-fade-${uid}`
+const zoneId = `mq-zoneclip-${uid}`
 
 // Plot 16..304 in einem 320er-viewBox (Padding 16 je Seite).
 const PAD = 16
@@ -37,18 +43,25 @@ const ariaLabel = computed(
 
 <template>
   <div class="quad">
-    <div class="quad__plot">
-      <span class="quad__axislbl quad__axislbl--y">Wie gut es aussieht ↑</span>
-      <div class="quad__stage" role="img" :aria-label="ariaLabel">
+    <div class="quad__stage" role="img" :aria-label="ariaLabel">
         <svg class="quad__svg" viewBox="0 0 320 320" aria-hidden="true">
           <defs>
-            <pattern id="mq-hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <pattern :id="hatchId" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
               <line class="quad__hatch" x1="0" y1="0" x2="0" y2="8" />
             </pattern>
+            <linearGradient :id="fadeId" x1="0" y1="0" x2="1" y2="1">
+              <stop class="quad__fade0" offset="0" />
+              <stop class="quad__fade1" offset="0.8" />
+            </linearGradient>
+            <clipPath :id="zoneId">
+              <polygon points="16,304 16,16 304,16" />
+            </clipPath>
           </defs>
 
-          <!-- Maskierungs-Zone: Dreieck oberhalb der Diagonale -->
-          <polygon class="quad__zone" points="16,304 16,16 304,16" fill="url(#mq-hatch)" />
+          <!-- Maskierungs-Zone: Dreieck oberhalb der Diagonale. Warm-Verlauf IN die
+               Zone geclippt (nicht volle Fläche – Codex) + Schraffur = Flächengewicht. -->
+          <rect x="16" y="16" width="288" height="288" :fill="`url(#${fadeId})`" :clip-path="`url(#${zoneId})`" />
+          <polygon class="quad__zone" points="16,304 16,16 304,16" :fill="`url(#${hatchId})`" />
 
           <!-- Gitter -->
           <g class="quad__grid">
@@ -80,6 +93,10 @@ const ariaLabel = computed(
             <circle class="quad__pt-aura" :cx="cx" :cy="cy" r="9" />
             <circle class="quad__pt-core" :cx="cx" :cy="cy" r="6" />
           </g>
+
+          <!-- Achsentitel im SVG (vorlagentreu); sitzen im 16er-Padding-Gutter -->
+          <text class="quad__axt" x="160" y="317" text-anchor="middle">Inhaltlich stimmig →</text>
+          <text class="quad__axt" x="11" y="160" text-anchor="middle" transform="rotate(-90 11 160)">Sieht gut aus ↑</text>
         </svg>
 
         <!-- HTML-Overlay-Labels (deckungsgleich mit dem SVG) -->
@@ -94,8 +111,6 @@ const ariaLabel = computed(
           <span class="quad__val quad__val--integ">Integrität {{ integrity }}</span>
         </span>
       </div>
-      <span class="quad__axislbl quad__axislbl--x">Wie gut es inhaltlich hält →</span>
-    </div>
 
     <div class="quad__legend">
       <h3>Oben links liegt die Gefahr</h3>
@@ -129,31 +144,24 @@ const ariaLabel = computed(
 <style scoped>
 .quad {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
-  gap: 36px;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: clamp(24px, 3vw, 40px);
   align-items: center;
-  padding: 36px;
+  padding: clamp(24px, 3.5vw, 40px);
   background: var(--canvas);
   border: 1px solid var(--line);
   border-radius: var(--r);
 }
 
-/* Achsentitel als Grid-Geschwister AUSSERHALB der Stage: Y-Achse eigene Spalte
-   links, X-Achse eigene Zeile unten – klar abgesetzt, robust ohne Overflow. */
-.quad__plot {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr) auto;
-  gap: 10px 12px;
-  max-width: 512px;
-  margin: 0 auto;
-}
+/* Stage = direktes Grid-Kind mit width:100% (wie Vorlage): füllt die 1fr-Spalte
+   grosszügig. WICHTIG: width:100% explizit setzen – sonst kollabiert der Block mit
+   margin:0 auto auf die SVG-Default-Breite (300px). max-width nur als Obergrenze. */
 .quad__stage {
-  grid-column: 2;
-  grid-row: 1;
   position: relative;
   aspect-ratio: 1;
   width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
 }
 .quad__svg {
   display: block;
@@ -171,13 +179,22 @@ const ariaLabel = computed(
 .quad__zone {
   opacity: 0.9;
 }
+/* Warm-Verlauf in der Zone (Flächengewicht), in die Polygon-Zone geclippt. */
+.quad__fade0 {
+  stop-color: var(--warn);
+  stop-opacity: 0.16;
+}
+.quad__fade1 {
+  stop-color: var(--warn);
+  stop-opacity: 0;
+}
 .quad__grid line {
   stroke: var(--line-soft);
   stroke-width: 1;
 }
 .quad__axis line {
   stroke: var(--line-strong);
-  stroke-width: 1.5;
+  stroke-width: 2;
 }
 .quad__diag {
   stroke: var(--line-strong);
@@ -249,26 +266,13 @@ const ariaLabel = computed(
 .quad__val--integ {
   color: var(--substance);
 }
-.quad__axislbl {
+/* Achsentitel im SVG (fill statt color); im Padding-Gutter, daher overflow: visible. */
+.quad__axt {
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-size: 10px;
-  letter-spacing: 0.1em;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--subtle);
-  white-space: nowrap;
-}
-.quad__axislbl--x {
-  grid-column: 2;
-  grid-row: 2;
-  text-align: center;
-}
-.quad__axislbl--y {
-  grid-column: 1;
-  grid-row: 1;
-  align-self: center;
-  justify-self: center;
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
+  fill: var(--subtle);
 }
 
 /* Legende */

@@ -17,57 +17,70 @@ useHead({
 </script>
 
 <template>
-  <!-- ================= SEITENKOPF ================= -->
-  <div class="page page--text">
-    <header class="page-head">
-      <p class="page-head__kicker">So funktioniert SemantIC</p>
-      <h1>Was passiert, wenn du ein Bild prüfst.</h1>
-      <p class="page-head__lead">
-        SemantIC nimmt ein KI-generiertes Bild und sieht es sich entlang von drei
-        Dimensionen an: ob es physikalisch plausibel ist, ob es inhaltlich Sinn
-        ergibt und welche Klischees es trägt. Auf dieser Seite zeigen wir dir, was
-        das Tool tut, woher seine Kriterien kommen und – genauso wichtig – was es
-        bewusst nicht tut.
-      </p>
-    </header>
-  </div>
+  <!-- ================= EINSTIMMUNG · Editorial-Kopf (Moodbild + Lead darüber) ================= -->
+  <section class="hero">
+    <img
+      class="hero__img"
+      src="/landing/band-printstudio.webp"
+      alt=""
+      aria-hidden="true"
+      loading="eager"
+      fetchpriority="high"
+      decoding="async"
+    />
+    <span class="hero__tone" aria-hidden="true" />
+    <div class="hero__veil" aria-hidden="true" />
+    <div class="page">
+      <header class="hero__head">
+        <p class="hero__kicker">So funktioniert SemantIC</p>
+        <h1>Was passiert, wenn du ein Bild prüfst.</h1>
+        <p class="hero__lead">
+          SemantIC nimmt ein KI-generiertes Bild und sieht es sich entlang von drei
+          Dimensionen an: ob es physikalisch plausibel ist, ob es inhaltlich Sinn
+          ergibt und welche Klischees es trägt. Auf dieser Seite zeigen wir dir, was
+          das Tool tut, woher seine Kriterien kommen und – genauso wichtig – was es
+          bewusst nicht tut.
+        </p>
+      </header>
+    </div>
+    <span class="hero__chip">KI-generiertes Moodbild</span>
+  </section>
 
   <!-- ================= 1 · MASKIERUNGSEFFEKT ================= -->
   <section class="section" aria-labelledby="s1-title">
     <div class="page page--text">
       <p class="section__index">01 · Die Idee dahinter</p>
       <h2 id="s1-title">Warum gute Bilder ihre eigenen Fehler verstecken.</h2>
-      <div class="section__body">
-        <p>
-          KI-Bildgeneratoren optimieren auf das, was Menschen sofort als „gut"
-          lesen: Schärfe, Farbe, Licht, Komposition. Auf die inhaltliche
-          Stimmigkeit – ob eine Szene logisch ist, ob Proportionen passen, ob ein
-          Bild nicht in ein Klischee kippt – optimieren sie weit weniger. Das
-          Ergebnis ist eine systematische Schieflage: Bilder werden zuverlässig
-          schön, aber nur zufällig richtig.
-        </p>
-        <p>
-          Der entscheidende Punkt ist, was daraus folgt. Ein Bild, das visuell
-          überzeugt, lädt nicht dazu ein, genauer hinzusehen. Die Oberfläche
-          beruhigt das Auge, und die Schwächen rutschen durch. Genau diesen
-          Mechanismus nennen wir <strong>Maskierung</strong> – die Arbeitsthese
-          hinter SemantIC: Visuelle Perfektion kann inhaltliche und ethische
-          Schwächen maskieren. Je überzeugender ein Bild, desto grösser die
-          Gefahr, dass du seine Probleme übersiehst.
-        </p>
-      </div>
+      <div class="s1-grid">
+        <div class="section__body">
+          <p>
+            KI-Bildgeneratoren optimieren auf das, was sofort als „gut" gelesen wird:
+            Schärfe, Farbe, Licht, Komposition. Auf die inhaltliche Stimmigkeit –
+            Logik der Szene, Proportionen, Klischees – optimieren sie weit weniger.
+            Bilder werden so zuverlässig schön, aber nur zufällig richtig.
+          </p>
+          <p>
+            Die Folge ist das eigentliche Problem: Ein überzeugendes Bild lädt nicht
+            dazu ein, genauer hinzusehen. Die Oberfläche beruhigt das Auge, und
+            Schwächen rutschen durch. Diesen Mechanismus nennen wir
+            <strong>Maskierung</strong> – die Arbeitsthese hinter SemantIC. Je
+            überzeugender ein Bild, desto grösser die Gefahr, dass du seine Probleme
+            übersiehst.
+          </p>
+        </div>
 
-      <!-- Theoriebezug: ruhiger sunken-Panel (Card-Variante) -->
-      <Card tone="sunken" border="hair" padding="none" class="card theory">
-        <p class="card__kicker">Theoriebezug</p>
-        <p>
-          Dieser Effekt ist nicht nur eine Beobachtung, sondern lässt sich
-          wissenschaftlich einordnen. Neuere Forschung zeigt, dass künstliche
-          neuronale Netze visuelle Eigenschaften priorisieren, während Menschen
-          Bilder stärker über ihre Bedeutung erfassen. SemantIC setzt genau in diese
-          Lücke: Es schaut dorthin, wo das Auge zu schnell zufrieden ist.
-        </p>
-      </Card>
+        <!-- Theoriebezug: ruhige Randnotiz (Card-Variante) -->
+        <Card tone="sunken" border="hair" padding="none" class="card theory">
+          <p class="card__kicker">Theoriebezug</p>
+          <p>
+            Dieser Effekt ist nicht nur eine Beobachtung, sondern lässt sich
+            wissenschaftlich einordnen. Neuere Forschung zeigt, dass künstliche
+            neuronale Netze visuelle Eigenschaften priorisieren, während Menschen
+            Bilder stärker über ihre Bedeutung erfassen. SemantIC setzt genau in diese
+            Lücke: Es schaut dorthin, wo das Auge zu schnell zufrieden ist.
+          </p>
+        </Card>
+      </div>
     </div>
   </section>
 
@@ -77,35 +90,31 @@ useHead({
       <p class="section__index">02 · Der Ablauf</p>
       <h2 id="s2-title">Vom Bild zum Befund.</h2>
 
-      <div class="section__body">
-        <p>
-          Ein Bildmodell allein lässt sich von der schönen Oberfläche leiten.
-          SemantIC trennt deshalb Inhalt und Ästhetik in zwei eigenständige
-          Durchläufe – bewusst, damit die Wirkung das inhaltliche Urteil nicht
-          beschönigt. Erst danach werden beide Ergebnisse zusammengeführt.
+      <div class="figure-card">
+        <p class="figure-card__lead">
+          SemantIC trennt Inhalt und Ästhetik in zwei eigenständige Durchläufe –
+          damit die Wirkung das inhaltliche Urteil nicht beschönigt. Erst danach
+          werden beide Ergebnisse zusammengeführt.
+        </p>
+        <PipelineDiagram />
+        <p class="figure-note">
+          Modellagnostisch – Gemini &amp; Claude sind die aktuellen Standard-Modelle,
+          austauschbar. Die Symbole sind stilisierte Platzhalter.
         </p>
       </div>
-
-      <div class="section__figure">
-        <PipelineDiagram />
-      </div>
-      <p class="figure-note">
-        Modellagnostisch – Gemini &amp; Claude sind die aktuellen Standard-Modelle,
-        austauschbar. Die Symbole sind stilisierte Platzhalter.
-      </p>
     </div>
   </section>
 
-  <!-- ============ 2·b · LEITPLANKEN DER BEWERTUNG ============ -->
-  <section class="section" aria-labelledby="s2b-title">
+  <!-- ============ 2·b · LEITPLANKEN DER BEWERTUNG (dunkle Sektion) ============ -->
+  <section class="section section--ink" aria-labelledby="s2b-title">
     <div class="page">
       <p class="section__index">02 · b · Die Leitplanken</p>
       <h2 id="s2b-title">Die Leitplanken der Bewertung.</h2>
       <div class="section__body">
         <p>
           Ein Bildmodell allein neigt dazu, sich von visueller Perfektion leiten zu
-          lassen – genau der Maskierungseffekt. SemantIC legt der Bewertung deshalb
-          Leitplanken an, die auf belegte, nachvollziehbare Urteile hinwirken.
+          lassen. SemantIC legt der Bewertung deshalb Leitplanken an, die auf belegte,
+          nachvollziehbare Urteile hinwirken.
         </p>
       </div>
 
@@ -114,15 +123,14 @@ useHead({
       </div>
       <div class="section__body">
         <p>
-          Diese Leitplanken machen die Bewertung disziplinierter und nachvollziehbarer
-          – sie sollen dem Maskierungseffekt entgegenwirken. Wo das Tool an Grenzen
-          stösst, legt SemantIC das offen (Abschnitt „Wir kennen die Grenzen").
+          Das macht die Bewertung disziplinierter und nachvollziehbarer. Wo das Tool
+          an Grenzen stösst, legt SemantIC das offen (Abschnitt „Wir kennen die Grenzen").
         </p>
       </div>
       <p class="figure-note">
-        „Maskiert → klar": Tendenz hinter Schleier, Leitplanke scharf, Hover hebt den
-        Schleier. Grösstenteils hart erzwungen (festes Schema &amp; Prüfregeln); die
-        Kriterien stammen aus 144 codierten Bildern.
+        „Maskiert → klar": Tendenz gedämpft, Leitplanke scharf. Grösstenteils hart
+        erzwungen (festes Schema &amp; Prüfregeln); die Kriterien stammen aus 144
+        codierten Bildern.
       </p>
     </div>
   </section>
@@ -134,51 +142,47 @@ useHead({
       <h2 id="s3-title">Was hinter Physik, Semantik und Bias steckt.</h2>
 
       <div class="dims">
-        <!-- Akzent OBEN als Severity-Echo (links ist verboten) -->
-        <article class="dim-card dim-card--safe">
-          <div class="dim-card__top" aria-hidden="true" />
+        <!-- Gleichrangige Dimensionen: neutrale Mono-Indexziffer statt Ampel-Akzent. -->
+        <article class="dim-card">
           <div class="dim-card__inner">
-            <p class="dim-card__name">Physik</p>
+            <div class="dim-card__head">
+              <span class="dim-card__idx" aria-hidden="true">01</span>
+              <p class="dim-card__name">Physik</p>
+            </div>
             <h3>Physikalische Kohärenz</h3>
             <p>
-              Hier geht es um die Naturgesetze im Bild. Fällt das Licht konsistent?
-              Stimmen Schatten mit ihren Quellen überein? Sind Körper, Hände und
-              Gegenstände anatomisch und proportional plausibel? Verhalten sich
-              Materialien – Glas, Metall, Stoff, Haut – so, wie sie sollten?
-              Physikalische Brüche sind oft klein, aber sie verraten ein Bild
-              zuverlässig, wenn man sie einmal sieht.
+              Gehorcht das Bild den Naturgesetzen? Licht, Schatten, Anatomie,
+              Proportionen, Materialien. Solche Brüche sind oft klein – aber sie
+              verraten ein Bild zuverlässig, wenn man sie einmal sieht.
             </p>
           </div>
         </article>
-        <article class="dim-card dim-card--warn">
-          <div class="dim-card__top" aria-hidden="true" />
+        <article class="dim-card">
           <div class="dim-card__inner">
-            <p class="dim-card__name">Semantik</p>
+            <div class="dim-card__head">
+              <span class="dim-card__idx" aria-hidden="true">02</span>
+              <p class="dim-card__name">Semantik</p>
+            </div>
             <h3>Semantische Konsistenz</h3>
             <p>
-              Hier geht es um den Sinn der Szene. Passen die Elemente logisch
-              zusammen? Ergibt das Bild als Ganzes eine kohärente Situation? Und
-              passt es zu dem Kontext, in dem du es verwenden willst? Ein technisch
-              sauberes Bild kann inhaltlich trotzdem danebenliegen – etwa wenn es
-              eine Szene zeigt, die so nicht stattfinden würde, oder die nicht zu
-              deinem Beitrag passt.
+              Ergibt die Szene Sinn – und passt sie zu deinem Kontext? Ein technisch
+              sauberes Bild kann inhaltlich trotzdem danebenliegen: eine Situation,
+              die so nicht stattfinden würde, oder die nicht zu deinem Beitrag passt.
             </p>
           </div>
         </article>
-        <article class="dim-card dim-card--crit">
-          <div class="dim-card__top" aria-hidden="true" />
+        <article class="dim-card">
           <div class="dim-card__inner">
-            <p class="dim-card__name">Bias</p>
+            <div class="dim-card__head">
+              <span class="dim-card__idx" aria-hidden="true">03</span>
+              <p class="dim-card__name">Bias</p>
+            </div>
             <h3>Bias und Stereotypisierung</h3>
             <p>
-              Hier geht es um soziale Verzerrungen. Welche Rollen sind wie besetzt?
-              Folgen Posen, Kleidung, Kontext einem Klischee? Wird eine Gruppe
-              einseitig dargestellt? Dies ist die heikelste Dimension, weil Bias sich
-              besonders gut maskieren lässt: Ein schönes Bild eines Klischees bleibt
-              ein Klischee. Wichtig dabei – das wahrgenommene Geschlecht oder die
-              Hautfarbe einer Person sind für sich genommen kein Befund. Erst wenn
-              daraus eine stereotype Rollenbesetzung, eine Machtdynamik oder ein
-              Kontextbruch wird, schlägt SemantIC an.
+              Welche Rollen, Posen, Klischees zeigt das Bild? Ein schönes Bild eines
+              Klischees bleibt ein Klischee. Wichtig: Geschlecht oder Hautfarbe sind
+              für sich kein Befund – erst eine stereotype Rollenbesetzung, Machtdynamik
+              oder ein Kontextbruch schlägt an.
             </p>
           </div>
         </article>
@@ -186,136 +190,106 @@ useHead({
     </div>
   </section>
 
-  <!-- ================= 4 · MASKIERUNGS-CHECK ================= -->
-  <section class="section" aria-labelledby="s4-title">
-    <div class="page">
-      <p class="section__index">04 · Der Maskierungs-Check</p>
-      <h2 id="s4-title">Wenn die Oberfläche stärker ist als der Inhalt.</h2>
-      <div class="section__body">
-        <p>
-          SemantIC bewertet zwei Dinge strikt getrennt: wie gut ein Bild aussieht
-          (die Ästhetik) und wie gut es inhaltlich hält (die Integrität). Liegt
-          die Wirkung deutlich über der Substanz, ist das der Nährboden für
-          Maskierung: Die perfekte Oberfläche kann Fehler überdecken, bevor du
-          sie überhaupt bemerkst.
-        </p>
-        <p>
-          Eine einzelne Maskierungs-Kennzahl findest du bei SemantIC bewusst
-          nicht. Wir haben in der eigenen Validierung mehrere Messansätze geprüft
-          – keiner hat der menschlichen Einschätzung standgehalten. Statt einer
-          Scheinpräzision markiert der Befund konkret die Stellen, an denen ein
-          ästhetischer Treiber einen Befund überdecken könnte, und benennt die
-          Leseart, über die das Bild seine Wirkung erzeugt. Das ist am Bild
-          nachprüfbar – eine Zahl wäre es nicht.
-        </p>
+  <!-- ================= 4 · MASKIERUNGS-CHECK (dunkle Bild-Sektion) =================
+       Das Pressekonferenz-Foto bleibt vollflächig sichtbar; der Text liegt in einer
+       opaken Ink-Tafel (Lesbarkeit vom Foto entkoppelt, AA-sicher), der Quadrant als
+       eigene helle Karte davor. Bezug: die „Oberfläche" des Bildes wird selbst zur
+       Folie, über der der Maskierungs-Quadrant das Prinzip erklärt. -->
+  <section class="section s4 section--ink" aria-labelledby="s4-title">
+    <img
+      class="s4__bg"
+      src="/landing/masking-press.webp"
+      alt=""
+      aria-hidden="true"
+      loading="lazy"
+      decoding="async"
+    />
+    <span class="s4__scrim" aria-hidden="true" />
+    <div class="page s4__content">
+      <div class="s4__top">
+        <div class="s4__panel">
+          <p class="section__index">04 · Der Maskierungs-Check</p>
+          <h2 id="s4-title">Wenn die Oberfläche stärker ist als der Inhalt.</h2>
+          <div class="section__body">
+            <p>
+              SemantIC bewertet getrennt, wie gut ein Bild aussieht (die Ästhetik) und wie
+              gut es inhaltlich hält (die Integrität). Liegt die Wirkung deutlich über der
+              Substanz, ist das der Nährboden für Maskierung – die perfekte Oberfläche
+              überdeckt Fehler, bevor du sie bemerkst. Eine einzelne Maskierungs-Kennzahl
+              gibt es bewusst nicht; der Quadrant zeigt das Prinzip, nicht das Resultat
+              einer Prüfung.
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div class="section__figure">
+      <div class="section__figure s4__figure">
         <MaskingQuadrant :aesthetic="86" :integrity="64" />
       </div>
-      <p class="figure-note">
-        Bewusst illustratives Schema, keine Messzahl – es zeigt das Prinzip, nicht das
-        Resultat einer einzelnen Prüfung.
-      </p>
     </div>
   </section>
 
-  <!-- ================= 5 · LESEARTEN ================= -->
+  <!-- ================= 5 · DEINE ANGABEN ================= -->
   <section class="section" aria-labelledby="s5-title">
     <div class="page">
-      <p class="section__index">05 · Lesearten</p>
-      <h2 id="s5-title">Wie ein Bild seine Wirkung erzeugt.</h2>
+      <p class="section__index">05 · Deine Angaben</p>
+      <h2 id="s5-title">Warum du das Bild einordnen sollst.</h2>
       <div class="section__body">
         <p>
-          Jedes Bild erzeugt seine Überzeugungskraft auf eine bestimmte Art.
-          SemantIC ordnet jedem Bild eine von fünf Lesearten zu – sie beschreibt,
-          über welchen Bildstil das Bild seine Glaubwürdigkeit bezieht und damit
-          auch, wie es potenziell maskiert.
+          Bevor SemantIC prüft, fragen wir zwei Dinge: deine
+          <strong>Haltung</strong> zum Bild und seine
+          <strong>Verwendungsform</strong>. Beide rahmen nur die Empfehlung – sie
+          verschieben weder den Score noch die Befunde.
         </p>
       </div>
 
-      <div class="table-scroll">
-        <table class="table">
-          <caption class="table__caption mono">Die fünf Lesearten</caption>
-          <thead>
-            <tr><th scope="col">Code</th><th scope="col">Leseart</th><th scope="col">Wie sie wirkt</th></tr>
-          </thead>
-          <tbody>
-            <tr><td class="code">WA</td><td class="name">Werbe-Ästhetik</td><td>Überzeugt über eine ideale, makellose Bildwelt</td></tr>
-            <tr><td class="code">DA</td><td class="name">Dokumentarisch-Authentisch</td><td>Überzeugt über den Anschein von Objektivität</td></tr>
-            <tr><td class="code">CI</td><td class="name">Cinematisch</td><td>Überzeugt über Filmstimmung und Atmosphäre</td></tr>
-            <tr><td class="code">AA</td><td class="name">Amateur-Authentisch</td><td>Überzeugt über Vertrautheit und scheinbare Spontaneität</td></tr>
-            <tr><td class="code">MI</td><td class="name">Magazin/Inszeniert</td><td>Überzeugt über Professionalität und Status</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
-  <!-- ================= 6 · DEINE ANGABEN ================= -->
-  <section class="section" aria-labelledby="s6-title">
-    <div class="page">
-      <p class="section__index">06 · Deine Angaben</p>
-      <h2 id="s6-title">Warum du das Bild einordnen sollst.</h2>
-      <div class="section__body">
-        <p>
-          Bevor SemantIC prüft, fragen wir nach zwei Dingen: deiner Haltung und der
-          Verwendungsform. Beide rahmen die Empfehlung – sie sind keine
-          Messfaktoren.
-        </p>
-      </div>
-
-      <div class="input-frames">
-        <Card tone="paper" border="hair" padding="none" class="card card--paper">
-          <p class="card__kicker">Haltung</p>
+      <div class="angaben">
+        <div class="angaben__card">
+          <p class="angaben__kicker">Haltung</p>
           <h3>Welche Funktion hat das Bild?</h3>
-          <p>
-            Die Haltung sagt, welche Funktion das Bild in deinem Beitrag hat:
-            Untermalt es das Thema bestätigend, ordnet es kritisch ein, dient es als
-            neutrales Beispiel? Dieselbe Schwäche wiegt unterschiedlich, je nachdem,
-            ob ein Bild ein Klischee bewusst zeigt oder es unreflektiert
-            reproduziert.
+          <ul class="angaben__opts" aria-label="Auswahl im Tool">
+            <li class="chip">Standard</li>
+            <li class="chip">Bestätigend</li>
+            <li class="chip">Kritisch</li>
+            <li class="chip">Illustrativ</li>
+          </ul>
+          <p class="angaben__hint">
+            Dieselbe Schwäche wiegt anders, je nachdem ob ein Bild ein Klischee
+            bewusst zeigt oder es unreflektiert reproduziert.
           </p>
-        </Card>
-        <Card tone="paper" border="hair" padding="none" class="card card--paper">
-          <p class="card__kicker">Verwendungsform</p>
-          <h3>Wofür ist das Bild gedacht?</h3>
-          <p>
-            Die Verwendungsform sagt, wofür das Bild gedacht ist – ein flüchtiges
-            Moodbild oder ein redaktionelles Bild mit Anspruch. Daraus leitet
-            SemantIC ab, wie streng der Massstab sein sollte.
+        </div>
+        <div class="angaben__card">
+          <p class="angaben__kicker">Verwendungsform</p>
+          <h3>Wofür ist es gedacht?</h3>
+          <ul class="angaben__opts" aria-label="Auswahl im Tool">
+            <li class="chip">Headerbild</li>
+            <li class="chip">Moodbild</li>
+            <li class="chip">Symbolbild</li>
+            <li class="chip">Illustration</li>
+            <li class="chip">Social-Post</li>
+            <li class="chip">Werbe-/Marketingbild</li>
+            <li class="chip">Editorial-Bild</li>
+          </ul>
+          <p class="angaben__hint">
+            Daraus leitet SemantIC ab, wie streng der Massstab sein sollte.
           </p>
-        </Card>
+        </div>
       </div>
-
-      <Card tone="sunken" border="hair" padding="none" class="card card--sunken important-note">
-        <p class="card__kicker">Wichtig</p>
-        <p>
-          Beide Angaben verschieben weder den Score noch die Befunde. Sie ändern nur,
-          wie die Empfehlung am Ende formuliert ist.
-        </p>
-      </Card>
+      <p class="figure-note">Auswahl im Tool – hier nur zur Übersicht, nicht anklickbar.</p>
     </div>
   </section>
 
-  <!-- ================= 7 · HINWEIS STATT NACHWEIS ================= -->
-  <section class="section" aria-labelledby="s7-title">
+  <!-- ================= 6 · HINWEIS STATT NACHWEIS ================= -->
+  <section class="section" aria-labelledby="s6-title">
     <div class="page page--text">
-      <p class="section__index">07 · Hinweis statt Nachweis</p>
-      <h2 id="s7-title">Warum SemantIC dir nichts beweist.</h2>
+      <p class="section__index">06 · Hinweis statt Nachweis</p>
+      <h2 id="s6-title">Warum SemantIC dir nichts beweist.</h2>
       <div class="section__body">
         <p>
-          SemantIC gibt dir keine harten Urteile, sondern begründete Hinweise. Jeder
-          Befund ist eine Beobachtung, die dir zeigt, wo du genauer hinsehen solltest
-          – nicht der Beweis, dass ein Bild „falsch" ist. Das ist eine bewusste
-          Entscheidung. Ob ein Bild in deinen konkreten Kontext passt, kann ein
-          Werkzeug nicht für dich entscheiden. Es kann dir nur die Stellen zeigen,
-          die du sonst übersehen hättest. Die letzte Beurteilung bleibt bei dir.
-        </p>
-        <p>
-          Aus demselben Grund verzichtet SemantIC auf ein „Fake oder echt"-Verdikt.
-          Es bewertet die Qualität eines Bildes, von dem du bereits weisst, dass es
-          KI-generiert ist – nicht seine Herkunft.
+          SemantIC gibt keine harten Urteile, sondern begründete Hinweise: Jeder
+          Befund zeigt, wo du genauer hinsehen solltest – nicht, dass ein Bild
+          „falsch" ist. Ob es in deinen Kontext passt, entscheidet kein Werkzeug für
+          dich; die letzte Beurteilung bleibt bei dir.
         </p>
       </div>
 
@@ -341,22 +315,20 @@ useHead({
     </div>
   </section>
 
-  <!-- ================= 8 · VALIDIERTE GRENZEN (F2) =================
+  <!-- ================= 7 · VALIDIERTE GRENZEN (F2) =================
        Grenzen als Qualitätsmerkmal: jede Aussage hier ist empirisch geprüft
        (Anatomie-Batch + verblindeter Zweitmodell-Vergleich, dokumentierte
        Testreihen gegen die menschliche Phase-1-Codierung). -->
-  <section class="section" aria-labelledby="s-limits-title">
+  <section class="section" aria-labelledby="s7-title">
     <div class="page page--text">
-      <p class="section__index">08 · Validierte Grenzen</p>
-      <h2 id="s-limits-title">Wir kennen die Grenzen – und legen sie offen.</h2>
+      <p class="section__index">07 · Validierte Grenzen</p>
+      <h2 id="s7-title">Wir kennen die Grenzen – und legen sie offen.</h2>
       <div class="section__body">
         <p>
-          Jede Grenze, die hier steht, ist kein juristisches Kleingedrucktes,
-          sondern empirisch geprüft: in dokumentierten Testreihen gegen die
-          menschliche Codierung, bei der Anatomie zusätzlich verblindet mit einem
-          zweiten Vision-Modell. Diese Offenheit ist Teil des Forschungsanspruchs –
-          du sollst wissen, wann du dich auf einen Befund verlassen kannst und wann
-          dein eigener Blick gefragt ist.
+          Jede Grenze hier ist empirisch geprüft – in dokumentierten Testreihen gegen
+          die menschliche Codierung, bei der Anatomie zusätzlich verblindet mit einem
+          zweiten Vision-Modell. Du sollst wissen, wann du dich auf einen Befund
+          verlassen kannst und wann dein eigener Blick gefragt ist.
         </p>
       </div>
 
@@ -365,87 +337,87 @@ useHead({
           <p class="card__kicker">Verlässlich</p>
           <h3>Die rote Ampel</h3>
           <p>
-            In der Validierung gab es keinen einzigen unbegründet roten Befund.
-            Zeigt SemantIC rot, gibt es etwas zu klären – nimm es ernst.
+            In der Validierung kein einziger unbegründet roter Befund. Zeigt SemantIC
+            rot, nimm es ernst.
           </p>
         </Card>
         <Card tone="paper" border="hair" padding="none" class="card card--paper">
           <p class="card__kicker">Richtig lesen</p>
           <h3>Grün heisst: nichts gefunden</h3>
           <p>
-            Ein grünes Ergebnis heisst, dass das Tool nichts gefunden hat – nicht,
-            dass das Bild fehlerfrei ist. Es ersetzt deine Sichtprüfung nicht,
-            es fokussiert sie.
+            Grün heisst „nichts gefunden" – nicht „fehlerfrei". Es fokussiert deine
+            Sichtprüfung, ersetzt sie nicht.
           </p>
         </Card>
         <Card tone="paper" border="hair" padding="none" class="card card--paper">
           <p class="card__kicker">Bekannte Lücke</p>
           <h3>Anatomie: Flag = Prüfauftrag</h3>
           <p>
-            In den Tests fand das Tool lokale Hand- und Finger-Artefakte
-            zuverlässig. Strukturelle Körperfehler – Kopforientierung, Anzahl
-            Gliedmassen, Beinstellung – kann es übersehen; das ist über zwei
-            verschiedene Vision-Modelle hinweg validiert. Ein Anatomie-Flag ist
-            deshalb ein manueller Prüfauftrag an dich, keine abschliessende Diagnose.
+            Hand- und Finger-Artefakte findet das Tool zuverlässig; strukturelle
+            Körperfehler (Kopf, Gliedmassen, Beinstellung) kann es übersehen – über
+            zwei Vision-Modelle hinweg validiert. Ein Anatomie-Flag ist deshalb ein
+            Prüfauftrag an dich, keine Diagnose.
           </p>
         </Card>
         <Card tone="paper" border="hair" padding="none" class="card card--paper">
           <p class="card__kicker">Einordnung</p>
           <h3>Schwere ist eine Einschätzung</h3>
           <p>
-            Die Stufen an einzelnen Befunden – schwer, moderat, gering – sind eine
-            Einschätzung des Vision-Modells, keine Messung. Gerade bei Anatomie ist
-            die Schwere nicht verlässlich: Ob ein markierter Punkt
-            publikationskritisch ist, entscheidet dein Blick aufs Bild.
+            Schwer, moderat, gering sind eine Einschätzung des Vision-Modells, keine
+            Messung. Ob ein markierter Punkt publikationskritisch ist, entscheidet
+            dein Blick aufs Bild.
           </p>
         </Card>
       </div>
 
       <div class="section__body">
         <p>
-          Die andere Seite derselben Tests: SemantIC fand darin auch Befunde, die
-          ein menschlicher Blick übersehen hatte. Die Hinweise ergänzen deine
-          Sichtprüfung – ersetzen sie nicht. Genau dafür ist jeder Befund mit
-          Markierung und Beobachtung am Bild nachprüfbar gebaut.
+          Dieselben Tests zeigten auch Befunde, die ein menschlicher Blick übersehen
+          hatte. Die Hinweise ergänzen deine Sichtprüfung – jeder Befund ist mit
+          Markierung am Bild nachprüfbar gebaut.
         </p>
       </div>
     </div>
   </section>
 
-  <!-- ================= 9 · WOHER DIE KRITERIEN STAMMEN ================= -->
+  <!-- Auflockerung · KI-Moodbild (Werkstatt) vor dem Forschungsteil -->
+  <MoodBand src="/landing/specimen-werkstatt.webp" />
+
+  <!-- ================= 8 · WOHER DIE KRITERIEN STAMMEN ================= -->
   <section class="section" aria-labelledby="s8-title">
     <div class="page page--text">
-      <p class="section__index">09 · Woher die Kriterien stammen</p>
+      <p class="section__index">08 · Woher die Kriterien stammen</p>
       <h2 id="s8-title">Forschung, kein generisches Modellwissen.</h2>
-      <div class="section__body">
-        <p>
-          Die Prüflogik von SemantIC speist sich aus einer eigenen empirischen
-          Grundlage: einer qualitativen Inhaltsanalyse von 144 KI-generierten
-          Bildern. Daraus sind die fünf Lesearten, die wiederkehrenden Fehlerprofile
-          und die neun visuellen Treiber entstanden, mit denen das Tool arbeitet.
-          Diese Heuristik ist der praktische Teil der Bachelorarbeit „Visual Bias im
-          KI-generierten Bild" im Studiengang Multimedia-Production an der FH
-          Graubünden. Die Bildanalyse selbst führt ein Vision-Modell aus – aber
-          nach welchen Kriterien es prüft und was als Befund zählt, bestimmt diese
-          nachvollziehbare, dokumentierte Forschungsbasis.
-        </p>
-        <p>
-          Die Pipeline dahinter wurde über dokumentierte Iterationsrunden entwickelt
-          und systematisch gegen die menschliche Codierung geprüft – die validierten
-          Grenzen oben stammen aus genau diesen Tests. Und sie ist bewusst
-          modellagnostisch gebaut: Die Kriterien, die Evidenz-Pflicht und die
-          deterministischen Prüfregeln hängen nicht an einem bestimmten KI-Modell.
-          Werden die Vision-Modelle besser, wird die Prüfung besser – am Prüfraster
-          ändert das nichts.
-        </p>
+      <div class="s8-grid">
+        <aside class="s8-figure" aria-hidden="true">
+          <span class="s8-figure__num">144</span>
+          <span class="s8-figure__cap">codierte Bilder</span>
+        </aside>
+        <div class="section__body">
+          <p>
+            Die Prüflogik stützt sich auf eine eigene empirische Grundlage: eine
+            qualitative Inhaltsanalyse von 144 KI-generierten Bildern. Daraus entstanden
+            die wiederkehrenden Fehlerprofile, die Lesearten und die visuellen Treiber,
+            mit denen das Tool arbeitet – der praktische Teil der Bachelorarbeit „Visual
+            Bias im KI-generierten Bild" (Multimedia-Production, FH Graubünden).
+          </p>
+          <p>
+            Die Pipeline wurde über dokumentierte Iterationen entwickelt und gegen die
+            menschliche Codierung geprüft – die validierten Grenzen oben stammen aus
+            genau diesen Tests. Sie ist bewusst modellagnostisch: Kriterien,
+            Evidenz-Pflicht und Prüfregeln hängen an der Forschungsbasis, nicht an einem
+            KI-Modell. Werden die Vision-Modelle besser, wird die Prüfung besser – das
+            Prüfraster bleibt.
+          </p>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- ================= 10 · DATENSCHUTZ IN EINEM SATZ ================= -->
+  <!-- ================= 9 · DATENSCHUTZ IN EINEM SATZ ================= -->
   <section class="section" aria-labelledby="s9-title">
     <div class="page page--text">
-      <p class="section__index">10 · Datenschutz</p>
+      <p class="section__index">09 · Datenschutz</p>
       <h2 id="s9-title">Was mit deinem Bild passiert.</h2>
       <div class="section__body">
         <p>
@@ -485,18 +457,49 @@ useHead({
   max-width: var(--container-text);
 }
 
-.mono {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-feature-settings: 'tnum';
-}
-
-/* Seitenkopf (Mono-Kicker + H1 + Lead) */
-.page-head {
-  padding: 56px 0 36px;
+/* ---- Editorial-Kopf (Moodbild + Lead darüber im Creme-Scrim) ---- */
+.hero {
+  position: relative;
+  width: 100%;
+  min-height: clamp(360px, 56vh, 560px);
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  background: var(--surface-2);
   border-bottom: 1px solid var(--line);
-  margin-bottom: 48px;
 }
-.page-head__kicker {
+.hero__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.hero__tone {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(rgba(228, 229, 221, 0.1), rgba(228, 229, 221, 0.1));
+}
+/* Creme-Scrim unten: hält Mood sichtbar, macht Lead auf jedem Bild lesbar. */
+.hero__veil {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    rgba(238, 239, 233, 0.96) 0%,
+    rgba(238, 239, 233, 0.9) 28%,
+    rgba(238, 239, 233, 0.55) 50%,
+    rgba(238, 239, 233, 0) 72%
+  );
+}
+.hero__head {
+  position: relative;
+  padding: 56px 0 44px;
+  max-width: 62ch;
+}
+.hero__kicker {
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
   font-weight: 600;
   font-size: 11px;
@@ -504,21 +507,79 @@ useHead({
   text-transform: uppercase;
   color: var(--subtle);
 }
-.page-head h1 {
+.hero__head h1 {
   font-family: 'IBM Plex Sans', system-ui, sans-serif;
   font-weight: 700;
-  font-size: clamp(28px, 5vw, 42px);
+  font-size: clamp(30px, 5.4vw, 46px);
   letter-spacing: -0.02em;
-  line-height: 1.08;
+  line-height: 1.06;
   margin-top: 12px;
   color: var(--ink);
 }
-.page-head__lead {
+.hero__lead {
   font-size: clamp(15px, 2vw, 17px);
   line-height: 1.6;
   color: var(--ink-soft);
   margin-top: 18px;
   max-width: 60ch;
+}
+.hero__chip {
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  padding: 4px 9px;
+  background: var(--canvas);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ---- §1: Fliesstext + Theorie-Randnotiz nebeneinander (Desktop) ---- */
+.s1-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 32px;
+  align-items: start;
+  margin-top: 4px;
+}
+.s1-grid .theory {
+  margin-top: 0;
+}
+
+/* ---- §8: „144" als Mono-Drop-Figure neben dem Fliesstext ---- */
+.s8-grid {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+  gap: 36px;
+  align-items: start;
+}
+.s8-figure {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  border-right: 1px solid var(--line-soft);
+  padding-right: 32px;
+}
+.s8-figure__num {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-weight: 700;
+  font-size: clamp(56px, 8vw, 88px);
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.s8-figure__cap {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--subtle);
+  margin-top: 10px;
 }
 
 /* Section-Rhythmus */
@@ -561,6 +622,33 @@ useHead({
   font-weight: 600;
 }
 
+/* ---- Dunkle Sektion (Ink-Inversion) – gemeinsamer Modifier für §2·b + §4.
+   Muster wie Landing .wall--ink: dunkler Grund, helle Text-Tokens, Ink-Hairline.
+   Eingebettete Datengrafiken (GuardrailList, MaskingQuadrant) bleiben eigene helle
+   Karten und „poppen" – Scoped-CSS leakt nicht in ihre Interna. ---- */
+.section--ink {
+  background: var(--ink-surface);
+  border-color: var(--ink-line);
+}
+.section--ink .section__index {
+  color: var(--ink-text-muted);
+}
+.section--ink h2 {
+  color: var(--ink-text);
+}
+.section--ink .section__body p {
+  color: var(--ink-text-soft);
+}
+.section--ink .figure-note {
+  color: var(--ink-text-muted);
+}
+/* Guardrail-Pfeil: Normal-Stroke --line-strong hält auf Dunkel (6.6:1); der
+   Hover-Recolor auf --substance (2.9:1) wäre zu schwach → auf helle Ink-Farbe. */
+.section--ink :deep(.rail:hover .rail__arrow :is(line, path)),
+.section--ink :deep(.rail:focus-within .rail__arrow :is(line, path)) {
+  stroke: var(--ink-text-soft);
+}
+
 /* ---- Card / Panel (Primitive §2) – Fläche/Border liefert Card.vue, Padding lokal ---- */
 .card {
   padding: 24px;
@@ -588,14 +676,103 @@ useHead({
   margin-top: 10px;
 }
 
-/* Theoriebezug-Panel (ruhig, sunken) */
+/* Theoriebezug-Panel (ruhig, sunken) – als Randnotiz im §1-Grid */
 .theory {
-  margin-top: 28px;
+  margin-top: 0;
 }
 
 /* ---- Eingebettete Datengrafik (dataviz/*) – einheitlicher Abstand ---- */
 .section__figure {
   margin-top: 28px;
+}
+
+/* ---- §4: Pressekonferenz-Foto vollflächig sichtbar; Text in opaker Ink-Tafel,
+   Quadrant als helle Karte davor ---- */
+.s4 {
+  position: relative;
+  overflow: hidden;
+  /* Dunkler Ink-Grund als Basisschicht – Fallback, falls das Foto nicht lädt. */
+  background: var(--ink-surface);
+}
+.s4__bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Foto in die rechte (offene) Spalte rücken, damit die Person dort sichtbar wird. */
+  object-position: 72% center;
+}
+/* Horizontaler Mood-Verlauf: links (Inhaltsspalte) dunkel für Kohäsion, rechts klar,
+   damit das Foto als starke Fläche durchkommt. Textlesbarkeit trägt die Ink-Tafel. */
+.s4__scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      to right,
+      rgba(35, 37, 29, 0.58) 0%,
+      rgba(35, 37, 29, 0.4) 38%,
+      rgba(35, 37, 29, 0.12) 68%,
+      rgba(35, 37, 29, 0) 100%
+    );
+}
+.s4__content {
+  position: relative;
+  z-index: 1;
+}
+/* Obere Reihe: Text-Tafel links, Foto rechts als starke, offene Fläche. */
+.s4__top {
+  display: grid;
+  grid-template-columns: minmax(0, 560px) 1fr;
+  gap: clamp(24px, 4vw, 56px);
+  align-items: start;
+  min-height: clamp(280px, 32vh, 380px);
+}
+/* Ink-Tafel hinter dem Text: nahezu opak → Lesbarkeit vom Foto entkoppelt (AA),
+   minimaler Foto-Schimmer bleibt. Muster wie Landing .tablet--ink. */
+.s4__panel {
+  padding: clamp(22px, 3vw, 34px);
+  background: rgba(35, 37, 29, 0.9);
+  border: 1px solid var(--ink-line);
+  border-radius: var(--r);
+}
+/* Quadrant über die volle Sektionsbreite – gross, eigene helle Karte. */
+.s4__figure {
+  margin-top: clamp(28px, 4vw, 44px);
+}
+@media (max-width: 859px) {
+  .s4__top {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+}
+/* Der Quadrant bringt eigene helle Tafel + Rahmen mit – bleibt als klarer
+   Vordergrund vor dem Foto lesbar. */
+.s4__figure :deep(.quad) {
+  box-shadow: 0 1px 0 rgba(35, 37, 29, 0.04);
+}
+
+/* ---- §2: Intro + Diagramm + Note „aus einem Guss" in einer Kachel ---- */
+.figure-card {
+  margin-top: 28px;
+  padding: clamp(24px, 4vw, 40px);
+  background: var(--canvas);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+}
+.figure-card__lead {
+  max-width: 56ch;
+  margin: 0 auto 28px;
+  text-align: center;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+.figure-card .figure-note {
+  text-align: center;
+  margin-top: 22px;
 }
 
 /* ---- Drei Dimensionen im Detail (Cards mit Severity-Marker oben) ---- */
@@ -611,22 +788,35 @@ useHead({
   border-radius: var(--r);
   padding: 0;
   overflow: hidden;
+  position: relative;
 }
-/* Akzent OBEN (erlaubt) statt links (verboten) – nur Severity-Echo, dezent. */
-.dim-card__top {
-  height: 4px;
-}
-.dim-card--safe .dim-card__top {
-  background: var(--safe);
-}
-.dim-card--warn .dim-card__top {
-  background: var(--warn);
-}
-.dim-card--crit .dim-card__top {
-  background: var(--crit);
+/* Subtiler Anker: Haarlinie OBEN (nie links – CLAUDE.md), Tiefe über Flächenwechsel. */
+.dim-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--line-strong);
 }
 .dim-card__inner {
   padding: 22px;
+}
+/* Gleichrangige Dimensionen: neutrale Mono-Indexziffer statt Ampel-Balken. */
+.dim-card__head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 2px;
+}
+.dim-card__idx {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--line-strong);
+  font-variant-numeric: tabular-nums;
 }
 .dim-card__name {
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
@@ -651,74 +841,6 @@ useHead({
   margin-top: 12px;
 }
 
-/* ---- Lesearten-Tabelle ---- */
-.table-scroll {
-  max-width: 100%;
-  overflow-x: auto; /* Sicherheitsnetz: Tabelle scrollt intern, nie die ganze Seite */
-}
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 24px;
-  font-size: 15px;
-}
-.table__caption {
-  text-align: left;
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--subtle);
-  padding-bottom: 8px;
-}
-.table th,
-.table td {
-  text-align: left;
-  vertical-align: top;
-  padding: 11px 14px;
-  border: 1px solid var(--line);
-}
-.table thead th {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-weight: 600;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted);
-  background: var(--surface-2);
-}
-.table td {
-  background: var(--surface);
-  color: var(--ink-soft);
-  line-height: 1.5;
-}
-.table td.code {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-weight: 600;
-  font-size: 13px;
-  color: var(--ink);
-  white-space: nowrap;
-}
-.table td.name {
-  font-weight: 600;
-  color: var(--ink);
-  white-space: nowrap;
-}
-/* Mobil: lange Lesearten-Namen umbrechen lassen, kompaktere Zellen – so passt die
-   Tabelle ohne Seiten-Scroll; der .table-scroll-Wrapper bleibt als Sicherheitsnetz. */
-@media (max-width: 520px) {
-  .table {
-    font-size: 14px;
-  }
-  .table th,
-  .table td {
-    padding: 9px 10px;
-  }
-  .table td.name {
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
-}
-
 /* ---- „Was es nicht ist" – Kontrastliste (kein Severity-Farbton) ---- */
 .contrast {
   display: grid;
@@ -727,13 +849,14 @@ useHead({
   margin-top: 24px;
 }
 .contrast__col {
-  background: var(--surface);
+  background: var(--canvas);
   border: 1px solid var(--line);
   border-radius: var(--r);
   padding: 22px;
 }
 .contrast__col--is {
-  background: var(--canvas);
+  background: var(--surface);
+  border-color: var(--line-strong);
 }
 .contrast__col h3 {
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
@@ -769,23 +892,67 @@ useHead({
   color: var(--ink);
 }
 
-/* ---- Angaben (Haltung / Verwendungsform) – zwei Panels ---- */
-.input-frames {
+/* ---- §5 Angaben (Haltung / Verwendungsform) – zwei Karten mit echten Tool-Optionen ---- */
+.angaben {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
   margin-top: 24px;
 }
+.angaben__card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 22px;
+}
+.angaben__kicker {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--subtle);
+  margin-bottom: 10px;
+}
+.angaben__card h3 {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.angaben__opts {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+/* Statische Tool-Optionen – reine Labels, KEINE Klick-Affordanz (Codex). */
+.chip {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--ink-soft);
+  background: var(--canvas);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 4px 9px;
+}
+.angaben__hint {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--muted);
+  margin-top: 14px;
+}
 
-/* ---- Validierte Grenzen (F2) – vier Panels, gleiche Sprache wie input-frames ---- */
+/* ---- Validierte Grenzen (F2) – vier Panels, gleiche Sprache wie .angaben ---- */
 .limits-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
   margin-top: 24px;
-}
-.important-note {
-  margin-top: 16px;
 }
 
 /* ---- Datenschutz-Kurzblock + CTA-Link ---- */
@@ -848,18 +1015,74 @@ useHead({
 @media (max-width: 719px) {
   .dims,
   .contrast,
-  .input-frames,
-  .limits-grid {
+  .angaben,
+  .limits-grid,
+  .s1-grid {
     grid-template-columns: 1fr;
   }
-  .page-head {
-    padding: 40px 0 28px;
-    margin-bottom: 36px;
+  .hero__head {
+    padding: 40px 0 32px;
+  }
+  /* §1-Randnotiz rutscht unter den Text, wieder mit Abstand wie ursprünglich. */
+  .s1-grid .theory {
+    margin-top: 8px;
+  }
+  /* §8-Drop-Figure über dem Text, ohne trennende rechte Linie. */
+  .s8-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .s8-figure {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 14px;
+    border-right: none;
+    border-bottom: 1px solid var(--line-soft);
+    padding-right: 0;
+    padding-bottom: 18px;
+  }
+  .s8-figure__num {
+    font-size: 56px;
   }
 }
 @media (min-width: 720px) and (max-width: 959px) {
   .dims {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================ */
+/* DRUCK – dunkle Sektionen (§2·b, §4) auf hell zurücksetzen,    */
+/* sonst erzwingt die globale Druckregel vollflächigen Dunkel-   */
+/* druck (analog zu index.vue).                                  */
+/* ============================================================ */
+@media print {
+  .section--ink {
+    background: #fff;
+    border-color: var(--line);
+  }
+  .section--ink .section__index,
+  .section--ink .figure-note {
+    color: var(--muted);
+  }
+  .section--ink h2 {
+    color: var(--ink);
+  }
+  .section--ink .section__body p {
+    color: var(--ink-soft);
+  }
+  .s4__bg,
+  .s4__scrim {
+    display: none;
+  }
+  /* Ohne Foto keine zweispaltige Reihe nötig – sonst klafft rechts Leerraum. */
+  .s4__top {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+  .s4__panel {
+    background: #fff;
+    border-color: var(--line);
   }
 }
 </style>
