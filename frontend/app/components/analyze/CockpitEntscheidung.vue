@@ -10,13 +10,18 @@ interface PriorityItem {
   description: string
 }
 
-defineProps<{
-  headline: string
-  copy: string
-  items: PriorityItem[]
-  integrity: number
-  aesthetic: number
-}>()
+withDefaults(
+  defineProps<{
+    headline: string
+    copy: string
+    items: PriorityItem[]
+    integrity: number
+    aesthetic: number
+    // Verdict-bewusster Leertext (z. B. Status gelb/rot ohne einzelnen Befund); sonst Default.
+    emptyNote?: string
+  }>(),
+  { emptyNote: undefined },
+)
 </script>
 
 <template>
@@ -34,7 +39,7 @@ defineProps<{
           </span>
         </li>
       </ol>
-      <p v-else class="decision__copy decision__empty">Keine offenen Prüf-Hinweise.</p>
+      <p v-else class="decision__copy decision__empty">{{ emptyNote ?? 'Keine offenen Prüf-Hinweise.' }}</p>
     </section>
 
     <section class="decision__section">

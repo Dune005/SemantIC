@@ -28,7 +28,7 @@ interface ContextItem {
 interface ContextData {
   items: ContextItem[]
   drivers: { code: string; label: string }[]
-  normative: { verdictWord: string; reasoning: string } | null
+  normative: { verdictWord: string; reasoning: string; aspects: string[] } | null
   notes: string[]
 }
 
@@ -146,6 +146,9 @@ defineProps<{
               <p v-else class="panel-empty">Keine visuellen Treiber benannt.</p>
               <div v-if="context.normative" class="normative">
                 <strong>Normative Bildwirkung · {{ context.normative.verdictWord }}</strong>
+                <div v-if="context.normative.aspects.length" class="chips normative__aspects">
+                  <span v-for="a in context.normative.aspects" :key="a" class="chip">{{ a }}</span>
+                </div>
                 <p>{{ context.normative.reasoning }}</p>
               </div>
               <div v-for="(n, i) in context.notes" :key="i" class="ctx-note">{{ n }}</div>
@@ -515,6 +518,9 @@ defineProps<{
   display: block;
   margin-bottom: 6px;
 }
+.normative__aspects {
+  margin-bottom: 10px;
+}
 .normative p {
   margin: 0;
   color: var(--ink-soft);
@@ -560,6 +566,45 @@ defineProps<{
   }
   .evidence-section__note {
     text-align: left;
+  }
+}
+/* Phones: die Severity-/„unverifiziert"-Flags auf eine eigene Zeile legen, damit der
+   Befundtext die volle Breite bekommt (sonst zerfasert er in einer ~98px-Spalte). */
+@media (max-width: 560px) {
+  .finding-row {
+    grid-template-columns: 34px minmax(0, 1fr);
+  }
+  .finding-row__flags {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    margin-top: 2px;
+  }
+  /* Bias-Achsen: Beobachtung/Interpretation – Label über den Text stapeln statt in eine
+     92px-Spalte (sonst nur ~145px Textbreite). */
+  .evidence-pair {
+    grid-template-columns: 1fr;
+    gap: 3px 0;
+  }
+  /* Tab-Leiste: die drei Tabs passen bei Phone-Breite nicht nebeneinander (448px vs ~281px) –
+     statt horizontalem Scroll mit abgeschnittenem 3. Tab → gleich breite, zentrierte Tabs, die
+     bei Bedarf zweizeilig umbrechen. Kein Scroll, nichts verdeckt. */
+  .tabs {
+    overflow-x: visible;
+  }
+  .tab {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 8px 6px;
+    font-size: 9.5px;
+    letter-spacing: 0.03em;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.3;
+  }
+  .tab:last-child {
+    border-right: 0;
   }
 }
 </style>

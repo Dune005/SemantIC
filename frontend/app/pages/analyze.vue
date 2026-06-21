@@ -5,7 +5,7 @@
 //
 // ETAPPE 6 (Naht geschlossen): Upload → Canvas-Downscaling (prepareImage) → echter
 // $fetch.raw('/api/analyze', {signal}) → buildAnalysisViewModel(raw, submittedUsageForm)
-// → BefundKarte. usage_form bleibt frontend-only (nie im API-Body). Fehler werden über
+// → DiagnoseCockpit. usage_form bleibt frontend-only (nie im API-Body). Fehler werden über
 // mapFetchError(HTTP-Status → ErrorKind) abgebildet; rateLimitHint/bypassActive kommen
 // aus den Response-Headern in den geteilten Chrome-State (useState).
 import { ref, computed, onBeforeUnmount } from 'vue'
@@ -13,7 +13,7 @@ import Button from '~/components/ui/Button.vue'
 import TileSelect from '~/components/ui/TileSelect.vue'
 import WaitState from '~/components/analyze/WaitState.vue'
 import ErrorCard from '~/components/analyze/ErrorCard.vue'
-import BefundKarte from '~/components/analyze/BefundKarte.vue'
+import DiagnoseCockpit from '~/components/analyze/DiagnoseCockpit.vue'
 import ReportPrintView from '~/components/analyze/ReportPrintView.vue'
 import type { AnalysisViewModel, UsageForm } from '~/types/analysis'
 import { buildAnalysisViewModel } from '~/composables/useAnalysisView'
@@ -316,7 +316,7 @@ function onSubmit() {
   void runAnalysis()
 }
 
-// Echter Pipeline-Call: Bild-Base64 → /api/analyze → buildAnalysisViewModel → BefundKarte.
+// Echter Pipeline-Call: Bild-Base64 → /api/analyze → buildAnalysisViewModel → DiagnoseCockpit.
 // usage_form geht NICHT in den Body (nur als 2. Arg an den Composable).
 async function runAnalysis() {
   if (!apiImageBase64.value) {
@@ -478,7 +478,7 @@ function exportPdf() {
 </script>
 
 <template>
-  <div class="page-head">
+  <div v-if="state !== 'result'" class="page-head">
     <p class="page-kicker">Tool · /analyze</p>
     <h1>Bild prüfen</h1>
     <p class="lead">
@@ -487,8 +487,8 @@ function exportPdf() {
     </p>
   </div>
 
-  <!-- TOOL-STAGE (eine Karte, sieben Zustände) -->
-  <section class="stage" :data-state="state" aria-label="Bildprüfung – Eingabe und Ablauf">
+  <!-- TOOL-STAGE (schmale Eingabe-Karte; Result rendert ausserhalb als volles Cockpit) -->
+  <section v-if="state !== 'result'" class="stage" :data-state="state" aria-label="Bildprüfung – Eingabe und Ablauf">
     <div class="stage__strip" aria-hidden="true">
       <span>SEMANTIC · INPUT</span>
       <span>
@@ -682,22 +682,28 @@ function exportPdf() {
         @action="onErrorAction"
       />
 
-      <!-- RESULT (BefundKarte rendert den vollen Report) -->
-      <div v-else-if="state === 'result' && resultVm">
-        <BefundKarte
-          :vm="resultVm"
-          :image-url="imageUrl"
-          :submitted-usage-form="submittedUsageForm"
-          sample-id="SEMANTIC"
-          image-aspect="4:5"
-        />
-        <div class="result-actions">
-          <Button variant="secondary" @click="fullReset">Neues Bild prüfen</Button>
-          <Button variant="secondary" @click="exportPdf">Als PDF exportieren</Button>
-        </div>
-      </div>
     </div>
   </section>
+
+  <!-- RESULT: Diagnose-Cockpit voll breit, AUSSERHALB der schmalen .stage-Karte (E5-Swap).
+       BefundKarte.vue bleibt als Fallback-Datei im Repo – Rückkehr = diesen Zweig wieder mit
+       <BefundKarte :vm="resultVm" :image-url="imageUrl" :submitted-usage-form="submittedUsageForm"
+       sample-id="SEMANTIC" image-aspect="4:5" /> rendern (Import zurückholen). -->
+  <div v-if="state === 'result' && resultVm" class="result-stage">
+    <DiagnoseCockpit
+      :vm="resultVm"
+      :image-url="imageUrl"
+      :submitted-usage-form="submittedUsageForm"
+      :submitted-context="submittedContext"
+      :submitted-prompt="submittedPrompt"
+      :timestamp="generatedAt ?? undefined"
+      sample-id="SEMANTIC"
+    />
+    <div class="result-actions result-actions--cockpit">
+      <Button variant="secondary" @click="fullReset">Neues Bild prüfen</Button>
+      <Button variant="secondary" @click="exportPdf">Als PDF exportieren</Button>
+    </div>
+  </div>
 
   <!-- Druckansicht (report-print.md): im Screen verborgen, im @media print sichtbar.
        Bewusst AUSSERHALB der .stage, damit die interaktive Stage im Druck ausgeblendet
@@ -1162,12 +1168,25 @@ textarea.field::placeholder {
   margin-top: 24px;
 }
 
-/* Druck (report-print.md §3): interaktive Stage + Seitenkopf ausblenden –
+/* Result-Stage (E5): voll-breiter Wrapper ausserhalb der schmalen .stage-Karte; das
+   Cockpit zentriert sich selbst auf min(1380px, 100%). */
+.result-stage {
+  margin-bottom: 56px;
+}
+/* Aktionen bündig unter dem Cockpit-Inhalt (gleiche Breite + Innen-Gutter wie das Cockpit). */
+.result-actions--cockpit {
+  width: min(1380px, 100%);
+  margin: 0 auto;
+  padding: 0 clamp(20px, 4vw, 48px);
+}
+
+/* Druck (report-print.md §3): interaktive Stage + Seitenkopf + Cockpit-Result ausblenden –
    sichtbar bleibt nur die ReportPrintView (ausserhalb der .stage). AppHeader/
    AppFooter blenden sich global via .no-print aus. */
 @media print {
   .page-head,
-  .stage {
+  .stage,
+  .result-stage {
     display: none !important;
   }
 }

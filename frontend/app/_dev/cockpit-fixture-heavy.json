@@ -1,0 +1,302 @@
+{
+  "analysis": {
+    "input_completeness": {
+      "image": true,
+      "usage_context": true,
+      "original_prompt": true,
+      "analysis_note": "Heavy-Fixture (TEMP, Etappe 4): viele Befunde, mehrere Bias-Achsen, viele lokalisierte Evidence-Spots inklusive einer qualifizierten Maskierungsbox (confidence=high + salient_region=true) und absichtlich sehr langer Texte, um Layout-Bruch und Seitenumbruch im Druck zu prüfen."
+    },
+    "bias_axis_analysis": {
+      "axes_derived_from": "prompt_and_context",
+      "axes": [
+        {
+          "axis_id": "gender_representation_surgery",
+          "label": "Geschlechterdarstellung im chirurgischen Führungsteam",
+          "relevance": "high",
+          "reason_for_relevance": "Der Nutzungskontext thematisiert den Fachkräftemangel im Gesundheitswesen; die visuelle Besetzung von Schlüsselrollen prägt die Wahrnehmung, wer in diesem Berufsfeld Autorität und Kompetenz verkörpert.",
+          "analysis_questions": [
+            "Wird die zentrale Chirurgenrolle durch ein bestimmtes Geschlecht besetzt?",
+            "Welche Rollen nehmen die übrigen sichtbaren Personen im Operationssaal ein?"
+          ],
+          "observed_evidence": [
+            {
+              "observation": "Die zentrale, im Fokus stehende und beleuchtete Person ist männlich gelesen und nimmt die handlungsführende Position am Operationstisch ein.",
+              "interpretation": "Bestätigt das klassische Rollenbild des männlichen Chirurgen in einer dominanten Führungsposition.",
+              "supports_bias_finding": true
+            },
+            {
+              "observation": "Die assistierenden Personen am Bildrand sind kleiner, unschärfer und tiefer im Bildraum positioniert.",
+              "interpretation": "Die Komposition ordnet assistierende Rollen visuell unter und verstärkt die Hierarchie.",
+              "supports_bias_finding": true
+            }
+          ],
+          "risk_level": "high",
+          "confidence": "high",
+          "codebook_mapping": ["has_gender_bias", "has_role_stereotype"]
+        },
+        {
+          "axis_id": "ethnic_diversity_healthcare",
+          "label": "Ethnische Diversität im Operationsteam",
+          "relevance": "medium",
+          "reason_for_relevance": "Im Kontext des Fachkräftemangels in der Schweiz ist die Repräsentation einer diversen Belegschaft gesellschaftlich relevant und prägt, welche Gruppen sich mit dem Berufsfeld identifizieren.",
+          "analysis_questions": [
+            "Spiegelt die Besetzung des Operationsteams ethnische Vielfalt wider?",
+            "Sind Minderheiten in aktiven oder eher passiven Rollen dargestellt?"
+          ],
+          "observed_evidence": [
+            {
+              "observation": "Die im Fokus stehende Person ist weiß/kaukasisch; Hintergrundpersonen sind zu unscharf für eine eindeutige Bestimmung.",
+              "interpretation": "Die Darstellung konzentriert sich auf ein homogenes Bild medizinischer Expertise.",
+              "supports_bias_finding": false
+            }
+          ],
+          "risk_level": "low",
+          "confidence": "medium",
+          "codebook_mapping": []
+        },
+        {
+          "axis_id": "age_authority_medicine",
+          "label": "Alter und zugeschriebene Autorität",
+          "relevance": "medium",
+          "reason_for_relevance": "Die visuelle Kopplung von mittlerem Alter und Autorität kann jüngere Fachkräfte symbolisch ausschließen.",
+          "analysis_questions": [
+            "Welches Alter wird der autoritätstragenden Person zugeschrieben?"
+          ],
+          "observed_evidence": [
+            {
+              "observation": "Die Führungsperson wird als Mann mittleren Alters mit grauen Schläfen dargestellt.",
+              "interpretation": "Koppelt Autorität an ein bestimmtes Alters- und Geschlechtsbild.",
+              "supports_bias_finding": true
+            }
+          ],
+          "risk_level": "medium",
+          "confidence": "medium",
+          "codebook_mapping": ["has_role_stereotype"]
+        }
+      ],
+      "no_axes_reason": null
+    },
+    "dimension_analysis": {
+      "physics": {
+        "score": 52,
+        "status": "red",
+        "findings": [
+          {
+            "finding": "Die Hände des Chirurgen sind anatomisch unpräzise und verschmelzen an mehreren Stellen mit den metallischen Instrumenten, sodass kein klarer Übergang zwischen Haut, Handschuh und Werkzeug erkennbar ist – ein gut sichtbarer struktureller Defekt im Bildzentrum.",
+            "severity": "severe",
+            "category": "anatomy"
+          },
+          {
+            "finding": "Kryptische, unleserliche Zeichenfolgen auf dem medizinischen Monitor links zeigen keine validen medizinischen Daten, sondern halluzinierte Glyphen.",
+            "severity": "moderate",
+            "category": "text_error"
+          },
+          {
+            "finding": "Physikalisch übersteigerte, unnatürlich lineare Lens-Flares verlaufen quer durch das gesamte Bild und kreuzen Objekte, ohne deren Geometrie zu folgen.",
+            "severity": "moderate",
+            "category": "light_consistency"
+          },
+          {
+            "finding": "Die Spiegelung in der Metallschale unten rechts entspricht nicht der Position der Lichtquelle.",
+            "severity": "minor",
+            "category": "reflection"
+          }
+        ]
+      },
+      "semantics": {
+        "score": 64,
+        "status": "yellow",
+        "findings": [
+          {
+            "finding": "Im Hintergrund steht ein Gerät, dessen Bauform an kein reales medizinisches Instrument anschließt und im Operationskontext semantisch deplatziert wirkt.",
+            "severity": "moderate",
+            "category": "context_break"
+          },
+          {
+            "finding": "Die Anzahl der OP-Leuchten über dem Tisch übersteigt die in einem realen Setting übliche Konfiguration.",
+            "severity": "minor",
+            "category": "context_break"
+          },
+          {
+            "finding": "Ein zweiter, halb verdeckter Patientenarm passt geometrisch nicht zur Lage der Hauptfigur.",
+            "severity": "moderate",
+            "category": "context_break"
+          },
+          {
+            "finding": "Die Beschriftung der Instrumententablare ergibt keine sinnvollen medizinischen Begriffe.",
+            "severity": "minor",
+            "category": "context_break"
+          }
+        ]
+      },
+      "bias": {
+        "score": 58,
+        "status": "red",
+        "findings": [
+          {
+            "finding": "Klischeehafte Darstellung der zentralen Chirurgenrolle durch einen weißen Mann mittleren Alters in dominanter Bildposition, was bestehende Rollenstereotype über medizinische Autorität verstärkt.",
+            "severity": "severe",
+            "category": "role_stereotype"
+          },
+          {
+            "finding": "Assistierende, weiblich gelesene Personen erscheinen ausschließlich am unscharfen Bildrand in zuarbeitender Funktion.",
+            "severity": "moderate",
+            "category": "gender_bias"
+          },
+          {
+            "finding": "Die idealisierte, makellose Körperhaltung der Hauptfigur überzeichnet ein heroisches Berufsbild.",
+            "severity": "minor",
+            "category": "body_stereotype"
+          },
+          {
+            "finding": "Die Bildkomposition rückt ausschließlich die männlich gelesene Person ins Zentrum der Handlungsmacht.",
+            "severity": "moderate",
+            "category": "gender_bias"
+          }
+        ]
+      }
+    },
+    "research_layer": {
+      "reading_mode": "CI",
+      "reading_mode_label": "Cinematisch",
+      "reading_mode_masking_logic": "Kann affektiv über Filmstimmung und emotionale Unmittelbarkeit maskieren",
+      "visual_drivers": ["CL", "BK", "WCG", "DS", "GF", "MO"],
+      "visual_drivers_labels": [
+        "Cinematic Lighting",
+        "Bokeh / Unschärfeverlauf",
+        "Warmes Color Grading",
+        "Dynamische Spiegelungen",
+        "Gesättigte Farben",
+        "Makellose Oberflächen"
+      ],
+      "dominant_error_type": "mixed",
+      "codebook": {
+        "visual_realism_level": "high",
+        "has_physics_issue": true,
+        "physics_evidence": [
+          {
+            "region_box_2d": [390, 0, 560, 110],
+            "specific_observation": "Der Monitor links zeigt keine validen medizinischen Daten, sondern unleserliche KI-generierte Glyphen, die nur aus der Ferne wie eine Anzeige wirken."
+          },
+          {
+            "region_box_2d": [40, 120, 240, 880],
+            "specific_observation": "Eine unnatürlich gerade Lens-Flare-Linie zieht quer durch das obere Bilddrittel und ignoriert die Geometrie der darunterliegenden Objekte."
+          }
+        ],
+        "has_anatomy_issue": true,
+        "anatomy_evidence": [
+          {
+            "region_box_2d": [710, 460, 800, 560],
+            "specific_observation": "Die Hände des Chirurgen sind anatomisch unpräzise und verschmelzen teilweise mit den metallischen Instrumenten; einzelne Finger sind nicht klar trennbar."
+          },
+          {
+            "region_box_2d": [740, 560, 950, 990],
+            "specific_observation": "Der Arm der Person im rechten Vordergrund ist stark verzerrt und weist keine klare anatomische Struktur auf."
+          }
+        ],
+        "has_context_issue": true,
+        "context_evidence": [
+          {
+            "region_box_2d": [120, 700, 360, 980],
+            "specific_observation": "Im Hintergrund rechts steht ein Gerät, dessen Bauform an kein reales medizinisches Instrument anschließt und das im OP-Kontext deplatziert wirkt."
+          }
+        ],
+        "hallucination_present": true,
+        "resistance_to_prompt": false,
+        "has_gender_bias": true,
+        "has_role_stereotype": true,
+        "has_body_stereotype": true,
+        "stereotype_intensity": "high"
+      },
+      "masking_evidence": [
+        {
+          "driver": "CL",
+          "masked_issue": "Anatomische Unschärfe und Verschmelzung der Hände mit den Instrumenten",
+          "codebook_link": "anatomy",
+          "region_box_2d": [710, 460, 800, 560],
+          "salient_region": true,
+          "confidence": "high"
+        },
+        {
+          "driver": "BK",
+          "masked_issue": "Fehlerhafte Textdarstellung auf dem Monitor",
+          "codebook_link": "physics",
+          "region_box_2d": [390, 0, 560, 110],
+          "salient_region": false,
+          "confidence": "low"
+        },
+        {
+          "driver": "WCG",
+          "masked_issue": "Deplatziertes Gerät im Hintergrund",
+          "codebook_link": "context",
+          "region_box_2d": [120, 700, 360, 980],
+          "salient_region": true,
+          "confidence": "medium"
+        }
+      ],
+      "normative_masking": {
+        "verdict": "high",
+        "aspects": ["success_norm", "status_signaling", "lifestyle_aspiration"],
+        "reasoning": "Die cinematische Inszenierung und heroisierende Lichtsetzung stilisieren den Chirurgenberuf zu einem Idealbild von Kompetenz, Status und Hochleistung und überhöhen den Klinikalltag ästhetisch."
+      }
+    },
+    "integrity_score_llm": {
+      "score": 49,
+      "reasoning": "Deutliche Abzüge durch einen schweren anatomischen Defekt an den Händen, halluzinierte Textanzeigen, semantische Kontextbrüche und eine ausgeprägte stereotype Rollenbesetzung; die hohe visuelle Überzeugungskraft kann diese Mängel teilweise überdecken."
+    },
+    "intent_assessment": {
+      "declared_intent": "affirmative",
+      "intent_alignment": "mismatch",
+      "framing_risk": "high",
+      "reasoning": "Als affirmatives Symbolbild verstärkt die Darstellung gerade die stereotypen Muster, die der Beitrag eigentlich aufbrechen will – hohes Framing-Risiko."
+    }
+  },
+  "aesthetic": {
+    "aesthetic_score": 88,
+    "aesthetic_reasoning": "Herausragende Lichtführung mit dramatischen Operationslampen und atmosphärischem Lichtstrahl; die Farbkomposition aus kühlem Blau und warmem Lampenlicht ist stimmig und auf hohem fotografischem Niveau, Schärfe und Komposition überzeugen durchgehend."
+  },
+  "computed": {
+    "integrity_score_local": 49,
+    "aesthetic_combined": 82,
+    "aesthetic_combined_source": "sonnet+v25"
+  },
+  "context_review_hints": [
+    {
+      "id": "visual_overload",
+      "severity": "medium",
+      "triggeredBy": ["CL", "BK", "WCG", "DS"],
+      "hint": "Das Bild kombiniert mehrere starke visuelle Treiber. Prüfen, ob die Darstellung für den Nutzungskontext zu unruhig, zu dekorativ oder zu aufmerksamkeitsstark ist.",
+      "reviewQuestion": "Unterstützt die visuelle Dichte die Aussage des Beitrags oder lenkt sie davon ab?"
+    },
+    {
+      "id": "role_stereotype_review",
+      "severity": "high",
+      "triggeredBy": ["gender_bias", "role_stereotype"],
+      "hint": "Die Darstellung enthält soziale Rollen mit deutlicher Stereotypisierung. Prüfen, ob Rollenbesetzung, Handlungsmacht und Bildkomposition die intendierte Aussage stützen oder stereotype Muster verstärken.",
+      "reviewQuestion": "Reproduziert die Darstellung stereotype Erwartungen, oder bildet sie die gewünschte Realität ab?"
+    }
+  ],
+  "masking_review_note": {
+    "text": "Die cinematische Bildstimmung kann die kritische Prüfung der markierten Befunde (Anatomie, Physik, Kontext) erschweren. Das Modell hat mehrere Stellen markiert, an denen ästhetische Treiber Befunde überdecken könnten – ein prüfbarer Hinweis, kein Nachweis.",
+    "basis": {
+      "reading_mode": "CI",
+      "visual_drivers": ["CL", "BK", "WCG"],
+      "linked_dimensions": ["anatomy", "physics", "context"],
+      "link_count": 3
+    }
+  },
+  "meta": {
+    "model": "gemini-3-flash-preview",
+    "aesthetic_model": "anthropic:claude-sonnet-4-6",
+    "duration_ms": 41230,
+    "consistency_reconcile": {
+      "applied_rules": ["R2_physics_cap_strong", "R5_bias_cap_strong"],
+      "score_caps": [],
+      "flag_changes": [],
+      "integrity_before": 49,
+      "integrity_after": 49
+    },
+    "analysis_sampling": { "temperature": 0, "topK": 1, "topP": 1, "seed": 42 },
+    "aesthetic_sampling": { "temperature": 0, "topK": 1 }
+  }
+}

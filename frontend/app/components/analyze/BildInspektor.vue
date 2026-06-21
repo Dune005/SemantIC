@@ -48,17 +48,16 @@ const hasAnyBox = computed(() => boxedSpots.value.length > 0)
 const visibleBoxedSpots = computed(() => boxedSpots.value.filter((s) => visibleLayers[s.layer]))
 // Marker-UI (Toggles + SVG + Pins) erst nach Load und nur wenn es etwas zu zeigen gibt.
 const overlayActive = computed(() => imageLoaded.value && hasAnyBox.value)
-// Der aktuell gezeigte Spot – Hover hat Vorrang vors Angepinnte. SELBSTVALIDIEREND:
-// existiert der Spot noch, ist er geboxt und sein Layer sichtbar? Dadurch kein dangling
-// activeId (das sonst alle Boxen muten würde) und kein Tooltip über ausgeblendetem
-// Layer – Spot-/Bildwechsel und Layer-Toggle sind automatisch abgedeckt.
-const shownSpot = computed(() => {
-  const id = hoverId.value ?? activeId.value
+// Liefert den Spot zu einer ID NUR, wenn er noch existiert, geboxt und sein Layer
+// sichtbar ist – sonst null. Verhindert dangling-/stale-Zustände.
+function validSpot(id: string | null): InspectorSpot | null {
   if (!id) return null
   const s = props.spots.find((x) => x.id === id)
-  if (!s || !s.qualifiesAsBox || !visibleLayers[s.layer]) return null
-  return s
-})
+  return s && s.qualifiesAsBox && visibleLayers[s.layer] ? s : null
+}
+// Der aktuell gezeigte Spot – Hover hat Vorrang vors Angepinnte. Jeder Kandidat wird
+// EINZELN validiert: ein ungültiges hoverId darf kein gültiges activeId verdecken.
+const shownSpot = computed(() => validSpot(hoverId.value) ?? validSpot(activeId.value))
 
 function spotMeta(s: InspectorSpot): string {
   if (s.layer === 'mask') return s.driverLabel ? `Maskierung · ${s.driverLabel}` : 'Maskierung'
@@ -68,6 +67,14 @@ function pinStyle(box: InspectorSpot['box']) {
   const left = Math.min(Math.max(box[3] / 10, 4), 95)
   const top = Math.min(Math.max(box[0] / 10, 6), 92)
   return { left: `${left}%`, top: `${top}%` }
+}
+// Grobe Bildposition fürs aria-label (Spec verlangt Position + Text).
+function posLabel(box: InspectorSpot['box']): string {
+  const cx = (box[1] + box[3]) / 2
+  const cy = (box[0] + box[2]) / 2
+  const h = cx < 333 ? 'links' : cx > 667 ? 'rechts' : 'mittig'
+  const v = cy < 333 ? 'oben' : cy > 667 ? 'unten' : 'mittig'
+  return `${v} ${h}`
 }
 
 // Tooltip pixelgenau positionieren (1:1 aus v3): horizontal über Box-Mitte zentriert
@@ -119,9 +126,20 @@ function onListActivate(s: InspectorSpot) {
 }
 function toggleLayer(layer: 'finding' | 'mask') {
   visibleLayers[layer] = !visibleLayers[layer]
+  if (!visibleLayers[layer]) {
+    // Beim Ausblenden zugehörige IDs abräumen, damit der Spot beim Wieder-
+    // Einblenden nicht „zurückkehrt".
+    const inLayer = (id: string | null) => {
+      const s = id ? props.spots.find((x) => x.id === id) : null
+      return !!s && s.layer === layer
+    }
+    if (inLayer(hoverId.value)) hoverId.value = null
+    if (inLayer(activeId.value)) activeId.value = null
+  }
 }
 function onEscape() {
-  if (shownSpot.value) clearAll()
+  // Immer aufräumen – auch wenn shownSpot bereits null ist, könnten IDs hängen.
+  clearAll()
 }
 
 // Tooltip neu positionieren, sobald sich der gezeigte Spot ändert (nach DOM-Update).
@@ -161,9 +179,17 @@ watch(
   },
 )
 
-// Resize: offenen Tooltip neu positionieren (rAF-gedrosselt).
+// Neuer Spot-Satz (andere Analyse, IDs werden positional wiederverwendet) → Highlight
+// komplett zurücksetzen, damit kein alter Pin fälschlich „aktiv" bleibt.
+watch(
+  () => props.spots,
+  () => clearAll(),
+)
+
+// Offenen Tooltip neu positionieren (rAF-gedrosselt). ResizeObserver am Viewport
+// deckt Fenster- UND Container-Resizes ab (z. B. Reflow der Workbench-Spalte).
 let rafId = 0
-function onResize() {
+function repositionShown() {
   if (!shownSpot.value || rafId) return
   rafId = requestAnimationFrame(() => {
     rafId = 0
@@ -171,12 +197,16 @@ function onResize() {
     if (s) positionTooltip(s.box)
   })
 }
+let resizeObs: ResizeObserver | null = null
 onMounted(() => {
-  window.addEventListener('resize', onResize, { passive: true })
   syncCachedImage()
+  if (viewportEl.value && typeof ResizeObserver !== 'undefined') {
+    resizeObs = new ResizeObserver(repositionShown)
+    resizeObs.observe(viewportEl.value)
+  }
 })
 onBeforeUnmount(() => {
-  window.removeEventListener('resize', onResize)
+  resizeObs?.disconnect()
   if (rafId) cancelAnimationFrame(rafId)
 })
 </script>
@@ -245,7 +275,8 @@ onBeforeUnmount(() => {
             :data-id="s.id"
             :style="pinStyle(s.box)"
             type="button"
-            :aria-label="`${s.id}, ${spotMeta(s)} – unverifizierter Modellhinweis: ${s.text}`"
+            :aria-pressed="shownSpot?.id === s.id"
+            :aria-label="`${s.id}, ${spotMeta(s)}, Bildbereich ${posLabel(s.box)} – unverifizierter Modellhinweis: ${s.text}`"
             @mouseenter="setHover(s.id)"
             @mouseleave="clearHover(s.id)"
             @focus="setHover(s.id)"
@@ -279,6 +310,7 @@ onBeforeUnmount(() => {
             type="button"
             class="spotrow spotrow--linked"
             :class="{ 'is-active': shownSpot?.id === s.id }"
+            :aria-pressed="shownSpot?.id === s.id"
             @click="onListActivate(s)"
           >
             <span class="spotrow__id" :class="`spotrow__id--${s.layer}`">{{ s.id }}</span>

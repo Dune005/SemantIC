@@ -13,6 +13,7 @@ import {
   RISK_LEVEL_LABEL,
   INTENT_LABELS,
   NORMATIVE_VERDICT_LABELS,
+  NORMATIVE_ASPECT_LABELS,
 } from '~/lib/severity'
 import { buildInspectorSpots } from '~/lib/overlay-spots'
 import CockpitVerdikt from './CockpitVerdikt.vue'
@@ -119,11 +120,21 @@ const PRIORITY_HEADLINE = {
   red: 'Vor Freigabe überarbeiten',
 } as const
 
-const priority = computed(() => ({
-  headline: PRIORITY_HEADLINE[props.vm.overallVerdict.status],
-  copy: 'Kein pauschaler Ausschluss. Prüfe zuerst die konkret benannten Befunde und entscheide im Nutzungskontext.',
-  items: findings.value.slice(0, 3).map((f) => ({ label: f.catLabel, description: f.text })),
-}))
+const priority = computed(() => {
+  const status = props.vm.overallVerdict.status
+  const items = findings.value.slice(0, 3).map((f) => ({ label: f.catLabel, description: f.text }))
+  // Verdict-bewusster Leerzustand: Status gelb/rot ohne einzelnen Bildbefund (flag-/cap-getrieben)
+  // darf nicht als „nichts zu tun" lesen. Kein kuratierter Topic-Text – nur ein Verweis aufs Urteil.
+  const verdictDrivenEmpty = items.length === 0 && status !== 'green'
+  return {
+    headline: PRIORITY_HEADLINE[status],
+    copy: verdictDrivenEmpty
+      ? 'Das Gesamturteil folgt aus den Dimensionswerten und weiteren Prüfsignalen, nicht aus einem einzelnen Bildbefund. Sieh dir die gelb oder rot markierte(n) Dimension(en) oben an.'
+      : 'Kein pauschaler Ausschluss. Prüfe zuerst die konkret benannten Befunde und entscheide im Nutzungskontext.',
+    items,
+    emptyNote: verdictDrivenEmpty ? 'Kein einzelner Bildbefund benannt.' : undefined,
+  }
+})
 
 // Bild-Overlay (Etappe 3): rohe evidenceSpots → render-fertige InspectorSpots
 // (F2-Qualifikation + Layer + Treiber-Label, deterministisch in lib/overlay-spots).
@@ -206,7 +217,12 @@ const context = computed(() => {
     drivers: v.visualDrivers.map((d) => ({ code: d.code, label: d.label })),
     normative:
       norm.verdict !== 'not_applicable'
-        ? { verdictWord: NORMATIVE_VERDICT_LABELS[norm.verdict], reasoning: norm.reasoning }
+        ? {
+            verdictWord: NORMATIVE_VERDICT_LABELS[norm.verdict],
+            reasoning: norm.reasoning,
+            // Dedupe: das Schema garantiert keine eindeutigen Aspekte → kein Vue-Key-Konflikt.
+            aspects: [...new Set(norm.aspects.map((a) => NORMATIVE_ASPECT_LABELS[a]))],
+          }
         : null,
     notes: [v.intentRecommendationNote, v.usageFormNote, v.normativeMaskingNote].filter(
       (n): n is string => typeof n === 'string' && n.length > 0,
@@ -268,6 +284,7 @@ const contextDate = computed(() => props.timestamp ?? null)
         :headline="priority.headline"
         :copy="priority.copy"
         :items="priority.items"
+        :empty-note="priority.emptyNote"
         :integrity="hero.integrity"
         :aesthetic="hero.aesthetic"
       />
