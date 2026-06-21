@@ -9,9 +9,32 @@
 // NEUTRAL; warm/kühl-Dimensionsfarben NUR an den beiden Wert-Labels (Quadrant sonst zu laut).
 import { computed, useId } from 'vue'
 
+// variant 'full' (how-it-works: Stage + Legende) vs. 'compact' (Report: nur Stage +
+// Achsen + Punkt + Wert-Labels, ohne Erklaer-Legende). Default 'full' -> bestehende
+// how-it-works-Nutzung bleibt unveraendert.
 const props = withDefaults(
-  defineProps<{ aesthetic?: number; integrity?: number; pointLabel?: string }>(),
-  { aesthetic: 86, integrity: 64, pointLabel: 'Beispiel' },
+  defineProps<{
+    aesthetic?: number
+    integrity?: number
+    pointLabel?: string
+    variant?: 'full' | 'compact'
+    // Achsentitel konfigurierbar (Defaults = how-it-works-Wortlaut, unverändert).
+    // Das Cockpit übergibt die neutralen „Integrität hoch →" / „Ästhetik hoch →".
+    xAxisLabel?: string
+    yAxisLabel?: string
+    // Produkt-UI (Report/Cockpit): Wert-Labels neutral (kein --appeal/--substance,
+    // die laut BAU-CHECKLISTE §4 nur in der Dataviz-Seite /how-it-works erlaubt sind).
+    neutralValues?: boolean
+  }>(),
+  {
+    aesthetic: 86,
+    integrity: 64,
+    pointLabel: 'Beispiel',
+    variant: 'full',
+    xAxisLabel: 'Inhaltlich stimmig →',
+    yAxisLabel: 'Sieht gut aus →',
+    neutralValues: false,
+  },
 )
 
 // Eindeutige SVG-IDs pro Instanz (Codex: harte IDs kollidieren bei Mehrfach-Einsatz).
@@ -32,17 +55,34 @@ const cy = computed(() => Y(props.aesthetic))
 const ptLeft = computed(() => (cx.value / 320) * 100)
 const ptTop = computed(() => (cy.value / 320) * 100)
 
-const ariaLabel = computed(
-  () =>
-    `Schema: waagrecht „wie gut es inhaltlich hält", senkrecht „wie gut es aussieht". ` +
+// Randkorrektur (Codex 1.8): bei Punkten weit rechts/oben klappt die Wert-Box nach innen,
+// sonst laeuft sie aus dem Plot (v.a. compact/Mobile bei Werten nahe 100). Schwellen so
+// gewaehlt, dass die how-it-works-Defaults (Integritaet 64 / Aesthetik 86) unveraendert
+// rechts-oben bleiben.
+const valboxStyle = computed(() => {
+  const flipX = ptLeft.value > 72
+  const flipY = ptTop.value < 12
+  return {
+    left: `${ptLeft.value}%`,
+    top: `${ptTop.value}%`,
+    transform: `translate(${flipX ? 'calc(-100% - 12px)' : '12px'}, ${flipY ? '8px' : '-120%'})`,
+  }
+})
+
+const ariaLabel = computed(() => {
+  const x = props.xAxisLabel.replace(/\s*→\s*$/, '')
+  const y = props.yAxisLabel.replace(/\s*→\s*$/, '')
+  return (
+    `Verortungs-Schema. Waagrechte Achse: ${x}. Senkrechte Achse: ${y}. ` +
     `Das schraffierte Dreieck oben links ist die Maskierungs-Zone, in der die Ästhetik die ` +
-    `Integrität übersteigt. ${props.pointLabel}punkt bei Ästhetik ${props.aesthetic}, ` +
-    `Integrität ${props.integrity}.`,
-)
+    `Integrität übersteigt. Punkt für ${props.pointLabel}: Ästhetik ${props.aesthetic}, ` +
+    `Integrität ${props.integrity}.`
+  )
+})
 </script>
 
 <template>
-  <div class="quad">
+  <div class="quad" :class="{ 'quad--compact': variant === 'compact', 'quad--neutralvals': neutralValues }">
     <div class="quad__stage" role="img" :aria-label="ariaLabel">
         <svg class="quad__svg" viewBox="0 0 320 320" aria-hidden="true">
           <defs>
@@ -94,19 +134,17 @@ const ariaLabel = computed(
             <circle class="quad__pt-core" :cx="cx" :cy="cy" r="6" />
           </g>
 
-          <!-- Achsentitel im SVG (vorlagentreu); sitzen im 16er-Padding-Gutter -->
-          <text class="quad__axt" x="160" y="317" text-anchor="middle">Inhaltlich stimmig →</text>
-          <text class="quad__axt" x="11" y="160" text-anchor="middle" transform="rotate(-90 11 160)">Sieht gut aus ↑</text>
+          <!-- Achsentitel im SVG (vorlagentreu); sitzen im 16er-Padding-Gutter. Das Y-Label
+               ist um -90° rotiert -> ein "→" im Markup erscheint visuell als "↑" (nach oben).
+               Ein "↑" wuerde durch die Rotation faelschlich nach links zeigen. -->
+          <text class="quad__axt" x="160" y="317" text-anchor="middle">{{ xAxisLabel }}</text>
+          <text class="quad__axt" x="11" y="160" text-anchor="middle" transform="rotate(-90 11 160)">{{ yAxisLabel }}</text>
         </svg>
 
         <!-- HTML-Overlay-Labels (deckungsgleich mit dem SVG) -->
         <span class="quad__zonelbl">Maskierungs-Zone</span>
-        <span
-          class="quad__valbox"
-          :style="{ left: ptLeft + '%', top: ptTop + '%' }"
-          aria-hidden="true"
-        >
-          <span class="quad__valkicker">Beispiel</span>
+        <span class="quad__valbox" :style="valboxStyle" aria-hidden="true">
+          <span class="quad__valkicker">{{ pointLabel }}</span>
           <span class="quad__val quad__val--aesth">Ästhetik {{ aesthetic }}</span>
           <span class="quad__val quad__val--integ">Integrität {{ integrity }}</span>
         </span>
@@ -151,6 +189,21 @@ const ariaLabel = computed(
   background: var(--canvas);
   border: 1px solid var(--line);
   border-radius: var(--r);
+}
+
+/* compact (Report): nur die Stage, ohne Erklaer-Legende; rahmenlos, damit sich der
+   Quadrant in die umgebende Befund-Karte einfuegt (keine Karte-in-Karte). */
+.quad--compact {
+  grid-template-columns: 1fr;
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+.quad--compact .quad__legend {
+  display: none;
+}
+.quad--compact .quad__stage {
+  max-width: 340px;
 }
 
 /* Stage = direktes Grid-Kind mit width:100% (wie Vorlage): füllt die 1fr-Spalte
@@ -244,8 +297,8 @@ const ariaLabel = computed(
   display: flex;
   flex-direction: column;
   gap: 2px;
-  transform: translate(12px, -120%);
   white-space: nowrap;
+  /* transform wird dynamisch via valboxStyle gesetzt (Randkorrektur). */
 }
 .quad__valkicker {
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
@@ -265,6 +318,12 @@ const ariaLabel = computed(
 }
 .quad__val--integ {
   color: var(--substance);
+}
+/* Produkt-UI (Cockpit/Report): neutrale Wert-Labels statt Dimensionsfarben
+   (BAU-CHECKLISTE §4 – --appeal/--substance nur auf /how-it-works). */
+.quad--neutralvals .quad__val--aesth,
+.quad--neutralvals .quad__val--integ {
+  color: var(--ink);
 }
 /* Achsentitel im SVG (fill statt color); im Padding-Gutter, daher overflow: visible. */
 .quad__axt {

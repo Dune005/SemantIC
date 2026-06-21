@@ -5,6 +5,7 @@
 import { ref, computed } from 'vue'
 
 const route = useRoute()
+const { t } = useI18n()
 const activeNav = computed<'home' | 'analyze' | 'how-it-works' | undefined>(() => {
   if (route.path === '/') return 'home'
   if (route.path.startsWith('/analyze')) return 'analyze'
@@ -31,16 +32,17 @@ async function onRedeemBypass(code: string) {
     // Bypass hebt das Limit auf → alter Rate-Limit-Hint ist hinfaellig (Fixture-konform).
     rateLimitHint.value = null
   } catch {
-    // Verbatim aus content/microcopy.md (Bypass-Code-Feld, Fehler).
+    // Fehlertext i18n-fähig (Codex 1.8): sonst überschreibt der hartkodierte Layout-Text
+    // den $t-Fallback in BypassCodeField. Einzige Fehler-Quelle = bypass.error.
     bypassState.value = 'error'
-    bypassError.value = 'Dieser Code stimmt nicht. Bitte prüf die Schreibweise.'
+    bypassError.value = t('bypass.error')
   }
 }
 </script>
 
 <template>
   <div class="layout">
-    <a class="skip-link" href="#main">Zum Inhalt springen</a>
+    <a class="skip-link" href="#main">{{ $t('common.skipToContent') }}</a>
 
     <AppHeader :active="activeNav" :bypass-active="bypassActive" :rate-limit-hint="rateLimitHint" />
 

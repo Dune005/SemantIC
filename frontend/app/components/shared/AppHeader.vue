@@ -37,32 +37,33 @@ function closeMenu() {
 <template>
   <header class="app-header no-print">
     <div class="app-header__inner">
-      <NuxtLink to="/" class="brand" aria-label="SemantIC – zur Startseite">
+      <NuxtLink to="/" class="brand" :aria-label="$t('header.brandAria')">
         <span class="brand__mark">SemantIC</span>
         <span class="brand__divider" aria-hidden="true" />
         <!-- Wortlaut folgt dem Hero-Kicker (F4-Entscheid: «Validator» abgeschwächt);
              finale Wahl trifft der Bearbeiter im Browser-Review. -->
-        <span class="brand__kicker">AI Visual Integrity Check</span>
+        <span class="brand__kicker">{{ $t('header.brandKicker') }}</span>
       </NuxtLink>
 
-      <nav class="nav" aria-label="Hauptnavigation">
-        <NuxtLink to="/analyze" :aria-current="active === 'analyze' ? 'page' : undefined">Tool</NuxtLink>
-        <NuxtLink to="/how-it-works" :aria-current="active === 'how-it-works' ? 'page' : undefined">Funktionsweise</NuxtLink>
+      <nav class="nav" :aria-label="$t('header.navAria')">
+        <NuxtLink to="/analyze" :aria-current="active === 'analyze' ? 'page' : undefined">{{ $t('header.nav.tool') }}</NuxtLink>
+        <NuxtLink to="/how-it-works" :aria-current="active === 'how-it-works' ? 'page' : undefined">{{ $t('header.nav.howItWorks') }}</NuxtLink>
       </nav>
 
       <div class="header-actions">
         <span v-if="rateLimitHint" class="rate-hint">{{ rateLimitHint }}</span>
-        <Badge v-if="bypassActive" mode="neutral" label="Demo-Zugang aktiv" class="badge-on-dark" />
+        <Badge v-if="bypassActive" mode="neutral" :label="$t('header.badgeDemo')" class="badge-on-dark" />
         <!-- CTA wie v16-g: Mess-Punkt + Text statt weisser Kachel (kein Pfeil). -->
         <NuxtLink v-if="showCta" to="/analyze" class="header-cta">
-          <span class="header-cta__dot" aria-hidden="true" />Bild prüfen
+          <span class="header-cta__dot" aria-hidden="true" />{{ $t('header.cta') }}
         </NuxtLink>
+        <LangSwitcher />
       </div>
 
       <button
         class="nav-toggle"
         type="button"
-        :aria-label="menuOpen ? 'Menü schliessen' : 'Menü öffnen'"
+        :aria-label="menuOpen ? $t('header.menuClose') : $t('header.menuOpen')"
         :aria-expanded="menuOpen"
         aria-controls="mobile-nav"
         @click="toggleMenu"
@@ -75,7 +76,7 @@ function closeMenu() {
     <div id="mobile-nav" class="mobile-nav" :hidden="!menuOpen">
       <div class="mobile-nav__inner">
         <NuxtLink to="/analyze" class="mobile-nav__link" :aria-current="active === 'analyze' ? 'page' : undefined" @click="closeMenu">
-          Tool
+          {{ $t('header.nav.tool') }}
         </NuxtLink>
         <NuxtLink
           to="/how-it-works"
@@ -83,11 +84,14 @@ function closeMenu() {
           :aria-current="active === 'how-it-works' ? 'page' : undefined"
           @click="closeMenu"
         >
-          Funktionsweise
+          {{ $t('header.nav.howItWorks') }}
         </NuxtLink>
         <Button v-if="showCta" as="a" href="/analyze" variant="inverse" size="md" class="mt-[14px] w-full" @click="closeMenu">
-          Bild prüfen →
+          {{ $t('header.cta') }} →
         </Button>
+        <div class="mobile-nav__lang">
+          <LangSwitcher />
+        </div>
       </div>
     </div>
   </header>
@@ -270,6 +274,16 @@ function closeMenu() {
 /* Mobile-Aktivzustand bewusst nur font-weight (header.html Z.132) – kein Unterstrich. */
 .mobile-nav :deep(.mobile-nav__link[aria-current='page']) {
   font-weight: 600;
+}
+/* Sprachumschalter im Mobile-Panel: dezent abgesetzt (Trenner OBEN, nicht links). */
+.mobile-nav__lang {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--ink-line);
+}
+/* Touch-Target 44px im Mobile-Panel (Codex-A11y); der Desktop-Trigger bleibt kompakt. */
+.mobile-nav__lang :deep(.lang-trigger) {
+  min-height: 44px;
 }
 
 @media (max-width: 719px) {

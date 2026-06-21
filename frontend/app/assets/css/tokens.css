@@ -17,6 +17,14 @@
 
 :root {
   /* ---------------------------------------------------------- */
+  /* TYPO (Variante C – IBM Plex) als Tokens fuer Seiten-/      */
+  /* Komponenten-CSS. base.css setzt die Schriften direkt; diese */
+  /* Tokens machen sie per var() referenzierbar (Cockpit-Port). */
+  /* ---------------------------------------------------------- */
+  --sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  /* ---------------------------------------------------------- */
   /* FLAECHEN / GRUND                                           */
   /* Tiefe entsteht ueber Flaechenwechsel, NICHT ueber Schatten.*/
   /* ---------------------------------------------------------- */

@@ -36,42 +36,36 @@ function onRedeem() {
 <template>
   <footer class="app-footer no-print" role="contentinfo">
     <div class="app-footer__inner">
-      <!-- Spalte 1: Selbstbeschreibung -->
+      <!-- Spalte 1: Selbstbeschreibung. Inline-Link via <i18n-t> (Component-Interpolation),
+           damit der Satz EIN i18n-Key bleibt und der Link an {link} sitzt. -->
       <div class="foot-col foot-brand">
         <span class="mark">SemantIC</span>
-        <p>
-          SemantIC prüft KI-generierte Bilder vor der Veröffentlichung auf physikalische
-          Kohärenz, semantische Konsistenz und Bias – und zeigt dir prüfbare Hinweise,
-          wo ein Bild inhaltlich womöglich nicht hält, was sein Eindruck verspricht.
-          Mehr dazu unter
-          <NuxtLink to="/how-it-works">Funktionsweise</NuxtLink>.
-        </p>
+        <i18n-t keypath="footer.aboutText" tag="p" scope="global">
+          <template #link>
+            <NuxtLink to="/how-it-works">{{ $t('footer.aboutLink') }}</NuxtLink>
+          </template>
+        </i18n-t>
       </div>
 
       <!-- Spalte 2: Demo-Zugangscode -->
       <div class="foot-col foot-bypass">
-        <h3>Zugang</h3>
+        <h3>{{ $t('footer.bypassHeading') }}</h3>
         <BypassCodeField v-model="code" :state="effectiveState" :error-message="bypassError" @submit="onRedeem" />
       </div>
 
       <!-- Spalte 3: Projekt -->
       <div class="foot-col foot-project">
-        <h3>Projekt</h3>
-        <p>
-          SemantIC ist das Lehrprojekt der Bachelorarbeit „Visual Bias im KI-generierten
-          Bild" (Multimedia-Production, FH Graubünden). Es ist ein Prüfassistent für
-          Content-Profis, kein Fake-Detektor – ein Forschungsprototyp, der empirisch
-          weiterentwickelt wird.
-        </p>
-        <nav class="foot-links" aria-label="Footer-Links">
-          <NuxtLink to="/how-it-works">Funktionsweise</NuxtLink>
-          <NuxtLink to="/privacy">Datenschutz</NuxtLink>
+        <h3>{{ $t('footer.projectHeading') }}</h3>
+        <p>{{ $t('footer.projectText') }}</p>
+        <nav class="foot-links" :aria-label="$t('footer.linksAria')">
+          <NuxtLink to="/how-it-works">{{ $t('footer.linkHowItWorks') }}</NuxtLink>
+          <NuxtLink to="/privacy">{{ $t('footer.linkPrivacy') }}</NuxtLink>
         </nav>
       </div>
     </div>
 
     <div class="app-footer__bottom">
-      <div class="inner">© 2026 Claudio Riz · FH Graubünden · Lehrprojekt · Version 1.6</div>
+      <div class="inner">{{ $t('footer.copyright') }}</div>
     </div>
   </footer>
 </template>

@@ -1,0 +1,38 @@
+{
+  "common": {
+    "skipToContent": "Zum Inhalt springen"
+  },
+  "header": {
+    "brandAria": "SemantIC – zur Startseite",
+    "brandKicker": "AI Visual Integrity Check",
+    "navAria": "Hauptnavigation",
+    "nav": {
+      "tool": "Tool",
+      "howItWorks": "Funktionsweise"
+    },
+    "badgeDemo": "Demo-Zugang aktiv",
+    "cta": "Bild prüfen",
+    "menuOpen": "Menü öffnen",
+    "menuClose": "Menü schliessen",
+    "langAria": "Sprache wählen"
+  },
+  "footer": {
+    "aboutText": "SemantIC prüft KI-generierte Bilder vor der Veröffentlichung auf physikalische Kohärenz, semantische Konsistenz und Bias – und zeigt dir prüfbare Hinweise, wo ein Bild inhaltlich womöglich nicht hält, was sein Eindruck verspricht. Mehr dazu unter {link}.",
+    "aboutLink": "Funktionsweise",
+    "bypassHeading": "Zugang",
+    "projectHeading": "Projekt",
+    "projectText": "SemantIC ist das Lehrprojekt der Bachelorarbeit „Visual Bias im KI-generierten Bild“ (Multimedia-Production, FH Graubünden). Es ist ein Prüfassistent für Content-Profis, kein Fake-Detektor – ein Forschungsprototyp, der empirisch weiterentwickelt wird.",
+    "linksAria": "Footer-Links",
+    "linkHowItWorks": "Funktionsweise",
+    "linkPrivacy": "Datenschutz",
+    "copyright": "© 2026 Claudio Riz · FH Graubünden · Lehrprojekt · Version 1.6"
+  },
+  "bypass": {
+    "label": "Zugangscode (Demo)",
+    "hint": "Hebt das Tageslimit (3 Analysen / 24 h) für die Begutachtung auf. Der Zugang gilt 30 Tage für diesen Browser.",
+    "placeholder": "Code eingeben",
+    "submit": "Einlösen",
+    "success": "Zugang aktiv – das Tageslimit ist für diesen Browser 30 Tage aufgehoben.",
+    "error": "Code nicht erkannt. Bitte prüfe die Schreibweise."
+  }
+}

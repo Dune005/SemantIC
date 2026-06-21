@@ -33,7 +33,8 @@ import {
   USAGE_FORM_LABELS,
   RISK_LEVEL_LABEL,
 } from '~/lib/severity'
-import type { AnalysisViewModel, UsageForm } from '~/types/analysis'
+import type { AnalysisViewModel, UsageForm, InspectorSpot } from '~/types/analysis'
+import { buildInspectorSpots } from '~/lib/overlay-spots'
 
 const props = withDefaults(
   defineProps<{
@@ -88,6 +89,23 @@ const hasNotes = computed(
 // Headline: Schlusspunkt als chromatischen Akzent (kein Links-Streifen).
 const headlineMain = computed(() => vm.value.overallVerdict.headline.replace(/\.$/, ''))
 const headlineHasDot = computed(() => vm.value.overallVerdict.headline.endsWith('.'))
+
+// Block „Lokalisierte Bildbefunde": dieselbe F2-Projektion wie der Bild-Inspektor, als
+// druckbare Textliste. Ohne diesen Block fehlen die Codebook-Spots (Physik/Anatomie/Kontext
+// specific_observation) im PDF komplett (sie stehen weder in Block 9 noch in Block 6). Die
+// Maskierungs-Spot-Liste wandert aus Block 6 hierher (kein doppelter Druck). „F2 im Druck =
+// Textliste" (Spec): keine Box-Grafik, nur Text + ehrliche Verortungs-Kennzeichnung.
+const SPOT_SOURCE_LABEL: Record<InspectorSpot['source'], string> = {
+  physics: 'Physik',
+  anatomy: 'Anatomie',
+  context: 'Kontext',
+  masking: 'Maskierung',
+}
+const localizedSpots = computed(() => buildInspectorSpots(vm.value.evidenceSpots))
+function spotSourceLabel(s: InspectorSpot): string {
+  if (s.source === 'masking') return s.driverLabel ? `Maskierung · ${s.driverLabel}` : 'Maskierung'
+  return SPOT_SOURCE_LABEL[s.source]
+}
 </script>
 
 <template>
@@ -169,20 +187,36 @@ const headlineHasDot = computed(() => vm.value.overallVerdict.headline.endsWith(
       </div>
     </section>
 
-    <!-- Block 6: Maskierungs-Hinweis (beschreibend; ersetzt den früheren Differenz-Score) -->
+    <!-- Block 6: Maskierungs-Hinweis (beschreibend; ersetzt den früheren Differenz-Score).
+         Die markierten Stellen stehen jetzt im Block „Lokalisierte Bildbefunde" (kein
+         doppelter Druck); Block 6 trägt nur noch den interpretierenden Hinweis. -->
     <section class="print-block">
       <h2 class="print-h2">Maskierungs-Hinweis</h2>
-      <template v-if="vm.maskingReviewNote">
-        <p class="print-line">{{ vm.maskingReviewNote.text }}</p>
-        <ul v-if="vm.maskingMarkedSpots.length" class="print-spot-list">
-          <li v-for="(s, i) in vm.maskingMarkedSpots" :key="`spot-${i}`" class="print-sub">
-            <strong>{{ s.driverLabel }}</strong> könnte den {{ s.area }}-Befund überdecken: {{ s.text }}
-          </li>
-        </ul>
-      </template>
+      <p v-if="vm.maskingReviewNote" class="print-line">{{ vm.maskingReviewNote.text }}</p>
       <p v-else class="print-sub">
         Kein Maskierungs-Hinweis – das Modell hat keine Stelle markiert, an der ein ästhetischer
         Treiber einen Befund überdecken könnte.
+      </p>
+    </section>
+
+    <!-- Block 6b: Lokalisierte Bildbefunde – F2-Overlay als druckbare Textliste (Codebook +
+         Maskierung). Teilbar über Seitengrenzen; nur einzelne Zeilen bleiben zusammen. -->
+    <section class="print-block print-block--splittable">
+      <h2 class="print-h2">Lokalisierte Bildbefunde</h2>
+      <ul v-if="localizedSpots.length" class="print-spot-rows">
+        <li v-for="s in localizedSpots" :key="s.id" class="print-spot-row">
+          <span class="ps-id">{{ s.id }}</span>
+          <span class="ps-body">
+            <span class="ps-text">{{ s.text }}</span>
+            <span class="ps-meta">
+              {{ spotSourceLabel(s) }}<template v-if="!s.qualifiesAsBox"> · ohne sichere Verortung</template>
+            </span>
+          </span>
+        </li>
+      </ul>
+      <p v-else class="print-sub">Keine lokalisierten Bildstellen markiert.</p>
+      <p v-if="localizedSpots.length" class="print-spot-caption">
+        Boxen sind LLM-verortet und nicht pixelgenau.
       </p>
     </section>
 
@@ -206,6 +240,9 @@ const headlineHasDot = computed(() => vm.value.overallVerdict.headline.endsWith(
       <h2 class="print-h2">Leseart &amp; visuelle Treiber</h2>
       <p class="print-line">{{ vm.readingMode.label }} ({{ vm.readingMode.code }})</p>
       <p class="print-sub">{{ READING_MODE_DESC[vm.readingMode.code] }}</p>
+      <p v-if="vm.readingModeMaskingLogic" class="print-sub">
+        <strong>Maskierungs-Logik:</strong> {{ vm.readingModeMaskingLogic }}
+      </p>
       <div v-if="vm.visualDrivers.length" class="print-chips">
         <Chip v-for="(drv, i) in vm.visualDrivers" :key="`${drv.code}-${i}`" :code="drv.code" :label="drv.label" />
       </div>
@@ -258,6 +295,17 @@ const headlineHasDot = computed(() => vm.value.overallVerdict.headline.endsWith(
         · maximales Risiko: {{ RISK_LEVEL_LABEL[vm.biasAxesSummary.maxRisk] }}.
       </p>
       <p class="print-sub" v-else>Keine Bias-Achsen erkannt.</p>
+      <!-- F3 (1.8): Beobachtung/Lesart je Achse – damit die Trennung auch im PDF erhalten
+           bleibt (Print-Leitplanke: kein Befund verschwindet beim Export). -->
+      <div v-for="ax in vm.biasAxesDetails" :key="ax.axisId" class="print-axis">
+        <p class="print-line">{{ ax.label }} · Risiko {{ RISK_LEVEL_LABEL[ax.riskLevel] }}</p>
+        <template v-for="(e, i) in ax.evidence" :key="`ev-${i}`">
+          <p class="print-sub"><strong>Beobachtung:</strong> {{ e.observation }}</p>
+          <p class="print-sub">
+            <strong>Lesart:</strong> {{ e.interpretation }}<template v-if="!e.supportsBiasFinding"> – stützt keinen Bias-Befund</template>
+          </p>
+        </template>
+      </div>
     </section>
 
     <!-- Block 12: Methoden-Fussnote (nicht-technisch, ohne Debug/Modell-Versionen) -->
@@ -287,6 +335,17 @@ const headlineHasDot = computed(() => vm.value.overallVerdict.headline.endsWith(
   .print-block,
   .print-hint,
   .print-check {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  /* Ausnahme: ein langer Listenblock darf über Seitengrenzen umbrechen – sonst würde
+     eine Spot-Liste, die höher als eine Seite ist, abgeschnitten. Nur die einzelnen
+     Zeilen bleiben jeweils zusammen. */
+  .print-block--splittable {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+  .print-spot-row {
     break-inside: avoid;
     page-break-inside: avoid;
   }
@@ -524,10 +583,60 @@ const headlineHasDot = computed(() => vm.value.overallVerdict.headline.endsWith(
   line-height: 1.5;
   margin-top: 6px;
 }
-.print-spot-list {
+/* F3 (1.8): Achsen-Block im PDF (Beobachtung/Lesart), dezent abgesetzt. */
+.print-axis {
+  margin-top: 10px;
+}
+/* Block 6b: Lokalisierte Bildbefunde (Textliste, druckrobust) */
+.print-spot-rows {
   list-style: none;
   margin: 0;
   padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.print-spot-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: start;
+}
+.ps-id {
+  flex: 0 0 auto;
+  min-width: 26px;
+  padding: 1px 7px;
+  border: 1px solid var(--line-strong);
+  border-radius: 2px;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  text-align: center;
+}
+.ps-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ps-text {
+  font-size: 14px;
+  color: var(--ink);
+  line-height: 1.5;
+}
+.ps-meta {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.print-spot-caption {
+  margin-top: 12px;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--subtle);
 }
 .print-chips {
   display: flex;

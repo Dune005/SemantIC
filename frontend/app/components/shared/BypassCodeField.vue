@@ -45,11 +45,8 @@ function onSubmit() {
          sie weicht der ruhigen Bestätigung (primitives.md §10.1). Label/Input/Hint
          verschwinden gemeinsam, damit kein <label for> ohne Ziel-Input bleibt. -->
     <template v-if="!isSuccess">
-      <label class="bypass__label" :for="codeId">Zugangscode (Demo)</label>
-      <p :id="hintId" class="bypass__hint">
-        Hebt das Tageslimit (3 Analysen / 24 h) für die Begutachtung auf. Der Zugang
-        gilt 30 Tage für diesen Browser.
-      </p>
+      <label class="bypass__label" :for="codeId">{{ $t('bypass.label') }}</label>
+      <p :id="hintId" class="bypass__hint">{{ $t('bypass.hint') }}</p>
       <div class="bypass__row">
         <input
           :id="codeId"
@@ -60,25 +57,23 @@ function onSubmit() {
           inputmode="text"
           autocomplete="off"
           spellcheck="false"
-          placeholder="Code eingeben"
+          :placeholder="$t('bypass.placeholder')"
           :disabled="isSubmitting"
           :aria-invalid="isError || undefined"
           :aria-describedby="`${hintId} ${statusId}`"
           @input="onInput"
         />
         <Button type="submit" variant="secondary" size="sm" :loading="isSubmitting" class="shrink-0">
-          Einlösen
+          {{ $t('bypass.submit') }}
         </Button>
       </div>
     </template>
 
     <!-- Status-Zeile: doppelt kodiert (Farbe + Wort), aria-live für Screenreader. -->
     <div :id="statusId" class="bypass__status" role="status" aria-live="polite">
-      <span v-if="isSuccess" class="bypass__ok">
-        Zugang aktiv – das Tageslimit ist für diesen Browser 30 Tage aufgehoben.
-      </span>
+      <span v-if="isSuccess" class="bypass__ok">{{ $t('bypass.success') }}</span>
       <span v-else-if="isError" class="bypass__err">
-        {{ errorMessage || 'Code nicht erkannt. Bitte prüfe die Schreibweise.' }}
+        {{ errorMessage || $t('bypass.error') }}
       </span>
     </div>
   </form>

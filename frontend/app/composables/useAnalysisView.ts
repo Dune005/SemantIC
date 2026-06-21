@@ -38,7 +38,9 @@ import type {
   ReadingModeView,
   VisualDriverView,
   BiasAxesSummary,
+  BiasAxisDetail,
   MaskingMarkedSpot,
+  EvidenceSpot,
   AnalysisViewModel,
 } from '~/types/analysis'
 
@@ -899,6 +901,22 @@ export function buildAnalysisViewModel(
     count: axes.length,
     maxRisk: maxRiskRank === 3 ? 'high' : maxRiskRank === 2 ? 'medium' : maxRiskRank === 1 ? 'low' : 'none',
   }
+  // F3 (1.8): Achsen-Details fuer die Vertiefung (Beobachtung = deskriptiv, Lesart =
+  // interpretativ). supportsBiasFinding durchgereicht, damit nicht-stuetzende Evidenz in
+  // der UI abgesetzt werden kann. Reine Lese-Schicht – kein Pipeline-Eingriff.
+  const biasAxesDetails: BiasAxisDetail[] = axes.map((a) => ({
+    axisId: a.axis_id,
+    label: a.label,
+    riskLevel: a.risk_level,
+    confidence: a.confidence,
+    evidence: a.observed_evidence.map((e) => ({
+      observation: e.observation,
+      interpretation: e.interpretation,
+      supportsBiasFinding: e.supports_bias_finding,
+    })),
+  }))
+  // Globale Maskierungs-Logik der Leseart (research_layer) – gehoert zum Leseart-Block.
+  const readingModeMaskingLogic = analysis.research_layer.reading_mode_masking_logic ?? null
 
   // Alt-JSON-Fallback (Codex-Review): Outputs vor dem Rückbau haben das Feld
   // nicht (undefined) — dann aus der vorhandenen masking_evidence mit derselben
@@ -923,6 +941,41 @@ export function buildAnalysisViewModel(
     area: LINK_AREA_LABEL[e.codebook_link],
     text: e.masked_issue,
   }))
+  // F2-Fundament (Cockpit-Overlay): alle im Bild lokalisierten Evidenz-Stellen mit
+  // Box, ROH und ungefiltert (Codebook physics/anatomy/context + Maskierung). Die
+  // Anzeigeschwelle (confidence/salient) macht erst die Overlay-Komponente.
+  // Maskierung bewusst aus dem ROHEN masking_evidence (NICHT maskingLinks): Dedupe
+  // und das maskingReviewNote-Gate sind Präsentationslogik und würden den
+  // Roh-Durchgriff verfälschen. region_box_2d wird kopiert (kein geteilter
+  // Pipeline-Reference); Länge 4 + Boxgültigkeit sind upstream durch Zod gesichert.
+  const codebook = analysis.research_layer.codebook
+  const codebookEvidenceSpots: EvidenceSpot[] = (
+    [
+      ['physics', 'P', codebook.physics_evidence],
+      ['anatomy', 'A', codebook.anatomy_evidence],
+      ['context', 'K', codebook.context_evidence],
+    ] as const
+  ).flatMap(([source, prefix, list]) =>
+    (list ?? []).map((e, i): EvidenceSpot => ({
+      id: `${prefix}${i + 1}`,
+      source,
+      box: [...e.region_box_2d] as EvidenceSpot['box'],
+      text: e.specific_observation,
+    })),
+  )
+  const maskingEvidenceSpots: EvidenceSpot[] = (analysis.research_layer.masking_evidence ?? []).map(
+    (e, i): EvidenceSpot => ({
+      id: `M${i + 1}`,
+      source: 'masking',
+      box: [...e.region_box_2d] as EvidenceSpot['box'],
+      text: e.masked_issue,
+      driver: e.driver,
+      codebookLink: e.codebook_link,
+      salientRegion: e.salient_region,
+      confidence: e.confidence,
+    }),
+  )
+  const evidenceSpots: EvidenceSpot[] = [...codebookEvidenceSpots, ...maskingEvidenceSpots]
   // Bereiche, auf die der Hinweis verweist, als Hint-Topics (anatomy bleibt
   // eigenes Topic, Kontextbrüche laufen über context_logic).
   const MASKING_LINK_TOPIC = { physics: 'physics', anatomy: 'anatomy', context: 'context_logic' } as const
@@ -934,7 +987,7 @@ export function buildAnalysisViewModel(
       semantics: { status: dim.semantics.status, findings: dim.semantics.findings },
       bias: { status: dim.bias.status, findings: dim.bias.findings },
     },
-    codebook: analysis.research_layer.codebook,
+    codebook,
     axes,
     ruleHints: result.context_review_hints,
     maskingEvidenceCount: analysis.research_layer.masking_evidence?.length ?? 0,
@@ -1142,9 +1195,12 @@ export function buildAnalysisViewModel(
     hintsCountBySeverity,
     maskingReviewNote,
     maskingMarkedSpots,
+    evidenceSpots,
     inputCompleteness,
     dominantErrorType: analysis.research_layer.dominant_error_type,
     biasAxesSummary,
+    biasAxesDetails,
+    readingModeMaskingLogic,
     intentAssessment,
     normativeMasking,
     normativeMaskingNote,
