@@ -216,7 +216,7 @@ function spotSourceLabel(s: InspectorSpot): string {
       </ul>
       <p v-else class="print-sub">Keine lokalisierten Bildstellen markiert.</p>
       <p v-if="localizedSpots.length" class="print-spot-caption">
-        LLM-verortet, nicht pixelgenau · unverifizierte Modellhinweise.
+        Boxen sind LLM-verortet und nicht pixelgenau.
       </p>
     </section>
 

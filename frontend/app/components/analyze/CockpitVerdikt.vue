@@ -24,7 +24,6 @@ const props = defineProps<{
   statusWord: string
   headline: string
   lead: string
-  hedge: string
   metaText: string
   integrity: number
   aesthetic: number
@@ -53,7 +52,6 @@ const dimDisplays = [0, 1, 2].map((i) =>
         <span class="status"><span class="status__dot" aria-hidden="true" />{{ statusWord }}</span>
         <h1 id="cockpit-verdict-title">{{ headline }}<span class="point">.</span></h1>
         <p class="brief__lead">{{ lead }}</p>
-        <p v-if="hedge" class="brief__hedge">{{ hedge }}</p>
         <p class="brief__meta"><span>{{ metaText }}</span></p>
       </div>
       <div class="brief__score">
@@ -198,15 +196,6 @@ const dimDisplays = [0, 1, 2].map((i) =>
   color: var(--ink-soft);
   font-size: 16px;
   line-height: 1.65;
-}
-.brief__hedge {
-  max-width: 62ch;
-  margin: 10px 0 0;
-  color: var(--muted);
-  font-family: var(--mono);
-  font-size: 11.5px;
-  line-height: 1.55;
-  letter-spacing: 0.02em;
 }
 .brief__meta {
   display: flex;

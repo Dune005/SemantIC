@@ -230,9 +230,10 @@ onBeforeUnmount(() => {
           type="button"
           :aria-pressed="visibleLayers.mask"
           :disabled="maskBoxCount === 0"
+          :title="maskBoxCount === 0 ? 'Keine im Bild verortbare Maskierung' : undefined"
           @click="toggleLayer('mask')"
         >
-          <span class="layer-toggle__key">{{ maskBoxCount }}</span>Maskierung
+          <span v-if="maskBoxCount > 0" class="layer-toggle__key">{{ maskBoxCount }}</span>Maskierung
         </button>
       </div>
     </div>
@@ -303,6 +304,7 @@ onBeforeUnmount(() => {
       <p class="spotlist__head">
         Verortete Modellhinweise<span class="spotlist__claim"> · unverifiziert</span>
       </p>
+      <p class="spotlist__legend">P Physik · A Anatomie · K Kontext · M Maskierung</p>
       <ul class="spotlist__items">
         <li v-for="s in spots" :key="s.id">
           <button
@@ -329,11 +331,9 @@ onBeforeUnmount(() => {
         </li>
       </ul>
     </div>
+    <p v-else class="spotlist-empty">Keine Bildstellen im Bild markiert.</p>
 
-    <p class="inspector__caption">
-      Gezeigt wird die modell-gesehene Bildfassung. Boxen sind LLM-verortet, nicht pixelgenau – Modellhinweise sind
-      unverifizierte Navigationshilfen, keine Nachweise. Bei rotierten EXIF-Bildern können Boxen abweichen.
-    </p>
+    <p class="inspector__caption">Boxen sind LLM-verortet und nicht pixelgenau.</p>
   </section>
 </template>
 
@@ -566,6 +566,23 @@ onBeforeUnmount(() => {
 }
 .spotlist__claim {
   color: var(--muted);
+}
+.spotlist__legend {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
+}
+.spotlist-empty {
+  margin: 0;
+  padding: 12px 14px;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  line-height: 1.5;
 }
 .spotlist__items {
   margin: 0;

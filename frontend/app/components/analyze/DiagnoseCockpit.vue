@@ -43,8 +43,6 @@ const props = withDefaults(
   },
 )
 
-const HEDGE = 'Das Gesamturteil folgt aus den Befunden, nicht aus dem Integritätswert.'
-
 // Konkrete Bild-Befunde (= dimension_analysis.findings) – die im Bild beobachteten,
 // verständlichen Einzelbefunde. Single Source für Sektion 02 (Nächster Schritt), den
 // Bildbefunde-Tab und die Befund-Zählung. severity-sortiert (stark→gering). Faithful:
@@ -103,7 +101,6 @@ const hero = computed(() => {
     statusWord: STATUS_WORD[status],
     headline: v.overallVerdict.headline.replace(/[.\s]+$/, ''),
     lead: v.overallVerdict.recommendation,
-    hedge: HEDGE,
     metaText: `${n} ${n === 1 ? 'Befund' : 'Befunde'} erfasst`,
     integrity: v.integrityScore,
     aesthetic: v.aestheticCombined,
@@ -126,11 +123,16 @@ const priority = computed(() => {
   // Verdict-bewusster Leerzustand: Status gelb/rot ohne einzelnen Bildbefund (flag-/cap-getrieben)
   // darf nicht als „nichts zu tun" lesen. Kein kuratierter Topic-Text – nur ein Verweis aufs Urteil.
   const verdictDrivenEmpty = items.length === 0 && status !== 'green'
+  // Grüner Leerfall: keine Befunde + Status grün → positiver Hinweis statt „prüfe zuerst die Befunde".
+  const greenEmpty = items.length === 0 && status === 'green'
+  const copy = verdictDrivenEmpty
+    ? 'Das Gesamturteil folgt aus den Dimensionswerten und weiteren Prüfsignalen, nicht aus einem einzelnen Bildbefund. Sieh dir die gelb oder rot markierte(n) Dimension(en) oben an.'
+    : greenEmpty
+      ? 'Keine Befunde benannt – im geprüften Rahmen spricht nichts gegen die Verwendung. Entscheide im Nutzungskontext.'
+      : 'Kein pauschaler Ausschluss. Prüfe zuerst die konkret benannten Befunde und entscheide im Nutzungskontext.'
   return {
     headline: PRIORITY_HEADLINE[status],
-    copy: verdictDrivenEmpty
-      ? 'Das Gesamturteil folgt aus den Dimensionswerten und weiteren Prüfsignalen, nicht aus einem einzelnen Bildbefund. Sieh dir die gelb oder rot markierte(n) Dimension(en) oben an.'
-      : 'Kein pauschaler Ausschluss. Prüfe zuerst die konkret benannten Befunde und entscheide im Nutzungskontext.',
+    copy,
     items,
     emptyNote: verdictDrivenEmpty ? 'Kein einzelner Bildbefund benannt.' : undefined,
   }
@@ -270,7 +272,6 @@ const contextDate = computed(() => props.timestamp ?? null)
       :status-word="hero.statusWord"
       :headline="hero.headline"
       :lead="hero.lead"
-      :hedge="hero.hedge"
       :meta-text="hero.metaText"
       :integrity="hero.integrity"
       :aesthetic="hero.aesthetic"
