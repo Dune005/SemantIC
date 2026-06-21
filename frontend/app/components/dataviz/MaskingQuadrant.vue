@@ -18,8 +18,23 @@ const props = withDefaults(
     integrity?: number
     pointLabel?: string
     variant?: 'full' | 'compact'
+    // Achsentitel konfigurierbar (Defaults = how-it-works-Wortlaut, unverändert).
+    // Das Cockpit übergibt die neutralen „Integrität hoch →" / „Ästhetik hoch →".
+    xAxisLabel?: string
+    yAxisLabel?: string
+    // Produkt-UI (Report/Cockpit): Wert-Labels neutral (kein --appeal/--substance,
+    // die laut BAU-CHECKLISTE §4 nur in der Dataviz-Seite /how-it-works erlaubt sind).
+    neutralValues?: boolean
   }>(),
-  { aesthetic: 86, integrity: 64, pointLabel: 'Beispiel', variant: 'full' },
+  {
+    aesthetic: 86,
+    integrity: 64,
+    pointLabel: 'Beispiel',
+    variant: 'full',
+    xAxisLabel: 'Inhaltlich stimmig →',
+    yAxisLabel: 'Sieht gut aus →',
+    neutralValues: false,
+  },
 )
 
 // Eindeutige SVG-IDs pro Instanz (Codex: harte IDs kollidieren bei Mehrfach-Einsatz).
@@ -54,17 +69,20 @@ const valboxStyle = computed(() => {
   }
 })
 
-const ariaLabel = computed(
-  () =>
-    `Schema: waagrecht „wie gut es inhaltlich hält", senkrecht „wie gut es aussieht". ` +
+const ariaLabel = computed(() => {
+  const x = props.xAxisLabel.replace(/\s*→\s*$/, '')
+  const y = props.yAxisLabel.replace(/\s*→\s*$/, '')
+  return (
+    `Verortungs-Schema. Waagrechte Achse: ${x}. Senkrechte Achse: ${y}. ` +
     `Das schraffierte Dreieck oben links ist die Maskierungs-Zone, in der die Ästhetik die ` +
     `Integrität übersteigt. Punkt für ${props.pointLabel}: Ästhetik ${props.aesthetic}, ` +
-    `Integrität ${props.integrity}.`,
-)
+    `Integrität ${props.integrity}.`
+  )
+})
 </script>
 
 <template>
-  <div class="quad" :class="{ 'quad--compact': variant === 'compact' }">
+  <div class="quad" :class="{ 'quad--compact': variant === 'compact', 'quad--neutralvals': neutralValues }">
     <div class="quad__stage" role="img" :aria-label="ariaLabel">
         <svg class="quad__svg" viewBox="0 0 320 320" aria-hidden="true">
           <defs>
@@ -119,8 +137,8 @@ const ariaLabel = computed(
           <!-- Achsentitel im SVG (vorlagentreu); sitzen im 16er-Padding-Gutter. Das Y-Label
                ist um -90° rotiert -> ein "→" im Markup erscheint visuell als "↑" (nach oben).
                Ein "↑" wuerde durch die Rotation faelschlich nach links zeigen. -->
-          <text class="quad__axt" x="160" y="317" text-anchor="middle">Inhaltlich stimmig →</text>
-          <text class="quad__axt" x="11" y="160" text-anchor="middle" transform="rotate(-90 11 160)">Sieht gut aus →</text>
+          <text class="quad__axt" x="160" y="317" text-anchor="middle">{{ xAxisLabel }}</text>
+          <text class="quad__axt" x="11" y="160" text-anchor="middle" transform="rotate(-90 11 160)">{{ yAxisLabel }}</text>
         </svg>
 
         <!-- HTML-Overlay-Labels (deckungsgleich mit dem SVG) -->
@@ -300,6 +318,12 @@ const ariaLabel = computed(
 }
 .quad__val--integ {
   color: var(--substance);
+}
+/* Produkt-UI (Cockpit/Report): neutrale Wert-Labels statt Dimensionsfarben
+   (BAU-CHECKLISTE §4 – --appeal/--substance nur auf /how-it-works). */
+.quad--neutralvals .quad__val--aesth,
+.quad--neutralvals .quad__val--integ {
+  color: var(--ink);
 }
 /* Achsentitel im SVG (fill statt color); im Padding-Gutter, daher overflow: visible. */
 .quad__axt {

@@ -159,6 +159,47 @@ export interface MaskingMarkedSpot {
   text: string
 }
 
+// Eine im Bild lokalisierte Evidenz-Stelle mit Bounding-Box. Speist das Befund-
+// Overlay des Diagnose-Cockpits (Bild-Inspektor, F2). ROH durchgereicht: weder
+// Filter noch F2-Anzeigeschwelle hier. Die Qualifikation (confidence==='high' &&
+// salientRegion für Maskierung; Box-Validität für Codebook) erfolgt deterministisch
+// im Root (DiagnoseCockpit) via lib/overlay-spots.ts → InspectorSpot, NICHT in
+// diesem ViewModel und NICHT erst im Renderer. Diskriminierte Union – bei
+// source='masking' sind die Maskierungs-Felder Pflicht (keine Optional-Lücken).
+interface EvidenceSpotBase {
+  // Pro Analyse-Lauf vergebener Handle ('P1' | 'A1' | 'K1' | 'M1' …).
+  id: string
+  // region_box_2d aus der Pipeline: [y_min, x_min, y_max, x_max], normiert 0–1000.
+  box: [number, number, number, number]
+  // specific_observation (Codebook) bzw. masked_issue (Maskierung) – roh.
+  text: string
+}
+export interface CodebookEvidenceSpot extends EvidenceSpotBase {
+  source: 'physics' | 'anatomy' | 'context'
+}
+export interface MaskingEvidenceSpot extends EvidenceSpotBase {
+  source: 'masking'
+  driver: VisualDriverCode
+  codebookLink: 'physics' | 'anatomy' | 'context'
+  salientRegion: boolean
+  confidence: 'low' | 'medium' | 'high'
+}
+export type EvidenceSpot = CodebookEvidenceSpot | MaskingEvidenceSpot
+
+// Render-fertige Projektion eines EvidenceSpot für den Bild-Inspektor (Etappe 3).
+// Erzeugt im Root via buildInspectorSpots(): qualifiesAsBox = F2-Anzeigeschwelle,
+// layer = Toggle-Gruppe (Codebook → 'finding', Maskierung → 'mask'), driverLabel
+// nur für Maskierung (sonst null).
+export interface InspectorSpot {
+  id: string
+  source: 'physics' | 'anatomy' | 'context' | 'masking'
+  box: [number, number, number, number]
+  text: string
+  layer: 'finding' | 'mask'
+  qualifiesAsBox: boolean
+  driverLabel: string | null
+}
+
 export interface DebugView {
   sonnetAesthetic: number
   v25Aesthetic: number | null
@@ -216,6 +257,11 @@ export interface AnalysisViewModel {
   // Die markierten Stellen hinter dem Hinweis (gleiche Dedupe-Zählung wie
   // note.basis.link_count) – leer, wenn kein Hinweis.
   maskingMarkedSpots: MaskingMarkedSpot[]
+  // F2-Fundament (Cockpit): alle im Bild lokalisierten Evidenz-Stellen mit
+  // Bounding-Box (Codebook physics/anatomy/context + Maskierung), ROH und
+  // ungefiltert. Die Overlay-Komponente wendet die Anzeigeschwelle an, nicht das
+  // ViewModel. Leer, wenn das Modell keine Box-Evidenz liefert (Alt-JSON/Nullfall).
+  evidenceSpots: EvidenceSpot[]
   inputCompleteness: InputCompleteness
   dominantErrorType: DominantErrorType
   biasAxesSummary: BiasAxesSummary
