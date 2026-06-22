@@ -235,6 +235,18 @@ function spotSourceLabel(s: InspectorSpot): string {
       <p v-else class="print-sub">Keine normative Bildwirkung erkannt – für dieses Bild nicht einschlägig.</p>
     </section>
 
+    <!-- Block 7b: Sichtbare Bildmarkierung (deskriptiv, kein Befund; verändert den Status NICHT).
+         Erscheint nur, wenn das Modell eine sichtbare Markierung erkannt hat. -->
+    <section v-if="vm.provenanceMarkers.length" class="print-block">
+      <h2 class="print-h2">Sichtbare Bildmarkierung</h2>
+      <p v-for="(m, i) in vm.provenanceMarkers" :key="i" class="print-line">
+        {{ m.description }} – Erkennungssicherheit: {{ m.confidence === 'high' ? 'hoch' : 'mittel' }}
+      </p>
+      <p class="print-sub">
+        Unverifizierte Modellbeobachtung; keine Aussage über Herkunft, Echtheit oder Urheberschaft.
+      </p>
+    </section>
+
     <!-- Block 8: Leseart + visuelle Treiber -->
     <section class="print-block">
       <h2 class="print-h2">Leseart &amp; visuelle Treiber</h2>
