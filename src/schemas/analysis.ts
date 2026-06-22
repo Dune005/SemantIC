@@ -40,6 +40,19 @@ const MaskingEvidenceSchema = z.object({
 
 export type MaskingEvidence = z.infer<typeof MaskingEvidenceSchema>
 
+// Rein deskriptive, sichtbare Overlay-Markierungen (eingeblendetes Wasserzeichen,
+// Signatur, aufgelegtes Logo) – KEIN Echtheits-/Herkunftsurteil, KEIN Codebook-Befund,
+// KEIN Score-Einfluss. Wird derzeit nicht weiterverarbeitet (kein Filter/Consumer) und
+// ist eine rein additive Transparenz-Annotation (Beschluss 2026-06-22, pipeline-anpassung).
+const ProvenanceMarkerSchema = z.object({
+  type: z.enum(['watermark', 'logo', 'signature']),
+  region_box_2d: z.array(z.number().int().min(0).max(1000)).length(4),
+  description: z.string(),
+  confidence: z.enum(['medium', 'high']),
+})
+
+export type ProvenanceMarker = z.infer<typeof ProvenanceMarkerSchema>
+
 const DimensionSchema = z.object({
   score: z.number(),
   status: z.enum(['green', 'yellow', 'red']),
@@ -141,6 +154,22 @@ export const AnalysisSchema = z.object({
       'the verdict here MUST NOT influence Codebook flags, severities, scores, ' +
       'masking_evidence or reading_mode.',
     ),
+    provenance_markers: z.array(ProvenanceMarkerSchema)
+      .max(3)
+      .describe(
+        'Purely descriptive catalog of clearly VISIBLE overlay markings that sit ON the image ' +
+        'surface (watermark, signature, or an overlaid logo). NOT part of the depicted scene ' +
+        '(no jewellery, reflections, light dots, patterns, or logos/text on clothing, products, ' +
+        'signs or posters). type classifies the visible FORM only, not the origin. Directly ' +
+        'legible text/names may be quoted verbatim, but never infer origin, authorship, ' +
+        'generation or ownership of the image from them. NEVER an authenticity / AI-vs-real / ' +
+        'manipulation / authorship verdict, and never a Codebook flaw: a marker here is NOT a ' +
+        'physics/anatomy/context issue and MUST NOT influence any flag, severity, score, ' +
+        'masking_evidence, normative_masking or reading_mode. description in German. Output [] ' +
+        'when nothing is clearly visible; do not invent markers.',
+      )
+      .optional()
+      .catch([]),
   }),
   integrity_score_llm: z.object({
     score: z.number(),

@@ -120,6 +120,18 @@ export function formatResult(result: SemanticAnalysisResult): string {
   lines.push(`  Fehlertyp (LLM):     ${rl.dominant_error_type}`)
   lines.push('')
 
+  const provenance = rl.provenance_markers ?? []
+  lines.push('Sichtbare Bildmarkierungen (deskriptiv – Overlay wie Wasserzeichen/Logo/Signatur, kein Echtheitsurteil)')
+  if (provenance.length === 0) {
+    lines.push('  Keine sichtbaren Overlay-Markierungen erfasst.')
+  } else {
+    provenance.forEach((m, i) => {
+      lines.push(`  ${i + 1}. ${m.type} ${formatBox(m.region_box_2d)} (conf=${m.confidence})`)
+      lines.push(`     ${m.description}`)
+    })
+  }
+  lines.push('')
+
   if (baa.axes.length > 0) {
     lines.push(`TIBET Bias-Achsen (${baa.axes.length})`)
     baa.axes.forEach((axis, i) => {

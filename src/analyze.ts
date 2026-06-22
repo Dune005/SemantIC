@@ -706,7 +706,8 @@ Dein JSON-Output MUSS exakt diese Top-Level-Struktur und Feldnamen verwenden:
       "verdict": "low | medium | high | not_applicable",
       "aspects": ["beauty_ideal", "status_signaling"],
       "reasoning": "..."
-    }
+    },
+    "provenance_markers": []
   },
   "integrity_score_llm": {
     "score": 0-100,
@@ -798,7 +799,8 @@ Your JSON output MUST use exactly this top-level structure and these field names
       "verdict": "low | medium | high | not_applicable",
       "aspects": ["beauty_ideal", "status_signaling"],
       "reasoning": "..."
-    }
+    },
+    "provenance_markers": []
   },
   "integrity_score_llm": {
     "score": 0-100,

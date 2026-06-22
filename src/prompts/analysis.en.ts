@@ -693,4 +693,19 @@ ANTI-LEAKAGE REMINDER
 If you find yourself wanting to revise a Phase 2 score, a Phase 3 flag, the
 masking_evidence, or the intent assessment because of the normative_masking
 verdict, stop — you are violating the isolation rule. Phase 7 only annotates
-the image's surface effect; it never modifies earlier phases.`
+the image's surface effect; it never modifies earlier phases.
+
+PROVENANCE / OVERLAY MARKINGS (research_layer.provenance_markers – descriptive output annotation, optional)
+Phases 1–7 are complete and MUST NOT be changed by this annotation. It writes ONLY
+research_layer.provenance_markers and influences nothing else – neither dimension_analysis (findings, severity,
+scores) nor codebook (hallucination_present, all has_* flags and evidence), dominant_error_type, masking_evidence,
+normative_masking, reading_mode, or integrity_score_llm.
+This is not a search obligation. Capture only a spatially clearly delimited graphic or textual sign that visibly
+sits AS A MARKING ON the image surface (e.g. an overlaid watermark or a signature). Do NOT capture parts of the
+depicted scene – jewellery, brooches, reflections, light dots, patterns, decor, or logos/lettering on clothing,
+products, signs or posters. type classifies only the visible FORM of the marking, not its origin. You may quote
+directly legible text or names verbatim, but do not infer origin, authorship, generation or ownership of the image
+from them. The entry is NOT an indication of AI generation, authenticity or manipulation.
+Per entry: type (watermark | logo | signature), region_box_2d ([y_min, x_min, y_max, x_max], integer 0–1000),
+description (in German, describing only the visible form), confidence (medium | high). If nothing is clearly
+visible, output []. Do not invent markers; when in doubt, output [].`

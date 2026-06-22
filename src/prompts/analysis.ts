@@ -629,4 +629,20 @@ ANTI-LEAKAGE-ERINNERUNG
 Wenn du den Impuls verspürst, einen Phase-2-Score, einen Phase-3-Flag, die
 masking_evidence oder das intent_assessment wegen des normative_masking-Verdicts
 zu revidieren, halte inne — das verletzt die Isolationsregel. Phase 7
-annotiert nur den Oberflächen-Effekt; sie ändert frühere Phasen nie.`
+annotiert nur den Oberflächen-Effekt; sie ändert frühere Phasen nie.
+
+PROVENIENZ-/OVERLAY-MARKIERUNGEN (research_layer.provenance_markers – deskriptive Ausgabe-Annotation, optional)
+Die Phasen 1–7 sind abgeschlossen und dürfen durch diese Annotation NICHT verändert werden. Sie schreibt
+ausschliesslich research_layer.provenance_markers und beeinflusst nichts anderes – weder dimension_analysis
+(findings, Severity, Scores) noch codebook (hallucination_present, sämtliche has_*-Flags und Evidenzen),
+dominant_error_type, masking_evidence, normative_masking, reading_mode oder integrity_score_llm.
+Dies ist keine Suchpflicht. Erfasse nur ein räumlich klar abgrenzbares grafisches oder textliches Zeichen, das
+sichtbar als Markierung AUF der Bildfläche liegt (z.B. ein eingeblendetes Wasserzeichen oder eine Signatur).
+Bestandteile der dargestellten Szene NICHT erfassen – Schmuck, Broschen, Reflexe, Lichtpunkte, Muster, Dekore
+sowie Logos/Aufschriften auf Kleidung, Produkten, Schildern oder Postern. type klassifiziert ausschliesslich die
+sichtbare FORM der Markierung, nicht ihre Herkunft. Direkt lesbaren Text oder Namen darfst du wörtlich wiedergeben;
+leite daraus aber keine Herkunft, Urheberschaft, Generierung oder Eigentümerschaft des Bildes ab. Der Eintrag ist
+KEIN Hinweis auf KI-Erzeugung, Echtheit oder Manipulation.
+Pro Eintrag: type (watermark | logo | signature), region_box_2d ([y_min, x_min, y_max, x_max], Integer 0–1000),
+description (deutsch, beschreibt nur die sichtbare Form), confidence (medium | high). Ist nichts klar erkennbar,
+gib [] aus. Erfinde keine Marker; im Zweifel [] ausgeben.`
