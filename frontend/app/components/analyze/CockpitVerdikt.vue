@@ -66,7 +66,6 @@ const dimDisplays = [0, 1, 2].map((i) =>
           :style="{ '--fill': `${clampPct(integrity)}%` }"
         >
           <span class="scorebar__fill" />
-          <span class="scorebar__pointer" :style="{ left: `${clampPct(integrity)}%` }" />
           <span class="scorebar__marker" :style="{ left: `${clampPct(integrity)}%` }" />
         </div>
         <div class="scorebar__ends" aria-hidden="true"><span>0</span><span>100</span></div>
@@ -244,15 +243,6 @@ const dimDisplays = [0, 1, 2].map((i) =>
   background: color-mix(in srgb, var(--bar) 28%, transparent);
   overflow: hidden;
 }
-.scorebar::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 2px;
-  background: repeating-linear-gradient(90deg, transparent 0 calc(5% - 1px), var(--bar-ink) calc(5% - 1px) 5%);
-  opacity: 0;
-  animation: barfade-bar 0.5s ease-out 0.15s forwards;
-}
 .scorebar::after {
   content: '';
   position: absolute;
@@ -263,12 +253,7 @@ const dimDisplays = [0, 1, 2].map((i) =>
 }
 @keyframes barfade {
   to {
-    opacity: 0.3;
-  }
-}
-@keyframes barfade-bar {
-  to {
-    opacity: 0.28;
+    opacity: 0.18;
   }
 }
 .scorebar__fill {
@@ -299,28 +284,9 @@ const dimDisplays = [0, 1, 2].map((i) =>
   z-index: 2;
   animation: barmarker 0.3s ease-out 1.25s forwards;
 }
-.scorebar__pointer {
-  position: absolute;
-  top: -11px;
-  transform: translateX(-50%) translateY(4px);
-  opacity: 0;
-  width: 0;
-  height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-top: 9px solid var(--ink);
-  z-index: 3;
-  animation: barpointer 0.3s ease-out 1.3s forwards;
-}
 @keyframes barmarker {
   to {
     transform: translateX(-50%) scaleY(1);
-  }
-}
-@keyframes barpointer {
-  to {
-    transform: translateX(-50%) translateY(0);
-    opacity: 1;
   }
 }
 .scorebar__ends {
@@ -487,13 +453,9 @@ const dimDisplays = [0, 1, 2].map((i) =>
     animation: none;
     opacity: 0;
   }
-  .scorebar::before {
-    animation: none;
-    opacity: 0.28;
-  }
   .scorebar::after {
     animation: none;
-    opacity: 0.3;
+    opacity: 0.18;
   }
   .scorebar__fill {
     animation: none;
@@ -503,11 +465,6 @@ const dimDisplays = [0, 1, 2].map((i) =>
   .scorebar__marker {
     animation: none;
     transform: translateX(-50%) scaleY(1);
-  }
-  .scorebar__pointer {
-    animation: none;
-    transform: translateX(-50%);
-    opacity: 1;
   }
   .dim-bar__fill {
     animation: none;
