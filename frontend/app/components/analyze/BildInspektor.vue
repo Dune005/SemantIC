@@ -5,6 +5,16 @@
 // InspectorSpot[] aus dem Root (DiagnoseCockpit via lib/overlay-spots.ts). Geometrie
 // + Interaktionszustand leben hier. Look portiert aus dashboard-cockpit-pruefauftrag-v3.html.
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import {
+  DialogRoot,
+  DialogTrigger,
+  DialogPortal,
+  DialogOverlay,
+  DialogContent,
+  DialogClose,
+  DialogTitle,
+  DialogDescription,
+} from 'reka-ui'
 import type { InspectorSpot } from '~/types/analysis'
 
 const props = withDefaults(
@@ -66,6 +76,12 @@ function spotMeta(s: InspectorSpot): string {
 function pinStyle(box: InspectorSpot['box']) {
   const left = Math.min(Math.max(box[3] / 10, 4), 95)
   const top = Math.min(Math.max(box[0] / 10, 6), 92)
+  return { left: `${left}%`, top: `${top}%` }
+}
+// Nummern-Chip an der oberen linken Box-Ecke (Grossansicht); Prozent → auflösungsunabhängig.
+function boxLabelStyle(box: InspectorSpot['box']) {
+  const left = Math.min(Math.max(box[1] / 10, 0), 90)
+  const top = Math.min(Math.max(box[0] / 10, 0), 94)
   return { left: `${left}%`, top: `${top}%` }
 }
 // Grobe Bildposition fürs aria-label (Spec verlangt Position + Text).
@@ -238,6 +254,9 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
+    <!-- DialogRoot umspannt Viewport-Trigger + portierte Grossansicht; reka liefert
+         Fokus-Trap/Escape/Fokus-Restore + Scroll-Lock (via Overlay). -->
+    <DialogRoot>
     <div ref="viewportEl" class="viewport" :style="{ aspectRatio: imageAR ?? FALLBACK_AR }" @mouseleave="clearHover()">
       <img v-if="imageUrl" ref="imgEl" :src="imageUrl" :alt="imageAlt" @load="onImgLoad" />
       <div v-else class="viewport__empty" aria-hidden="true">Kein Bild</div>
@@ -298,7 +317,83 @@ onBeforeUnmount(() => {
           </template>
         </div>
       </template>
+
+      <!-- Dezenter Auslöser unten rechts; nur sobald ein Bild geladen ist. as-child →
+           reka stülpt die Trigger-Semantik (aria-haspopup/-expanded) über den Button. -->
+      <DialogTrigger v-if="imageLoaded" as-child>
+        <button class="viewport__zoom" type="button" aria-label="Bild in Grossansicht öffnen">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+          </svg>
+        </button>
+      </DialogTrigger>
     </div>
+
+    <!-- Grossansicht (Lightbox): Bild gross + neutrale Overlay-Boxen (visibleBoxedSpots,
+         ohne Aktiv-/Stumm-Zustand). Content ist inhaltsgross + zentriert (NICHT inset:0),
+         damit der Backdrop-Klick ausserhalb greift und schliesst. -->
+    <DialogPortal>
+      <DialogOverlay class="bi-lightbox__backdrop" />
+      <DialogContent class="bi-lightbox" aria-modal="true">
+        <div class="bi-lightbox__bar">
+          <DialogTitle class="bi-lightbox__title">Bildinspektor · Grossansicht</DialogTitle>
+          <DialogClose class="bi-lightbox__close">Schliessen <span aria-hidden="true">✕</span></DialogClose>
+        </div>
+        <div class="bi-lightbox__body">
+          <div class="bi-lightbox__frame">
+            <img v-if="imageUrl" :src="imageUrl" :alt="imageAlt" />
+            <svg
+              v-if="visibleBoxedSpots.length"
+              viewBox="0 0 1000 1000"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <g
+                v-for="s in visibleBoxedSpots"
+                :key="s.id"
+                :class="['bi-lightbox__ev', `bi-lightbox__ev--${s.layer}`]"
+              >
+                <rect
+                  class="bi-lightbox__halo"
+                  :x="s.box[1]"
+                  :y="s.box[0]"
+                  :width="s.box[3] - s.box[1]"
+                  :height="s.box[2] - s.box[0]"
+                />
+                <rect
+                  class="bi-lightbox__box"
+                  :x="s.box[1]"
+                  :y="s.box[0]"
+                  :width="s.box[3] - s.box[1]"
+                  :height="s.box[2] - s.box[0]"
+                />
+              </g>
+            </svg>
+            <!-- Nummern-Chips auf den Boxen, korrelieren mit der Liste rechts. -->
+            <div v-if="visibleBoxedSpots.length" class="bi-lightbox__labels" aria-hidden="true">
+              <span
+                v-for="s in visibleBoxedSpots"
+                :key="s.id"
+                class="bi-lightbox__label"
+                :class="`bi-lightbox__label--${s.layer}`"
+                :style="boxLabelStyle(s.box)"
+              >{{ s.id }}</span>
+            </div>
+          </div>
+          <ul v-if="visibleBoxedSpots.length" class="bi-lightbox__aside" aria-label="Verortete Befunde">
+            <li v-for="s in visibleBoxedSpots" :key="s.id" class="bi-lightbox__finding">
+              <span class="bi-lightbox__fid" :class="`bi-lightbox__fid--${s.layer}`">{{ s.id }}</span>
+              <span class="bi-lightbox__fbody">
+                <span class="bi-lightbox__fmeta">{{ spotMeta(s) }} · unverifiziert</span>
+                <span class="bi-lightbox__ftext">{{ s.text }}</span>
+              </span>
+            </li>
+          </ul>
+        </div>
+        <DialogDescription class="bi-lightbox__caption">Boxen sind LLM-verortet und nicht pixelgenau.</DialogDescription>
+      </DialogContent>
+    </DialogPortal>
+    </DialogRoot>
 
     <div v-if="spots.length" class="spotlist">
       <p class="spotlist__head">
@@ -436,6 +531,33 @@ onBeforeUnmount(() => {
   color: var(--ink-text-muted);
   font-family: var(--mono);
   font-size: 12px;
+}
+/* Auslöser der Grossansicht – dunkel-transluzent über dem Bild (Ink-Grund). */
+.viewport__zoom {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  /* Unter den Pins (z-3), damit ein Eck-Pin nie verdeckt wird; der 36px-Button bleibt
+     trotz eines 28px-Pins klickbar (Pin kann ihn nie ganz überdecken). */
+  z-index: 2;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--ink-text) 55%, transparent);
+  border-radius: var(--r);
+  background: color-mix(in srgb, var(--ink) 62%, transparent);
+  color: var(--ink-text);
+  cursor: pointer;
+  transition: background 0.12s ease-out, border-color 0.12s ease-out;
+}
+.viewport__zoom:hover {
+  background: color-mix(in srgb, var(--ink) 88%, transparent);
+  border-color: var(--ink-text);
+}
+.viewport__zoom:focus-visible {
+  outline: 2px solid var(--ink-text);
+  outline-offset: 2px;
 }
 .overlay {
   position: absolute;
@@ -703,6 +825,242 @@ onBeforeUnmount(() => {
   .pin:focus-visible,
   .pin.is-active {
     transform: translate(-50%, -50%);
+  }
+}
+</style>
+
+<!-- Unscoped: DialogContent/Overlay werden per Portal in den <body> gerendert, scoped
+     Styles greifen dort nicht (Haus-Muster wie LangSwitcher). Eigener .bi-lightbox-Präfix
+     vermeidet Kollisionen mit dem zu generischen .lightbox aus Fremddateien. -->
+<style>
+.bi-lightbox__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  /* Tiefe über Fläche statt Schatten: translucentes Ink (~93 %). */
+  background: color-mix(in srgb, var(--ink) 93%, transparent);
+}
+.bi-lightbox {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 101;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: 94vw;
+  max-height: 94vh;
+  padding: 0;
+}
+.bi-lightbox__bar {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.bi-lightbox__title {
+  margin: 0;
+  color: var(--ink-text-soft);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.bi-lightbox__close {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 7px 14px;
+  border: 1px solid var(--ink-text-muted);
+  border-radius: var(--r);
+  background: transparent;
+  color: var(--ink-text);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background 0.12s ease-out, border-color 0.12s ease-out;
+}
+.bi-lightbox__close:hover {
+  background: color-mix(in srgb, var(--ink-text) 8%, transparent);
+  border-color: var(--ink-text);
+}
+.bi-lightbox__close:focus-visible {
+  outline: 2px solid var(--ink-text);
+  outline-offset: 2px;
+}
+/* Bild links, Befundliste rechts – wrappt auf schmalen Viewports darunter. */
+.bi-lightbox__body {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 18px;
+  max-width: 94vw;
+}
+/* Frame schrumpft auf die GERENDERTE Bildfläche (img per vw/vh begrenzt, AR erhalten);
+   das SVG (inset:0) liegt damit deckungsgleich – kein Letterbox, keine AR-Bindung nötig. */
+.bi-lightbox__frame {
+  position: relative;
+  line-height: 0;
+  /* nicht schrumpfen – sonst läuft das Bild über die Liste (Flex-Shrink-Overlap). */
+  flex: 0 0 auto;
+}
+.bi-lightbox__frame img {
+  display: block;
+  width: auto;
+  height: auto;
+  /* Platz für die seitliche Befundliste (≈300px) + Leiste/Caption reservieren. vw/vh-basiert
+     → keine zirkuläre Containing-Block-Abhängigkeit; SVG inset:0 deckt die exakte Bildfläche. */
+  max-width: calc(94vw - 340px);
+  max-height: min(74vh, calc(94vh - 110px));
+}
+.bi-lightbox__frame svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.bi-lightbox__halo {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink) 72%, transparent);
+  stroke-width: 7;
+  vector-effect: non-scaling-stroke;
+}
+.bi-lightbox__box {
+  fill: color-mix(in srgb, var(--warn) 10%, transparent);
+  stroke: var(--warn);
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+}
+.bi-lightbox__ev--mask .bi-lightbox__box {
+  fill: color-mix(in srgb, var(--surface) 4%, transparent);
+  stroke: var(--surface);
+  stroke-dasharray: 4 5;
+}
+/* Nummern-Chips auf den Boxen (korrelieren mit der Befundliste). */
+.bi-lightbox__labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.bi-lightbox__label {
+  position: absolute;
+  transform: translate(2px, 2px);
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--warn);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.bi-lightbox__label--mask {
+  background: var(--ink-surface-2);
+  color: var(--ink-text);
+  border: 1px solid var(--ink-text-muted);
+}
+/* Befundliste neben dem Bild (Nummer · Dimension · unverifizierter Modelltext). */
+.bi-lightbox__aside {
+  flex: 0 0 300px;
+  max-height: min(74vh, calc(94vh - 110px));
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.bi-lightbox__finding {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.bi-lightbox__fid {
+  flex: none;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 6px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--warn);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+}
+.bi-lightbox__fid--mask {
+  background: var(--ink-surface-2);
+  color: var(--ink-text);
+  border: 1px solid var(--ink-line);
+}
+.bi-lightbox__fbody {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.bi-lightbox__fmeta {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-text-muted);
+}
+.bi-lightbox__ftext {
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-text-soft);
+}
+/* Schmale Viewports: Bild über die Liste stapeln statt nebeneinander. */
+@media (max-width: 720px) {
+  .bi-lightbox__body {
+    flex-direction: column;
+    align-items: center;
+  }
+  .bi-lightbox__frame img {
+    max-width: 92vw;
+  }
+  .bi-lightbox__aside {
+    flex: 0 0 auto;
+    width: 92vw;
+    max-height: 26vh;
+  }
+}
+.bi-lightbox__caption {
+  margin: 0;
+  text-align: center;
+  color: var(--ink-text-muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+@keyframes bi-lightbox-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.bi-lightbox__backdrop[data-state='open'],
+.bi-lightbox[data-state='open'] {
+  animation: bi-lightbox-fade 0.16s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bi-lightbox__backdrop,
+  .bi-lightbox {
+    animation: none;
   }
 }
 </style>
