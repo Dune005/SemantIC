@@ -142,6 +142,19 @@ const priority = computed(() => {
 // (F2-Qualifikation + Layer + Treiber-Label, deterministisch in lib/overlay-spots).
 const inspectorSpots = computed(() => buildInspectorSpots(props.vm.evidenceSpots))
 
+// Sichtbare Bildmarkierung (provenance_markers) – BEWUSST getrennt von inspectorSpots/
+// qualifiesAsBox (kein Befund). Vollständig durchgereicht (auch entartete Boxen): der
+// BildInspektor zeigt den Hinweistext immer und filtert nur die Box-Darstellung per
+// isValidBox. region_box_2d (Zod: number[]) → Box-Tupel (Schema garantiert length 4).
+const provenanceMarkers = computed(() =>
+  props.vm.provenanceMarkers.map((m, i) => ({
+    id: `M${i + 1}`,
+    box: m.region_box_2d as [number, number, number, number],
+    description: m.description,
+    confidence: m.confidence,
+  })),
+)
+
 // ── Prüfprotokoll-Projektionen (render-fertig) ───────────────────────────────
 const ALIGN_LABEL = {
   match: { w: 'stimmig', tone: 'safe' },
@@ -280,7 +293,7 @@ const contextDate = computed(() => props.timestamp ?? null)
     />
 
     <div class="workbench">
-      <BildInspektor :image-url="imageUrl" image-alt="Analysiertes KI-Bild im Diagnose-Cockpit" :spots="inspectorSpots" />
+      <BildInspektor :image-url="imageUrl" image-alt="Analysiertes KI-Bild im Diagnose-Cockpit" :spots="inspectorSpots" :provenance-markers="provenanceMarkers" />
       <CockpitEntscheidung
         :headline="priority.headline"
         :copy="priority.copy"

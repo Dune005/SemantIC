@@ -16,14 +16,26 @@ import {
   DialogDescription,
 } from 'reka-ui'
 import type { InspectorSpot } from '~/types/analysis'
+import { isValidBox } from '~/lib/overlay-spots'
+
+// Sichtbare Bildmarkierung fürs Overlay – BEWUSST eigener, neutraler Marker-Typ, getrennt
+// von InspectorSpot/qualifiesAsBox (kein Befund). Box ist bereits zum Tupel konvertiert +
+// im Root (DiagnoseCockpit) per isValidBox gehärtet.
+interface ProvenanceMarkerView {
+  id: string
+  box: [number, number, number, number]
+  description: string
+  confidence: 'medium' | 'high'
+}
 
 const props = withDefaults(
   defineProps<{
     imageUrl?: string | null
     imageAlt?: string
     spots?: InspectorSpot[]
+    provenanceMarkers?: ProvenanceMarkerView[]
   }>(),
-  { imageUrl: null, imageAlt: 'Analysiertes KI-Bild', spots: () => [] },
+  { imageUrl: null, imageAlt: 'Analysiertes KI-Bild', spots: () => [], provenanceMarkers: () => [] },
 )
 
 // Vor dem Bild-Load steht die echte AR nicht fest → neutraler Fallback, danach exakt.
@@ -58,6 +70,17 @@ const hasAnyBox = computed(() => boxedSpots.value.length > 0)
 const visibleBoxedSpots = computed(() => boxedSpots.value.filter((s) => visibleLayers[s.layer]))
 // Marker-UI (Toggles + SVG + Pins) erst nach Load und nur wenn es etwas zu zeigen gibt.
 const overlayActive = computed(() => imageLoaded.value && hasAnyBox.value)
+// Sichtbare Bildmarkierung – eigene, von Befunden unabhängige Quelle. Erscheint auch
+// auf befundfreien Bildern (eigenes Gate, NICHT an overlayActive gekoppelt). Für das
+// Overlay nur valide Boxen; der Hinweistext unter dem Bild zeigt ALLE Marker
+// (entartete Box → kein Rect, aber Text bleibt).
+const provBoxes = computed(() => props.provenanceMarkers.filter((m) => isValidBox(m.box)))
+// Lightbox-Caption: Legende nur ergänzen, wenn ein Marker sichtbar ist.
+const lightboxCaption = computed(() =>
+  provBoxes.value.length
+    ? 'Boxen sind LLM-verortet und nicht pixelgenau. Gepunktete Box = sichtbare Bildmarkierung (kein Befund).'
+    : 'Boxen sind LLM-verortet und nicht pixelgenau.',
+)
 // Liefert den Spot zu einer ID NUR, wenn er noch existiert, geboxt und sein Layer
 // sichtbar ist – sonst null. Verhindert dangling-/stale-Zustände.
 function validSpot(id: string | null): InspectorSpot | null {
@@ -261,6 +284,34 @@ onBeforeUnmount(() => {
       <img v-if="imageUrl" ref="imgEl" :src="imageUrl" :alt="imageAlt" @load="onImgLoad" />
       <div v-else class="viewport__empty" aria-hidden="true">Kein Bild</div>
 
+      <!-- Sichtbare Bildmarkierung – neutrale, nicht-interaktive Schicht (kein Befund).
+           Eigenes Gate (unabhängig von overlayActive); liegt VOR der Befund-Schicht im DOM,
+           damit Befunde bei gleichem z-index darüber malen und nie verdeckt werden. -->
+      <svg
+        v-if="imageLoaded && provBoxes.length"
+        class="overlay overlay--prov"
+        viewBox="0 0 1000 1000"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <g v-for="m in provBoxes" :key="m.id" class="provmark">
+          <rect
+            class="provmark__halo"
+            :x="m.box[1]"
+            :y="m.box[0]"
+            :width="m.box[3] - m.box[1]"
+            :height="m.box[2] - m.box[0]"
+          />
+          <rect
+            class="provmark__box"
+            :x="m.box[1]"
+            :y="m.box[0]"
+            :width="m.box[3] - m.box[1]"
+            :height="m.box[2] - m.box[0]"
+          />
+        </g>
+      </svg>
+
       <template v-if="overlayActive">
         <svg class="overlay" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true">
           <g
@@ -339,9 +390,33 @@ onBeforeUnmount(() => {
           <DialogTitle class="bi-lightbox__title">Bildinspektor · Grossansicht</DialogTitle>
           <DialogClose class="bi-lightbox__close">Schliessen <span aria-hidden="true">✕</span></DialogClose>
         </div>
-        <div class="bi-lightbox__body">
+        <div class="bi-lightbox__body" :class="{ 'bi-lightbox__body--solo': !visibleBoxedSpots.length }">
           <div class="bi-lightbox__frame">
             <img v-if="imageUrl" :src="imageUrl" :alt="imageAlt" />
+            <!-- Sichtbare Bildmarkierung zuerst → Befunde malen bei gleichem z-index darüber. -->
+            <svg
+              v-if="provBoxes.length"
+              viewBox="0 0 1000 1000"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <g v-for="m in provBoxes" :key="m.id" class="bi-lightbox__provmark">
+                <rect
+                  class="bi-lightbox__prov-halo"
+                  :x="m.box[1]"
+                  :y="m.box[0]"
+                  :width="m.box[3] - m.box[1]"
+                  :height="m.box[2] - m.box[0]"
+                />
+                <rect
+                  class="bi-lightbox__prov-box"
+                  :x="m.box[1]"
+                  :y="m.box[0]"
+                  :width="m.box[3] - m.box[1]"
+                  :height="m.box[2] - m.box[0]"
+                />
+              </g>
+            </svg>
             <svg
               v-if="visibleBoxedSpots.length"
               viewBox="0 0 1000 1000"
@@ -390,7 +465,7 @@ onBeforeUnmount(() => {
             </li>
           </ul>
         </div>
-        <DialogDescription class="bi-lightbox__caption">Boxen sind LLM-verortet und nicht pixelgenau.</DialogDescription>
+        <DialogDescription class="bi-lightbox__caption">{{ lightboxCaption }}</DialogDescription>
       </DialogContent>
     </DialogPortal>
     </DialogRoot>
@@ -426,7 +501,19 @@ onBeforeUnmount(() => {
         </li>
       </ul>
     </div>
-    <p v-else class="spotlist-empty">Keine Bildstellen im Bild markiert.</p>
+    <p v-else class="spotlist-empty">Keine Befundstellen im Bild markiert.</p>
+
+    <!-- Sichtbare Bildmarkierung – Hinweis direkt zur gepunkteten Box im Bild (kein Befund).
+         Erscheint nur, wenn das Modell eine Markierung erkannt hat; zeigt ALLE Marker
+         (auch ohne darstellbare Box). -->
+    <div v-if="provenanceMarkers.length" class="prov-hint">
+      <p class="prov-hint__label">Sichtbare Bildmarkierung</p>
+      <p v-for="m in provenanceMarkers" :key="m.id" class="prov-hint__text">
+        {{ m.description }}
+        <span class="prov-hint__conf">· Erkennungssicherheit {{ m.confidence === 'high' ? 'hoch' : 'mittel' }}</span>
+      </p>
+      <p class="prov-hint__note">Unverifizierte Modellbeobachtung – kein Echtheits- oder Herkunftsurteil.</p>
+    </div>
 
     <p class="inspector__caption">Boxen sind LLM-verortet und nicht pixelgenau.</p>
   </section>
@@ -594,6 +681,23 @@ onBeforeUnmount(() => {
   stroke-width: 5;
 }
 
+/* Sichtbare Bildmarkierung – neutrale Schicht (kein Befund). Dunkles Halo für Lesbarkeit
+   über jedem Bild + dünner, gepunkteter neutraler Strich; klar verschieden von amber=Befund
+   und weiss-gestrichelt=Maskierung. Nur Tokens, keine Severity-Farbe, nicht interaktiv. */
+.provmark__halo {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink) 72%, transparent);
+  stroke-width: 7;
+  vector-effect: non-scaling-stroke;
+}
+.provmark__box {
+  fill: color-mix(in srgb, var(--surface) 4%, transparent);
+  stroke: var(--ink-text-soft);
+  stroke-width: 2;
+  stroke-dasharray: 2 3;
+  vector-effect: non-scaling-stroke;
+}
+
 .pins {
   position: absolute;
   inset: 0;
@@ -713,6 +817,39 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+/* Sichtbare Bildmarkierung – Hinweiszeile in der Inspektor-Karte (zur gepunkteten Box).
+   Deskriptiv, kein Befund/keine Severity-Farbe; nur Tokens, kein Links-Akzentstreifen. */
+.prov-hint {
+  padding: 12px 14px;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+.prov-hint__label {
+  margin: 0 0 6px;
+  color: var(--subtle);
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.prov-hint__text {
+  margin: 0 0 3px;
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.prov-hint__conf {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10.5px;
+}
+.prov-hint__note {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
 }
 .spotrow {
   width: 100%;
@@ -919,6 +1056,11 @@ onBeforeUnmount(() => {
   max-width: calc(94vw - 340px);
   max-height: min(74vh, calc(94vh - 110px));
 }
+/* Marker-only / keine Befunde: keine Aside-Liste → Bild darf die volle Breite nutzen
+   statt 340px für eine nicht gerenderte Liste zu reservieren. */
+.bi-lightbox__body--solo .bi-lightbox__frame img {
+  max-width: 94vw;
+}
 .bi-lightbox__frame svg {
   position: absolute;
   inset: 0;
@@ -942,6 +1084,20 @@ onBeforeUnmount(() => {
   fill: color-mix(in srgb, var(--surface) 4%, transparent);
   stroke: var(--surface);
   stroke-dasharray: 4 5;
+}
+/* Sichtbare Bildmarkierung in der Grossansicht – neutral, gepunktet (kein Befund). */
+.bi-lightbox__prov-halo {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink) 72%, transparent);
+  stroke-width: 7;
+  vector-effect: non-scaling-stroke;
+}
+.bi-lightbox__prov-box {
+  fill: color-mix(in srgb, var(--surface) 4%, transparent);
+  stroke: var(--ink-text-soft);
+  stroke-width: 2;
+  stroke-dasharray: 2 3;
+  vector-effect: non-scaling-stroke;
 }
 /* Nummern-Chips auf den Boxen (korrelieren mit der Befundliste). */
 .bi-lightbox__labels {

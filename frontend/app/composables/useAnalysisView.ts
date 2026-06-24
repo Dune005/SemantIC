@@ -918,6 +918,11 @@ export function buildAnalysisViewModel(
   // Globale Maskierungs-Logik der Leseart (research_layer) – gehoert zum Leseart-Block.
   const readingModeMaskingLogic = analysis.research_layer.reading_mode_masking_logic ?? null
 
+  // Sichtbare Bildmarkierung (research_layer.provenance_markers) – rein deskriptiv
+  // durchgereicht. KEIN Befund, NICHT im Zaehler, kein Score/Verdict-Einfluss. Alt-JSON
+  // ohne das optionale Feld → leeres Array (Schema hat .catch([])).
+  const provenanceMarkers = analysis.research_layer.provenance_markers ?? []
+
   // Alt-JSON-Fallback (Codex-Review): Outputs vor dem Rückbau haben das Feld
   // nicht (undefined) — dann aus der vorhandenen masking_evidence mit derselben
   // Pipeline-Funktion komponieren statt fälschlich «keine Stelle markiert» zu
@@ -1204,6 +1209,7 @@ export function buildAnalysisViewModel(
     intentAssessment,
     normativeMasking,
     normativeMaskingNote,
+    provenanceMarkers,
     debug: {
       sonnetAesthetic: sonnet,
       v25Aesthetic: v25,

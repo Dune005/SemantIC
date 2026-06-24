@@ -12,6 +12,7 @@
 import type { SemanticAnalysisResult } from '@pipeline/analyze'
 import type { ContextReviewHint } from '@pipeline/context-hints'
 import type { MaskingReviewNote } from '@pipeline/masking-note'
+import type { ProvenanceMarker } from '@pipeline/schemas/analysis'
 
 export type DimensionStatus = 'green' | 'yellow' | 'red'
 export type RiskLevel = 'low' | 'medium' | 'high'
@@ -290,5 +291,10 @@ export interface AnalysisViewModel {
   // (Bias wird durch keine Verwendungsform entlastet) oder wenn keine
   // Verwendungsform übergeben wurde. Kein Einfluss auf Status/Headline.
   usageFormNote: string | null
+  // Sichtbare Bildmarkierung (research_layer.provenance_markers) – rein deskriptive
+  // Transparenz-Annotation (Overlay wie Wasserzeichen/Logo/Signatur). KEIN Befund,
+  // KEIN Score/Verdict-Einfluss, NICHT im Befund-Zähler. Leer = keine erkannt
+  // (Schema .optional().catch([])). Erscheint unabhängig von Befunden.
+  provenanceMarkers: ProvenanceMarker[]
   debug: DebugView
 }
