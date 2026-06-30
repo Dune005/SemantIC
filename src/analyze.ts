@@ -560,7 +560,7 @@ export function reconcileDominantErrorType(
 }
 
 const DEFAULT_MODEL = 'gemini-3-flash-preview'
-const DEFAULT_AESTHETIC_MODEL = 'anthropic:claude-sonnet-4-6'
+const DEFAULT_AESTHETIC_MODEL = 'anthropic:claude-sonnet-5'
 const DEFAULT_LANG: 'de' | 'en' = 'en'
 
 type UseTextFallback = boolean
@@ -573,6 +573,9 @@ export interface SemanticAnalysisOptions {
   declaredIntent?: DeclaredIntent
   mediaType?: string
   model?: string
+  // A/B-Test (z.B. Sonnet 5 vs. 4.6): überschreibt NUR den Ästhetik-Provider (Call 2).
+  // Ohne Wert bleibt DEFAULT_AESTHETIC_MODEL. Der Analyse-Call (Call 1) bleibt unberührt.
+  aestheticModel?: string
   temperature?: number
   thinkingLevel?: ThinkingLevel
   mediaResolution?: MediaResolution
@@ -602,21 +605,29 @@ const DECLARED_INTENT_LABELS_DE: Record<DeclaredIntent, string> = {
   unspecified: 'unspecified (nicht angegeben — keine redaktionelle Haltung erklärt)',
 }
 
-function resolveModel(modelFlag?: string): { model: ReturnType<typeof google>; label: string; useTextFallback: UseTextFallback } {
+// Anthropic-Modelle der Adaptive-Thinking-Generation (Sonnet 5, Opus 4.7+) lehnen
+// nicht-Default-Sampling (temperature/top_p/top_k) mit HTTP 400 ab. Für sie senden wir
+// gar keine Sampling-Parameter (siehe buildSampling). Ältere Modelle (z.B. Sonnet 4.6)
+// akzeptieren temperature/topK weiter und behalten so ihren Quasi-Determinismus.
+const ANTHROPIC_NO_SAMPLING_PREFIXES = ['claude-sonnet-5', 'claude-opus-4-7', 'claude-opus-4-8']
+const anthropicAcceptsSampling = (modelId: string): boolean =>
+  !ANTHROPIC_NO_SAMPLING_PREFIXES.some((prefix) => modelId.startsWith(prefix))
+
+function resolveModel(modelFlag?: string): { model: ReturnType<typeof google>; label: string; useTextFallback: UseTextFallback; acceptsSampling: boolean } {
   if (modelFlag?.startsWith('openrouter:')) {
     const modelId = modelFlag.slice('openrouter:'.length)
     const openrouter = createOpenAI({
       baseURL: 'https://openrouter.ai/api/v1',
       apiKey: process.env.OPENROUTER_API_KEY,
     })
-    return { model: openrouter.chat(modelId) as any, label: `openrouter:${modelId}`, useTextFallback: true }
+    return { model: openrouter.chat(modelId) as any, label: `openrouter:${modelId}`, useTextFallback: true, acceptsSampling: true }
   }
   if (modelFlag?.startsWith('anthropic:')) {
     const modelId = modelFlag.slice('anthropic:'.length)
-    return { model: anthropic(modelId) as any, label: `anthropic:${modelId}`, useTextFallback: true }
+    return { model: anthropic(modelId) as any, label: `anthropic:${modelId}`, useTextFallback: true, acceptsSampling: anthropicAcceptsSampling(modelId) }
   }
   const modelId = modelFlag ?? DEFAULT_MODEL
-  return { model: google(modelId), label: modelId, useTextFallback: false }
+  return { model: google(modelId), label: modelId, useTextFallback: false, acceptsSampling: true }
 }
 
 const JSON_SUFFIX = '\n\nAntworte ausschliesslich mit einem validen JSON-Objekt. Kein Markdown, keine Erklärungen – nur das JSON.'
@@ -855,8 +866,8 @@ export interface SemanticAnalysisResult {
 }
 
 interface SamplingSnapshot {
-  temperature: number
-  topK: number
+  temperature?: number
+  topK?: number
   topP?: number
   seed?: number
 }
@@ -875,7 +886,12 @@ const DETERMINISTIC_SAMPLING = {
 // Per-Provider-Sampling: Anthropic ignoriert seed komplett und top_p, sobald
 // temperature gesetzt ist; OpenRouter ist heterogen. Für non-Google-Provider
 // senden wir deshalb nur temperature + topK und dokumentieren das in meta.
-function buildSampling(useTextFallback: boolean, overrideTemperature?: number): SamplingSnapshot {
+// Modelle, die nicht-Default-Sampling ablehnen (Sonnet 5 / Opus 4.7+, acceptsSampling=false):
+// gar keine Sampling-Parameter senden, sonst HTTP 400. Das leere Snapshot landet so in meta.
+function buildSampling(useTextFallback: boolean, acceptsSampling: boolean, overrideTemperature?: number): SamplingSnapshot {
+  if (!acceptsSampling) {
+    return {}
+  }
   const temperature =
     typeof overrideTemperature === 'number' ? overrideTemperature : DETERMINISTIC_SAMPLING.temperature
   if (useTextFallback) {
@@ -918,7 +934,7 @@ export async function runSemanticAnalysis(
     : `Original-Prompt:\n<original_prompt>${promptField}</original_prompt>\nNutzungskontext:\n<usage_context>${contextField}</usage_context>\nErklärte redaktionelle Haltung: ${intentLabel}`
   const imageBuffer = Buffer.from(imageBase64, 'base64')
   const analysisResolved = resolveModel(options?.model)
-  const aestheticResolved = resolveModel(DEFAULT_AESTHETIC_MODEL)
+  const aestheticResolved = resolveModel(options?.aestheticModel ?? DEFAULT_AESTHETIC_MODEL)
 
   const googleOptions: GoogleLanguageModelOptions = {}
   if (options?.thinkingLevel) {
@@ -928,8 +944,8 @@ export async function runSemanticAnalysis(
     googleOptions.mediaResolution = options.mediaResolution
   }
   const hasGoogleOptions = Object.keys(googleOptions).length > 0
-  const analysisSampling = buildSampling(analysisResolved.useTextFallback, options?.temperature)
-  const aestheticSampling = buildSampling(aestheticResolved.useTextFallback)
+  const analysisSampling = buildSampling(analysisResolved.useTextFallback, analysisResolved.acceptsSampling, options?.temperature)
+  const aestheticSampling = buildSampling(aestheticResolved.useTextFallback, aestheticResolved.acceptsSampling)
   const analysisGenerationSettings = {
     ...analysisSampling,
     ...(hasGoogleOptions && !analysisResolved.useTextFallback ? { providerOptions: { google: googleOptions } } : {}),
