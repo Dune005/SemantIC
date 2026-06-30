@@ -17,9 +17,9 @@ const imagePath = args[0]
 
 if (!imagePath || imagePath.startsWith('--')) {
   console.error([
-    'Usage: npm run spike -- <bildpfad> [--prompt "..."] [--context "..."] [--intent affirmative|critical|illustrative|unspecified] [--model "<provider:model>"] [--lang de|en] [--temperature 0.1] [--thinking-level medium] [--media-resolution high]',
+    'Usage: npm run spike -- <bildpfad> [--prompt "..."] [--context "..."] [--intent affirmative|critical|illustrative|unspecified] [--model "<provider:model>"] [--aesthetic-model "<provider:model>"] [--lang de|en] [--temperature 0.1] [--thinking-level medium] [--media-resolution high]',
     '',
-    'Hinweis: --model steuert NUR den Analyse-Call. Der Aesthetik-Call laeuft fest gegen anthropic:claude-sonnet-4-6 (Default fuer stabilere Aesthetik-Scores).',
+    'Hinweis: --model steuert NUR den Analyse-Call. Der Aesthetik-Call laeuft per Default gegen anthropic:claude-sonnet-5 (feinere Aesthetik-Differenzierung); --aesthetic-model ueberschreibt nur diesen Call (z.B. anthropic:claude-sonnet-4-6).',
     '         --lang waehlt die Analyse-Prompt-Sprache. Default ist "en" (R4.1.2: Englischer Prompt liefert stabilere Detection mit Gemini). Output-Texte bleiben Deutsch.',
     '         --intent setzt die erklaerte redaktionelle Haltung (Default: "unspecified"). Beeinflusst nur die Empfehlungs-Rahmung, nicht die Codebook-Flags oder den Verdict-Status.',
     '         --thinking-level und --media-resolution sind Gemini-spezifisch und greifen nur, wenn der Analyse-Call gegen Gemini laeuft.',
@@ -31,6 +31,7 @@ const prompt = getFlag(args, '--prompt')
 const context = getFlag(args, '--context')
 const intentRaw = getFlag(args, '--intent')
 const model = getFlag(args, '--model')
+const aestheticModel = getFlag(args, '--aesthetic-model')
 const temperatureRaw = getFlag(args, '--temperature')
 const thinkingLevel = getFlag(args, '--thinking-level')
 const mediaResolutionRaw = getFlag(args, '--media-resolution')
@@ -111,6 +112,7 @@ const result = await runSemanticAnalysis(imageBase64, {
   context,
   mediaType,
   model,
+  ...(aestheticModel !== undefined ? { aestheticModel } : {}),
   ...(declaredIntent !== undefined ? { declaredIntent } : {}),
   ...(temperature !== undefined ? { temperature } : {}),
   ...(thinkingLevel !== undefined ? { thinkingLevel: thinkingLevel as SemanticAnalysisOptions['thinkingLevel'] } : {}),
