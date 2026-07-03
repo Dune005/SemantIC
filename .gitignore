@@ -65,3 +65,18 @@ gemini-Flash-Analyse-Strategie.md
 /.playwright-mcp
 /Konzept_Frontend
 vercel.json
+
+# --- Frontend-Design-Labor (lokal, nicht ins Repo) ---
+/frontend/app/components/lab
+/frontend/app/pages/lab
+/frontend/public/lab16
+
+# --- Lose Mockup-Exporte ---
+/E-*.png
+
+# --- Arbeitsordner Repo-Doku (nicht ins Repo) ---
+/Plan-fuer-Repo-Dokumentation
+
+# --- Interne Arbeitsdokumente ---
+/PRODUCT.md
+/PROVENANCE-MARKERS-FRONTEND-TODO.md
