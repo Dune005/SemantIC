@@ -15,7 +15,7 @@ import Badge from '~/components/ui/Badge.vue'
 
 const props = withDefaults(
   defineProps<{
-    active?: 'home' | 'analyze' | 'how-it-works'
+    active?: 'home' | 'analyze' | 'how-it-works' | 'error-guide'
     bypassActive?: boolean
     rateLimitHint?: string | null
   }>(),
@@ -46,8 +46,10 @@ function closeMenu() {
       </NuxtLink>
 
       <nav class="nav" :aria-label="$t('header.navAria')">
-        <NuxtLink to="/analyze" :aria-current="active === 'analyze' ? 'page' : undefined">{{ $t('header.nav.tool') }}</NuxtLink>
+        <!-- „Tool"-Link entfernt: /analyze ist über den „Bild prüfen“-CTA erreichbar,
+             ein zweiter Link aufs selbe Ziel wirkte redundant. -->
         <NuxtLink to="/how-it-works" :aria-current="active === 'how-it-works' ? 'page' : undefined">{{ $t('header.nav.howItWorks') }}</NuxtLink>
+        <NuxtLink to="/error-guide" :aria-current="active === 'error-guide' ? 'page' : undefined">{{ $t('header.nav.errorGuide') }}</NuxtLink>
       </nav>
 
       <div class="header-actions">
@@ -75,9 +77,6 @@ function closeMenu() {
 
     <div id="mobile-nav" class="mobile-nav" :hidden="!menuOpen">
       <div class="mobile-nav__inner">
-        <NuxtLink to="/analyze" class="mobile-nav__link" :aria-current="active === 'analyze' ? 'page' : undefined" @click="closeMenu">
-          {{ $t('header.nav.tool') }}
-        </NuxtLink>
         <NuxtLink
           to="/how-it-works"
           class="mobile-nav__link"
@@ -85,6 +84,14 @@ function closeMenu() {
           @click="closeMenu"
         >
           {{ $t('header.nav.howItWorks') }}
+        </NuxtLink>
+        <NuxtLink
+          to="/error-guide"
+          class="mobile-nav__link"
+          :aria-current="active === 'error-guide' ? 'page' : undefined"
+          @click="closeMenu"
+        >
+          {{ $t('header.nav.errorGuide') }}
         </NuxtLink>
         <Button v-if="showCta" as="a" href="/analyze" variant="inverse" size="md" class="mt-[14px] w-full" @click="closeMenu">
           {{ $t('header.cta') }} →
@@ -286,7 +293,10 @@ function closeMenu() {
   min-height: 44px;
 }
 
-@media (max-width: 719px) {
+/* Nav-Umschaltung ab 859px (vorher 719px): der dritte Desktop-Nav-Link «Typische Bildfehler»
+   sprengt die Kopfzeile bei 720–768px (Codex-P1, Overflow verifiziert). Mobile-Menü greift
+   deshalb früher; --header-h zieht in base.css auf denselben Breakpoint nach. */
+@media (max-width: 859px) {
   .app-header__inner {
     height: 56px;
   }
