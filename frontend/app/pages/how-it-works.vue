@@ -17,33 +17,36 @@ useHead({
 </script>
 
 <template>
-  <!-- ================= EINSTIMMUNG · Editorial-Kopf (Moodbild + Lead darüber) ================= -->
+  <!-- ================= EINSTIMMUNG · Editorial-Kopf (full-bleed Moodbild + Lead darüber) ================= -->
   <section class="hero">
-    <img
-      class="hero__img"
-      src="/landing/band-printstudio.webp"
-      alt=""
-      aria-hidden="true"
-      loading="eager"
-      fetchpriority="high"
-      decoding="async"
-    />
-    <span class="hero__tone" aria-hidden="true" />
-    <div class="hero__veil" aria-hidden="true" />
-    <div class="page">
-      <header class="hero__head">
-        <p class="hero__kicker">So funktioniert SemantIC</p>
-        <h1>Was passiert, wenn du ein Bild prüfst.</h1>
-        <p class="hero__lead">
-          SemantIC nimmt ein KI-generiertes Bild und sieht es sich entlang von drei
-          Dimensionen an: ob es physikalisch plausibel ist, ob es inhaltlich Sinn
-          ergibt und welche Klischees es trägt. Auf dieser Seite zeigen wir dir, was
-          das Tool tut, woher seine Kriterien kommen und – genauso wichtig – was es
-          bewusst nicht tut.
-        </p>
-      </header>
+    <div class="hero__media">
+      <img
+        class="hero__img"
+        src="/landing/band-printstudio.webp"
+        alt=""
+        aria-hidden="true"
+        loading="eager"
+        fetchpriority="high"
+        decoding="async"
+      />
+      <div class="hero__scrim" aria-hidden="true" />
     </div>
-    <span class="hero__chip">KI-generiertes Moodbild</span>
+    <p class="hero__credit">KI-generiertes Moodbild</p>
+    <div class="hero__inner">
+      <div class="page">
+        <header class="hero__head">
+          <p class="hero__kicker">So funktioniert SemantIC</p>
+          <h1>Was passiert, wenn du ein Bild prüfst.</h1>
+          <p class="hero__lead">
+            SemantIC nimmt ein KI-generiertes Bild und sieht es sich entlang von drei
+            Dimensionen an: ob es physikalisch plausibel ist, ob es inhaltlich Sinn
+            ergibt und welche Klischees es trägt. Auf dieser Seite zeigen wir dir, was
+            das Tool tut, woher seine Kriterien kommen und – genauso wichtig – was es
+            bewusst nicht tut.
+          </p>
+        </header>
+      </div>
+    </div>
   </section>
 
   <!-- ================= 1 · MASKIERUNGSEFFEKT ================= -->
@@ -53,7 +56,7 @@ useHead({
       <h2 id="s1-title">Warum gute Bilder ihre eigenen Fehler verstecken.</h2>
       <div class="s1-grid">
         <div class="section__body">
-          <p>
+          <p class="s1-lead">
             KI-Bildgeneratoren optimieren auf das, was sofort als „gut" gelesen wird:
             Schärfe, Farbe, Licht, Komposition. Auf die inhaltliche Stimmigkeit –
             Logik der Szene, Proportionen, Klischees – optimieren sie weit weniger.
@@ -458,15 +461,22 @@ useHead({
 }
 
 /* ---- Editorial-Kopf (Moodbild + Lead darüber im Creme-Scrim) ---- */
+/* Editorial-Kopf: full-bleed Bild + dunkler Scrim + heller Text (Stil wie /error-guide). */
 .hero {
   position: relative;
   width: 100%;
-  min-height: clamp(360px, 56vh, 560px);
+  min-height: clamp(420px, 64vh, 620px);
   display: flex;
   align-items: flex-end;
   overflow: hidden;
-  background: var(--surface-2);
+  background: var(--ink-surface);
   border-bottom: 1px solid var(--line);
+  isolation: isolate;
+}
+.hero__media {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
 }
 .hero__img {
   position: absolute;
@@ -474,28 +484,34 @@ useHead({
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center 42%;
 }
-.hero__tone {
+/* Dunkler Verlauf: kräftig unten (Titel), leicht oben (Credit) – Text auf jedem Bild lesbar. */
+.hero__scrim {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(rgba(228, 229, 221, 0.1), rgba(228, 229, 221, 0.1));
+  background:
+    linear-gradient(to top, rgba(19, 20, 15, 0.88) 0%, rgba(19, 20, 15, 0.6) 28%,
+      rgba(19, 20, 15, 0.16) 58%, rgba(19, 20, 15, 0) 84%),
+    linear-gradient(to bottom, rgba(19, 20, 15, 0.34) 0%, rgba(19, 20, 15, 0) 26%);
 }
-/* Creme-Scrim unten: hält Mood sichtbar, macht Lead auf jedem Bild lesbar. */
-.hero__veil {
+.hero__credit {
   position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(
-    to top,
-    rgba(238, 239, 233, 0.96) 0%,
-    rgba(238, 239, 233, 0.9) 28%,
-    rgba(238, 239, 233, 0.55) 50%,
-    rgba(238, 239, 233, 0) 72%
-  );
+  right: clamp(16px, 4vw, 44px);
+  bottom: clamp(14px, 3vw, 22px);
+  z-index: 1;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(238, 239, 233, 0.72);
+}
+.hero__inner {
+  position: relative;
+  width: 100%;
 }
 .hero__head {
-  position: relative;
   padding: 56px 0 44px;
   max-width: 62ch;
 }
@@ -505,7 +521,7 @@ useHead({
   font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--subtle);
+  color: rgba(238, 239, 233, 0.74);
 }
 .hero__head h1 {
   font-family: 'IBM Plex Sans', system-ui, sans-serif;
@@ -514,28 +530,25 @@ useHead({
   letter-spacing: -0.02em;
   line-height: 1.06;
   margin-top: 12px;
-  color: var(--ink);
+  color: #fff;
 }
 .hero__lead {
   font-size: clamp(15px, 2vw, 17px);
   line-height: 1.6;
-  color: var(--ink-soft);
+  color: rgba(238, 239, 233, 0.9);
   margin-top: 18px;
   max-width: 60ch;
 }
-.hero__chip {
-  position: absolute;
-  right: 14px;
-  top: 14px;
-  padding: 4px 9px;
-  background: var(--canvas);
-  border: 1px solid var(--line);
-  border-radius: 3px;
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-size: 9.5px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted);
+
+/* Editorialer Initial im ersten Textblock (§01) – gleiche Wirkung wie /error-guide. */
+.s1-lead::first-letter {
+  float: left;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 3.4em;
+  line-height: 0.82;
+  padding: 6px 12px 0 0;
+  color: var(--ink);
 }
 
 /* ---- §1: Fliesstext + Theorie-Randnotiz nebeneinander (Desktop) ---- */

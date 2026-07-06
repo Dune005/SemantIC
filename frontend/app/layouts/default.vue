@@ -6,10 +6,11 @@ import { ref, computed } from 'vue'
 
 const route = useRoute()
 const { t } = useI18n()
-const activeNav = computed<'home' | 'analyze' | 'how-it-works' | undefined>(() => {
+const activeNav = computed<'home' | 'analyze' | 'how-it-works' | 'error-guide' | undefined>(() => {
   if (route.path === '/') return 'home'
   if (route.path.startsWith('/analyze')) return 'analyze'
   if (route.path.startsWith('/how-it-works')) return 'how-it-works'
+  if (route.path.startsWith('/error-guide')) return 'error-guide'
   return undefined
 })
 

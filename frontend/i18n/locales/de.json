@@ -8,7 +8,8 @@
     "navAria": "Hauptnavigation",
     "nav": {
       "tool": "Tool",
-      "howItWorks": "Funktionsweise"
+      "howItWorks": "Funktionsweise",
+      "errorGuide": "Typische Bildfehler"
     },
     "badgeDemo": "Demo-Zugang aktiv",
     "cta": "Bild prüfen",
@@ -24,8 +25,9 @@
     "projectText": "SemantIC ist das Lehrprojekt der Bachelorarbeit „Visual Bias im KI-generierten Bild“ (Multimedia-Production, FH Graubünden). Es ist ein Prüfassistent für Content-Profis, kein Fake-Detektor – ein Forschungsprototyp, der empirisch weiterentwickelt wird.",
     "linksAria": "Footer-Links",
     "linkHowItWorks": "Funktionsweise",
+    "linkErrorGuide": "Typische Bildfehler",
     "linkPrivacy": "Datenschutz",
-    "copyright": "© 2026 Claudio Riz · FH Graubünden · Lehrprojekt · Version 1.9"
+    "copyright": "© 2026 Claudio Riz · FH Graubünden · Lehrprojekt · Version 1.10"
   },
   "bypass": {
     "label": "Zugangscode (Demo)",
