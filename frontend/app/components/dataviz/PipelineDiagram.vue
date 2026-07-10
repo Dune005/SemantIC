@@ -1,7 +1,9 @@
 <script setup lang="ts">
 // PipelineDiagram (Frontend 1.7, §2) – „Zwei Blicke auf dasselbe Bild".
 // Ablauf: Eingabe → ZWEI getrennte, PARALLELE Prüfungen (Gemini = Inhalt/Integrität,
-// Claude = Ästhetik) → Zusammenführung → Befund. Semantik (Codex): natives <ol> mit
+// Claude + LAION-Referenz = Ästhetik; CLIP läuft als reines Diagnosesignal mit und
+// bleibt hier bewusst aus dem Diagramm – Details in der Figure-Note der Seite).
+// Semantik (Codex): natives <ol> mit
 // vier Schritten; die parallelen Prüfungen sind EIN Schritt mit zwei Spuren – nicht
 // zwei aufeinanderfolgende. KEIN role="img" über dem Ganzen (echte Struktur bleibt).
 // Logos: stilisierte Platzhalter in den Dimensionsfarben (warm = Inhalt, kühl = Ästhetik).
@@ -58,7 +60,8 @@
             <span class="lane__name">Claude</span>
           </div>
           <p class="lane__body">
-            <b>Ästhetik-Bewertung:</b> nur die visuelle Wirkung → Ästhetik-Score.
+            <b>Ästhetik-Bewertung:</b> nur die visuelle Wirkung, abgeglichen mit einem
+            unabhängigen Referenzmodell → Ästhetik-Score.
           </p>
         </div>
       </div>

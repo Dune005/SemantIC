@@ -41,8 +41,8 @@ const physics = specimensByCategory('physics')
           <p class="eg-hero__kicker">Typische Bildfehler · Bachelorarbeit</p>
           <h1 class="eg-hero__title">Das makellose Bild und seine blinden Flecken.</h1>
           <p class="eg-hero__lead">
-            KI-Bilder sehen zuverlässig gut aus – und genau das verdeckt ihre Fehler.
-            Auch die Szene hier ist komplett KI-generiert.
+            KI-Bilder sehen zuverlässig gut aus – und genau das kann ihre Fehler
+            verdecken. Auch die Szene hier ist komplett KI-generiert.
           </p>
         </div>
       </div>
@@ -53,19 +53,19 @@ const physics = specimensByCategory('physics')
       <div class="page page--text">
         <h2 id="eg-intro" class="sr-only">Einleitung</h2>
         <p class="eg-prose eg-prose--lead">
-          KI-Bildgeneratoren optimieren auf das, was sofort überzeugt: Schärfe, Licht,
-          Farbe, Komposition. Auf die inhaltliche Stimmigkeit einer Szene – ihre Logik,
-          Proportionen, Klischees – achten sie weit weniger. So werden Bilder zuverlässig
-          schön, aber nur zufällig richtig. Wir nennen das den <strong>Maskierungseffekt</strong>:
-          Je makelloser die Oberfläche, desto leichter rutscht der Fehler darunter durch.
+          KI-Bildgeneratoren optimieren auf das, was sofort überzeugt – auf die
+          inhaltliche Stimmigkeit einer Szene weit weniger. Je makelloser die
+          Oberfläche, desto leichter rutscht ein Fehler darunter durch: der
+          <strong>Maskierungseffekt</strong>, die Arbeitsthese hinter SemantIC –
+          <NuxtLink to="/how-it-works">warum das so ist, steht auf der Erklärseite</NuxtLink>.
         </p>
         <p class="eg-prose">
           Die Beispiele auf dieser Seite stammen aus dem empirischen Teil der
           Bachelorarbeit – 144 KI-generierte Bilder, systematisch codiert. Zwei von drei
-          fotorealistischen Bildern darunter trugen mindestens einen Fehler; das ist kein
-          Ausreisser, sondern die Regel. Alle Markierungen weiter unten kommen aus dieser
-          manuellen Codierung, nicht aus einem frischen Modelllauf. Es ist ein eigener
-          Korpus, kein repräsentativer Querschnitt aller KI-Bilder.
+          fotorealistischen Bildern darunter (71 von 106) trugen mindestens einen Fehler –
+          in diesem Korpus die Regel, kein Ausreisser. Alle Markierungen weiter unten
+          kommen aus dieser manuellen Codierung, nicht aus einem frischen Modelllauf. Es
+          ist ein eigener Korpus, kein repräsentativer Querschnitt aller KI-Bilder.
         </p>
       </div>
     </section>
@@ -76,11 +76,11 @@ const physics = specimensByCategory('physics')
         <p class="eg-chapter__eyebrow">Anatomie</p>
         <h2 id="eg-anatomie" class="eg-chapter__title">Wenn Körper nicht zusammenpassen.</h2>
         <p class="eg-prose">
-          Der Klassiker unter den KI-Fehlern ist seltener geworden, in dichten Szenen mit
-          mehreren Personen aber weiterhin da. Wo sich Menschen überlappen, verliert die
-          KI die Grenze zwischen zwei Körpern – Arme und Beine gehen ineinander über.
-          Hände bleiben ihr eigenes Problem: mal ein Finger zu viel, mal eine Hand zu viel
-          für die Haltung.
+          Der Klassiker unter den KI-Fehlern – im Korpus die seltenste der drei
+          Fehlerarten, in dichten Szenen mit mehreren Personen aber weiterhin da. Wo sich
+          Menschen überlappen, verliert die KI die Grenze zwischen zwei Körpern – Arme
+          und Beine gehen ineinander über. Hände bleiben ihr eigenes Problem: mal ein
+          Finger zu viel, mal eine Hand zu viel für die Haltung.
         </p>
       </div>
       <div class="page">
@@ -136,8 +136,8 @@ const physics = specimensByCategory('physics')
         <h2 id="eg-stereotype" class="eg-chapter__title">Der Fehler ohne Bildstelle.</h2>
         <p class="eg-prose">
           Manche Fehler sind keine markierbare Stelle, sondern ein Muster. Auf «nurse»
-          liefert die KI zuverlässig eine junge, attraktive Frau, auf «CEO» einen Mann in
-          Führungspose. Wahrgenommenes Geschlecht oder Hautfarbe sind für sich
+          liefert die KI typischerweise eine junge, attraktive Frau, auf «CEO» einen Mann
+          in Führungspose. Wahrgenommenes Geschlecht oder Hautfarbe sind für sich
           <strong>kein</strong> Befund – erst die stereotype Rollenbesetzung schlägt an.
         </p>
       </div>
@@ -160,13 +160,14 @@ const physics = specimensByCategory('physics')
     <section class="eg-chapter eg-chapter--closing" aria-labelledby="eg-schluss">
       <div class="page page--text">
         <p class="eg-chapter__eyebrow">Ausblick</p>
-        <h2 id="eg-schluss" class="eg-chapter__title">Die Fehler verschwinden nicht – sie werden subtiler.</h2>
+        <h2 id="eg-schluss" class="eg-chapter__title">Der auffällige Fehler ist die Ausnahme – der subtile die Regel.</h2>
         <p class="eg-prose">
-          Mit jeder Modellgeneration hilft die Suche nach dem sechsten Finger weniger.
-          Anatomie- und Textfehler werden seltener; Physik-, Funktions- und Kontextbrüche
-          bleiben – und je stärker ein Bild kuratiert ist, desto schwerer fällt der Fehler
-          auf. Reine Artefakt-Suche wird damit unzuverlässig. Deshalb prüft SemantIC nicht
-          «echt oder gefälscht», sondern die <strong>Kohärenz</strong> eines Bildes.
+          Die Suche nach dem sechsten Finger allein trägt nicht weit: Schon in diesem
+          Korpus dominieren nicht die Anatomie-Artefakte, sondern Physik- und
+          Kontextbrüche – und je stärker ein Bild kuratiert ist, desto schwerer fällt
+          der Fehler auf. Reine Artefakt-Suche ist damit unzuverlässig. Deshalb prüft
+          SemantIC nicht «echt oder gefälscht», sondern die <strong>Kohärenz</strong>
+          eines Bildes.
         </p>
         <p class="eg-cta">
           <Button as="a" href="/analyze" variant="primary" size="md">

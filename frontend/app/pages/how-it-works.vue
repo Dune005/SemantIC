@@ -66,9 +66,9 @@ useHead({
             Die Folge ist das eigentliche Problem: Ein überzeugendes Bild lädt nicht
             dazu ein, genauer hinzusehen. Die Oberfläche beruhigt das Auge, und
             Schwächen rutschen durch. Diesen Mechanismus nennen wir
-            <strong>Maskierung</strong> – die Arbeitsthese hinter SemantIC. Je
-            überzeugender ein Bild, desto grösser die Gefahr, dass du seine Probleme
-            übersiehst.
+            <strong>Maskierung</strong> – die Arbeitsthese hinter SemantIC: Je
+            überzeugender ein Bild wirkt, desto eher kann seine Oberfläche die
+            kritische Prüfung erschweren.
           </p>
         </div>
 
@@ -95,14 +95,21 @@ useHead({
 
       <div class="figure-card">
         <p class="figure-card__lead">
-          SemantIC trennt Inhalt und Ästhetik in zwei eigenständige Durchläufe –
-          damit die Wirkung das inhaltliche Urteil nicht beschönigt. Erst danach
-          werden beide Ergebnisse zusammengeführt.
+          SemantIC trennt Inhalt und Ästhetik in zwei getrennte Bewertungsstränge –
+          damit die Wirkung das inhaltliche Urteil nicht beschönigt. Die Ästhetik
+          wird doppelt geschätzt: von einem Vision-Modell und einem unabhängigen
+          Referenzmodell; weichen beide stark voneinander ab, weist der Befund das
+          aus. Erst danach werden beide Ergebnisse zusammengeführt.
         </p>
         <PipelineDiagram />
         <p class="figure-note">
           Modellagnostisch – Gemini &amp; Claude sind die aktuellen Standard-Modelle,
-          austauschbar. Die Symbole sind stilisierte Platzhalter.
+          austauschbar. Der Ästhetik-Score ist der Mittelwert aus Claude und einem
+          unabhängigen Referenzmodell (LAION Aesthetic Predictor); weichen beide um
+          20 Punkte oder mehr ab, weist der Befund das aus, fällt die Referenz aus,
+          zählt Claude allein. Gibst du Prompt oder Kontext an, läuft zusätzlich ein
+          Bild-Text-Abgleich (CLIP) mit – ein reines Diagnosesignal ohne Einfluss auf
+          Scores und Ampeln. Die Symbole sind stilisierte Platzhalter.
         </p>
       </div>
     </div>
@@ -218,7 +225,7 @@ useHead({
               SemantIC bewertet getrennt, wie gut ein Bild aussieht (die Ästhetik) und wie
               gut es inhaltlich hält (die Integrität). Liegt die Wirkung deutlich über der
               Substanz, ist das der Nährboden für Maskierung – die perfekte Oberfläche
-              überdeckt Fehler, bevor du sie bemerkst. Eine einzelne Maskierungs-Kennzahl
+              kann Fehler überdecken, bevor du sie bemerkst. Eine einzelne Maskierungs-Kennzahl
               gibt es bewusst nicht; der Quadrant zeigt das Prinzip, nicht das Resultat
               einer Prüfung.
             </p>
@@ -337,11 +344,12 @@ useHead({
 
       <div class="limits-grid">
         <Card tone="paper" border="hair" padding="none" class="card card--paper">
-          <p class="card__kicker">Verlässlich</p>
+          <p class="card__kicker">Im Test belastbar</p>
           <h3>Die rote Ampel</h3>
           <p>
-            In der Validierung kein einziger unbegründet roter Befund. Zeigt SemantIC
-            rot, nimm es ernst.
+            Im dokumentierten Anatomie-Testlauf (16 Bilder, 42 Läufe) löste kein
+            sauberes Bild einen roten Befund aus. Zeigt SemantIC rot, nimm es ernst –
+            gelbe Hinweise können dagegen auch mal danebenliegen.
           </p>
         </Card>
         <Card tone="paper" border="hair" padding="none" class="card card--paper">
@@ -356,9 +364,10 @@ useHead({
           <p class="card__kicker">Bekannte Lücke</p>
           <h3>Anatomie: Flag = Prüfauftrag</h3>
           <p>
-            Hand- und Finger-Artefakte findet das Tool zuverlässig; strukturelle
-            Körperfehler (Kopf, Gliedmassen, Beinstellung) kann es übersehen – über
-            zwei Vision-Modelle hinweg validiert. Ein Anatomie-Flag ist deshalb ein
+            Lokale Hand- und Finger-Artefakte findet das Tool eher als strukturelle
+            Körperfehler (Kopf, Gliedmassen, Beinstellung) – aber bildabhängig: In
+            den Tests gab es übersehene wie fälschlich gemeldete Befunde, über zwei
+            Vision-Modelle hinweg geprüft. Ein Anatomie-Flag ist deshalb ein
             Prüfauftrag an dich, keine Diagnose.
           </p>
         </Card>
@@ -409,8 +418,8 @@ useHead({
             menschliche Codierung geprüft – die validierten Grenzen oben stammen aus
             genau diesen Tests. Sie ist bewusst modellagnostisch: Kriterien,
             Evidenz-Pflicht und Prüfregeln hängen an der Forschungsbasis, nicht an einem
-            KI-Modell. Werden die Vision-Modelle besser, wird die Prüfung besser – das
-            Prüfraster bleibt.
+            KI-Modell. Die eingesetzten Modelle sind austauschbar – das Prüfraster
+            bleibt.
           </p>
         </div>
       </div>
@@ -424,10 +433,9 @@ useHead({
       <h2 id="s9-title">Was mit deinem Bild passiert.</h2>
       <div class="section__body">
         <p>
-          Dein Bild wird zur Analyse an externe Dienste übermittelt und danach nicht
-          gespeichert – es gibt keine Datenbank, kein Archiv, keinen Account. Was
-          genau an wen geht und wie lange etwas aufbewahrt wird, steht in der
-          Datenschutzerklärung.
+          Dein Bild wird zur Analyse an externe Dienste übermittelt und bei SemantIC
+          selbst nicht gespeichert – was genau an wen geht und wie lange etwas
+          aufbewahrt wird, steht in der Datenschutzerklärung.
         </p>
       </div>
       <NuxtLink to="/privacy" class="inline-cta">Zur Datenschutzerklärung →</NuxtLink>
