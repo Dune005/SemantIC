@@ -6,10 +6,8 @@
 // Skip-Link, AppHeader und AppFooter liefert das default-Layout; diese Seite
 // liefert NUR den Inhalt (kein eigenes <main>, keinen aktiven Nav-Zustand).
 //
-// [D2-PFLICHT] Platzhalter ([Verantwortliche Stelle ergänzen], [Kontakt-Mail
-// ergänzen], [Gültig-ab-Datum]) bleiben sichtbar markiert (.placeholder) und
-// sind unten zusätzlich mit „vor Go-Live klären"-Kommentaren versehen. Keine
-// private Mailadresse fest eintragen.
+// [D2] Verantwortliche Stelle, Kontakt-Mail und Gültig-ab-Datum sind seit
+// 2026-07-10 ausgefüllt (Claudio Riz, claudio.riz@stud.fhgr.ch).
 useHead({ title: 'Datenschutz – SemantIC' })
 </script>
 
@@ -18,9 +16,8 @@ useHead({ title: 'Datenschutz – SemantIC' })
     <header class="doc__head">
       <p class="doc__kicker">Datenschutz · revDSG</p>
       <h1>Datenschutzerklärung</h1>
-      <!-- [D2] vor Go-Live klären: Gültig-ab-Datum einsetzen -->
       <p class="doc__valid">
-        Gilt ab <span class="placeholder">[Gültig-ab-Datum]</span> · Schweizer Datenschutzrecht (revDSG)
+        Gilt ab 10. Juli 2026 · Schweizer Datenschutzrecht (revDSG)
       </p>
     </header>
 
@@ -44,18 +41,16 @@ useHead({ title: 'Datenschutz – SemantIC' })
     <section id="verantwortlicher">
       <h2><span class="num">1</span>Verantwortliche Stelle</h2>
       <p>Verantwortlich für die Bearbeitung der Personendaten ist:</p>
-      <!-- [D2] vor Go-Live klären: verantwortliche Stelle einsetzen (FHGR-c/o-Adresse erst nach Klärung) -->
-      <p><strong class="placeholder">[Verantwortliche Stelle ergänzen]</strong></p>
+      <p><strong>Claudio Riz</strong></p>
       <p>
         SemantIC ist ein Lehrprojekt im Rahmen der Bachelorarbeit „Visual Bias im
         KI-generierten Bild" im Studiengang Multimedia-Production an der FH Graubünden.
         Verantwortlich für Inhalt und Betrieb des Tools ist der Bearbeiter als
         Privatperson, nicht die FH Graubünden.
       </p>
-      <!-- [D2] vor Go-Live klären: Kontakt-Mail einsetzen (keine private Adresse vor Klärung) -->
       <p>
         Bei Fragen zum Datenschutz erreichst du die verantwortliche Stelle unter:
-        <strong class="placeholder">[Kontakt-Mail ergänzen]</strong>
+        <strong><a href="mailto:claudio.riz@stud.fhgr.ch">claudio.riz@stud.fhgr.ch</a></strong>
       </p>
     </section>
 
@@ -131,7 +126,7 @@ useHead({ title: 'Datenschutz – SemantIC' })
             <td>Ästhetik-Bewertung</td>
             <td>nur das Bild, keine Texte</td>
           </tr>
-          <!-- [D2] vor Go-Live klären: Upstash-Region MUSS beim Setup tatsächlich auf EU stehen, damit „EU-Region, kein Drittlandtransfer" stimmt -->
+          <!-- [D2 erledigt 2026-07-10] Upstash-Dashboard verifiziert: AWS eu-central-1 (Frankfurt), Free Tier ohne Read-Replicas -->
           <tr>
             <td>Upstash, Inc. (Redis, EU-Region)</td>
             <td>EU</td>
@@ -219,10 +214,9 @@ useHead({ title: 'Datenschutz – SemantIC' })
         Ausserdem hast du ein <strong>Beschwerderecht beim Eidgenössischen Datenschutz- und
         Öffentlichkeitsbeauftragten (EDÖB)</strong>.
       </p>
-      <!-- [D2] vor Go-Live klären: Kontakt-Mail einsetzen -->
       <p>
         Für Anfragen wendest du dich an die verantwortliche Stelle:
-        <strong class="placeholder">[Kontakt-Mail ergänzen]</strong>.
+        <strong><a href="mailto:claudio.riz@stud.fhgr.ch">claudio.riz@stud.fhgr.ch</a></strong>.
       </p>
     </section>
 
@@ -252,9 +246,8 @@ useHead({ title: 'Datenschutz – SemantIC' })
 
     <section id="stand">
       <h2><span class="num">9</span>Stand dieser Erklärung</h2>
-      <!-- [D2] vor Go-Live klären: Gültig-ab-Datum einsetzen -->
       <p>
-        Diese Datenschutzerklärung gilt ab <strong class="placeholder">[Gültig-ab-Datum]</strong>. Bei
+        Diese Datenschutzerklärung gilt ab <strong>10. Juli 2026</strong>. Bei
         Änderungen wird das Datum aktualisiert.
       </p>
     </section>
@@ -417,9 +410,4 @@ useHead({ title: 'Datenschutz – SemantIC' })
   line-height: 1.5;
 }
 
-/* Platzhalter-Marker – vor Go-Live mit geprüften Angaben füllen */
-.placeholder {
-  color: var(--subtle);
-  font-style: italic;
-}
 </style>
