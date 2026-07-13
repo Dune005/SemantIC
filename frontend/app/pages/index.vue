@@ -274,13 +274,12 @@ useReveal(page, '.reveal')
             <p class="eyebrow reveal">Der blinde Fleck</p>
             <h2 id="s1-head" class="h2 reveal r1">Ein Bild kann perfekt aussehen und trotzdem nicht stimmen.</h2>
             <p class="lead reveal r2">
-              KI-Bildgeneratoren sind gut darin, Bilder schön zu machen: scharf, farbig,
-              stimmungsvoll. Sie sind deutlich schlechter darin, Bilder <em>richtig</em> zu
-              machen – physikalisch plausibel, inhaltlich passend, frei von Klischees.
-              Das Problem ist nicht, dass diese Schwächen fehlen. Das Problem ist, dass
-              die visuelle Perfektion sie überdeckt. Ein Bild wirkt so überzeugend, dass
-              du gar nicht erst hinschaust, ob es auch hält. Genau diesen Effekt nennen
-              wir <em>Maskierung</em> – und genau ihm arbeitet SemantIC entgegen.
+              KI-Bildgeneratoren sind gut darin, Bilder schön zu machen – und deutlich
+              schlechter darin, sie <em>richtig</em> zu machen: physikalisch plausibel,
+              inhaltlich passend, frei von Klischees. Die visuelle Perfektion überdeckt
+              diese Schwächen: Ein Bild wirkt so überzeugend, dass du gar nicht erst
+              hinschaust, ob es auch hält. Diesen Effekt nennen wir <em>Maskierung</em> –
+              ihm arbeitet SemantIC entgegen.
             </p>
 
             <p class="switch-hint reveal r2">
@@ -362,10 +361,8 @@ useReveal(page, '.reveal')
             <p class="lead reveal r2">
               SemantIC bewertet zwei Dinge strikt getrennt: wie ein Bild <em>wirkt</em>
               (Ästhetik) und was es inhaltlich <em>hält</em> (Integrität). So wird sichtbar,
-              wenn ein Bild besser aussieht, als es ist – genau dort setzt die Maskierung
-              an: Die perfekte Oberfläche kann Fehler überdecken. Diese Lücke lässt sich
-              nicht seriös als einzelne Zahl messen – das haben wir in der eigenen
-              Validierung geprüft und deshalb bewusst darauf verzichtet.
+              wenn ein Bild besser aussieht, als es ist – der Nährboden für Maskierung.
+              Wie der Maskierungs-Check im Detail funktioniert, zeigt die Erklärseite.
             </p>
 
             <!-- Bild-Paar oben: Gesamteindruck + Detail-Crop. -->
@@ -425,12 +422,10 @@ useReveal(page, '.reveal')
             <p class="eyebrow reveal">Zur Einordnung</p>
             <h2 id="s4-head" class="h2 reveal r1">Kein Echtheits-Detektor.</h2>
             <p class="lead reveal r2">
-              SemantIC sagt dir nicht, ob ein Bild „echt" oder „KI" ist – diese Frage
-              beantwortet es bewusst nicht. Es sortiert auch nicht in „Fake" und „nicht
-              Fake". SemantIC setzt eine Ebene tiefer an: Es bewertet die <em>Qualität</em>
-              eines bereits als KI-generiert bekannten Bildes. Schlechte KI gegen gute KI,
-              nicht Fälschung gegen Wahrheit. Und jeder Befund ist ein Hinweis, kein
-              Urteil – du entscheidest, ob das Bild in deinen Kontext passt.
+              SemantIC sagt dir nicht, ob ein Bild „echt" oder „KI" ist, und sortiert
+              nicht in „Fake" und „nicht Fake". Es bewertet die <em>Qualität</em> eines
+              bereits als KI-generiert bekannten Bildes – schlechte KI gegen gute KI.
+              Und jeder Befund ist ein Hinweis, kein Urteil.
             </p>
           </div>
         </div>
@@ -459,12 +454,9 @@ useReveal(page, '.reveal')
             <h2 id="s5-head" class="h2 reveal r1">Die Prüflogik kommt aus eigener Forschung.</h2>
             <p class="lead reveal r2">
               Die Kriterien, nach denen SemantIC prüft, stammen aus einer eigenen
-              qualitativen Inhaltsanalyse von 144 KI-generierten Bildern. Daraus
-              entstanden fünf Lesearten, neun visuelle Treiber und die Fehlerprofile,
-              gegen die jedes Bild geprüft wird. Die Prüf-Pipeline wurde über
-              dokumentierte Iterationsrunden entwickelt und systematisch gegen die
-              menschliche Codierung geprüft – inklusive ihrer Grenzen: Welche Stärken
-              und Grenzen die Tests gezeigt haben, steht offen auf der Erklärseite.
+              qualitativen Inhaltsanalyse von 144 KI-generierten Bildern – wie daraus
+              die Prüfung wurde und wo ihre Grenzen liegen, steht offen auf der
+              Erklärseite.
             </p>
 
             <div class="facts reveal r2">

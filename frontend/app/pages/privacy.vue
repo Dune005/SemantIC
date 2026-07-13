@@ -76,19 +76,24 @@ useHead({ title: 'Datenschutz – SemantIC' })
             <td>Bei jedem Klick auf „Bild prüfen"</td>
           </tr>
           <tr>
-            <td>Optionale Texte</td>
-            <td>Nutzungskontext und Original-Prompt (Freitext, je ≤ 2 000 Zeichen)</td>
-            <td>Nur wenn du sie eingibst</td>
+            <td>Optionale Angaben</td>
+            <td>Nutzungskontext und Original-Prompt (Freitext, je ≤ 2 000 Zeichen) sowie die redaktionelle Haltung (feste Auswahl)</td>
+            <td>Nur wenn du sie angibst</td>
           </tr>
           <tr>
             <td>Technische Daten</td>
             <td>IP-Adresse, Zeitstempel</td>
-            <td>Bei jeder Analyse (für das Tageslimit)</td>
+            <td>Bei jeder Analyse (für das Tageslimit von 3 Analysen pro 24 Stunden) und beim Einlösen eines Zugangscodes</td>
           </tr>
           <tr>
             <td>Bypass-Cookie</td>
             <td>Ein HMAC-signierter Wert ohne personenbezogenen Inhalt</td>
             <td>Nur wenn du einen Zugangscode eingelöst hast</td>
+          </tr>
+          <tr>
+            <td>Sprach-Cookie</td>
+            <td>Deine Sprachwahl (z.&nbsp;B. „de"), kein personenbezogener Inhalt</td>
+            <td>Nur wenn du die Sprache manuell umschaltest</td>
           </tr>
           <tr>
             <td>Server-Logs</td>
@@ -118,7 +123,7 @@ useHead({ title: 'Datenschutz – SemantIC' })
             <td>Google LLC (Gemini API)</td>
             <td>USA</td>
             <td>Bildanalyse</td>
-            <td>Bild und optionale Texte (Nutzungskontext, Original-Prompt)</td>
+            <td>Bild und optionale Angaben (Nutzungskontext, Original-Prompt, redaktionelle Haltung)</td>
           </tr>
           <tr>
             <td>Anthropic, PBC (Claude API)</td>
@@ -126,28 +131,43 @@ useHead({ title: 'Datenschutz – SemantIC' })
             <td>Ästhetik-Bewertung</td>
             <td>nur das Bild, keine Texte</td>
           </tr>
+          <tr>
+            <td>Modal Labs, Inc. (Rechen-Endpoints)</td>
+            <td>USA</td>
+            <td>Ästhetik-Referenzwert (LAION) und Bild-Text-Abgleich (CLIP)</td>
+            <td>Bild; für den Bild-Text-Abgleich zusätzlich Nutzungskontext und Original-Prompt (nicht die redaktionelle Haltung)</td>
+          </tr>
           <!-- [D2 erledigt 2026-07-10] Upstash-Dashboard verifiziert: AWS eu-central-1 (Frankfurt), Free Tier ohne Read-Replicas -->
           <tr>
             <td>Upstash, Inc. (Redis, EU-Region)</td>
             <td>EU</td>
-            <td>Speicherung des Tageslimit-Zählers</td>
+            <td>Tageslimit-Zähler und Schutz vor dem Durchprobieren von Zugangscodes</td>
             <td>IP-Adresse, Zeitstempel</td>
           </tr>
           <tr>
             <td>Vercel Inc. (Hosting)</td>
             <td>USA</td>
             <td>Auslieferung der Webseite und Betrieb der Funktionen</td>
-            <td>Anfragedaten, Funktions-Logs</td>
+            <td>Alle Anfragedaten – bei einer Analyse laufen auch Bild und Texte durch die Vercel-Funktion – sowie Funktions-Logs</td>
+          </tr>
+          <tr>
+            <td>Google LLC (Fonts)</td>
+            <td>USA</td>
+            <td>Auslieferung der Schriften (IBM Plex)</td>
+            <td>IP-Adresse, User-Agent und angeforderte Schrift-URL, bei jedem Seitenaufruf</td>
           </tr>
         </tbody>
       </table>
       <p>
-        <strong>Übermittlung in die USA:</strong> Bei Google, Anthropic und Vercel findet eine
-        Datenübermittlung in die USA statt. Diese Anbieter sind unter dem Swiss-U.S. Data
-        Privacy Framework (DPF) zertifiziert. Die Schweiz hat das DPF als
+        <strong>Übermittlung in die USA:</strong> Bei Google, Anthropic, Modal und Vercel findet
+        eine Datenübermittlung in die USA statt. Google, Anthropic und Vercel sind unter dem
+        Swiss-U.S. Data Privacy Framework (DPF) zertifiziert. Die Schweiz hat das DPF als
         Adäquanz-Mechanismus anerkannt – die Übermittlung an DPF-zertifizierte
-        US-Unternehmen ist damit nach revDSG zulässig. Der Rate-Limit-Zähler bei Upstash
-        liegt in der EU-Region, hier findet keine Übermittlung in ein Drittland statt.
+        US-Unternehmen ist damit nach revDSG zulässig. Modal ist nicht DPF-zertifiziert;
+        hier stützt sich die Übermittlung auf die EU-Standardvertragsklauseln (SCC) im
+        Auftragsverarbeitungsvertrag von Modal, der das Schweizer Datenschutzrecht
+        ausdrücklich einbezieht. Der Rate-Limit-Zähler bei Upstash liegt in der EU-Region,
+        hier findet keine Übermittlung in ein Drittland statt.
       </p>
       <p><strong>Datenschutzerklärungen der Anbieter:</strong></p>
       <ul>
@@ -156,6 +176,11 @@ useHead({ title: 'Datenschutz – SemantIC' })
           Anthropic: <a href="https://privacy.claude.com/en/">https://privacy.claude.com/en/</a>
           (verbindlich für die API:
           <a href="https://platform.claude.com/docs/en/legal-center/privacy">https://platform.claude.com/docs/en/legal-center/privacy</a>)
+        </li>
+        <li>
+          Modal Labs, Inc.: <a href="https://modal.com/legal/privacy-policy">https://modal.com/legal/privacy-policy</a>
+          (Speicherfristen und Sicherheit:
+          <a href="https://modal.com/docs/guide/security">https://modal.com/docs/guide/security</a>)
         </li>
         <li>Vercel Inc.: <a href="https://vercel.com/legal/privacy-policy">https://vercel.com/legal/privacy-policy</a></li>
         <li>Upstash, Inc.: <a href="https://upstash.com/trust/privacy.pdf">https://upstash.com/trust/privacy.pdf</a></li>
@@ -171,11 +196,15 @@ useHead({ title: 'Datenschutz – SemantIC' })
         <tbody>
           <tr>
             <td>Bild</td>
-            <td>Nicht dauerhaft gespeichert. Es liegt nur während der Analyse im Arbeitsspeicher und wird danach verworfen. Keine Datenbank, kein Schreibzugriff auf die Festplatte.</td>
+            <td>Auf dem SemantIC-Server nicht gespeichert. Es liegt nur während der Analyse im Arbeitsspeicher und wird danach verworfen. Keine Datenbank, kein Schreibzugriff auf die Festplatte.</td>
           </tr>
           <tr>
             <td>Texte</td>
             <td>Wie das Bild – nur während der Analyse im Arbeitsspeicher.</td>
+          </tr>
+          <tr>
+            <td>Bei Modal (Referenzwert, Abgleich)</td>
+            <td>Ein- und Ausgaben der Rechen-Endpoints werden verschlüsselt zwischengespeichert und spätestens nach 7 Tagen gelöscht (gemäss Modal-Dokumentation).</td>
           </tr>
           <tr>
             <td>Tageslimit-Zähler (IP)</td>
@@ -186,11 +215,15 @@ useHead({ title: 'Datenschutz – SemantIC' })
             <td>Im Browser, maximal 30 Tage. Du kannst es jederzeit über die Browser-Einstellungen löschen.</td>
           </tr>
           <tr>
-            <td>Server-Logs (Vercel)</td>
-            <td>Nach Vercel-Standard rund 3 Tage.</td>
+            <td>Sprach-Cookie</td>
+            <td>Im Browser, maximal 1 Jahr. Ebenfalls jederzeit über die Browser-Einstellungen löschbar.</td>
           </tr>
           <tr>
-            <td>Bei den Analyse-Anbietern</td>
+            <td>Server-Logs (Vercel)</td>
+            <td>Im aktuellen Vercel-Tarif (Hobby) maximal 1 Stunde.</td>
+          </tr>
+          <tr>
+            <td>Bei den übrigen Analyse-Anbietern</td>
             <td>Nach deren eigenen Richtlinien – darauf haben wir keinen Einfluss, deshalb sind oben ihre Datenschutzerklärungen verlinkt.</td>
           </tr>
         </tbody>
@@ -227,10 +260,13 @@ useHead({ title: 'Datenschutz – SemantIC' })
         kein Matomo, keine Werbe-Cookies, keine Drittparty-Cookies.
       </p>
       <p>
-        Das einzige Cookie ist der <strong>Bypass-Cookie</strong>. Er wird nur gesetzt, wenn du selbst
-        einen Zugangscode einlöst, ist HMAC-signiert (also nicht fälschbar) und enthält
-        keinen personenbezogenen Inhalt. Er läuft nach 30 Tagen ab und ist technisch
-        zwingend für die Bypass-Funktion – deshalb braucht SemantIC keinen Cookie-Banner.
+        SemantIC setzt genau zwei Cookies, beide rein funktional: Den
+        <strong>Bypass-Cookie</strong> – er wird nur gesetzt, wenn du selbst einen Zugangscode
+        einlöst, ist HMAC-signiert (also nicht fälschbar), enthält keinen personenbezogenen
+        Inhalt und läuft nach 30 Tagen ab. Und den <strong>Sprach-Cookie</strong> – er merkt
+        sich deine Sprachwahl, wenn du sie manuell umschaltest, und läuft nach einem Jahr ab.
+        Beide sind technisch für ihre Funktion nötig und dienen keinem Tracking – deshalb
+        braucht SemantIC keinen Cookie-Banner.
       </p>
     </section>
 
