@@ -55,12 +55,12 @@ export const errorSpecimens: ErrorSpecimen[] = [
     category: 'anatomy',
     spots: [
       {
-        box: [380, 235, 630, 365],
+        box: [426, 283, 479, 343],
         title: 'Verschmelzende Gliedmassen',
         text: 'Bei der wartenden Frau und dem Kind auf ihrem Schoss gehen Arme und Beine ineinander über – die KI verliert an den Überlappungen die Grenze zwischen zwei Körpern.',
       },
       {
-        box: [430, 330, 590, 445],
+        box: [361, 336, 424, 411],
         title: 'Zu viele Finger',
         text: 'An der Hand des daneben wartenden Mannes lassen sich mehr Finger zählen, als anatomisch möglich sind.',
       },
@@ -76,7 +76,7 @@ export const errorSpecimens: ErrorSpecimen[] = [
     category: 'anatomy',
     spots: [
       {
-        box: [410, 140, 575, 270],
+        box: [407, 142, 504, 243],
         title: 'Zu viele Hände',
         text: 'Die Barista scheint das Tablett gleichzeitig von oben und von unten zu halten – es sind mehr Hände im Bild, als die Haltung zulässt.',
       },
@@ -93,12 +93,12 @@ export const errorSpecimens: ErrorSpecimen[] = [
     category: 'context',
     spots: [
       {
-        box: [640, 20, 815, 170],
+        box: [573, 70, 668, 143],
         title: 'Laptop ohne Bildschirm',
         text: 'Der Gast im Vordergrund tippt auf einem Laptop, dessen Display fehlt – das Gerät ergibt so keinen Sinn.',
       },
       {
-        box: [570, 245, 705, 325],
+        box: [567, 142, 670, 174],
         title: 'Pflanze aus der Tasse',
         text: 'Aus einem Gefäss, in dem Kaffee stehen sollte, wächst eine Zimmerpflanze.',
       },
@@ -114,7 +114,7 @@ export const errorSpecimens: ErrorSpecimen[] = [
     category: 'context',
     spots: [
       {
-        box: [600, 620, 785, 715],
+        box: [577, 556, 762, 651],
         title: 'Weinglas am Kinderplatz',
         text: 'Am Platz des kleinen Jungen steht ein gefülltes Rotweinglas – inhaltlich absurd, aber technisch tadellos gerendert.',
       },
@@ -131,12 +131,12 @@ export const errorSpecimens: ErrorSpecimen[] = [
     category: 'physics',
     spots: [
       {
-        box: [375, 510, 575, 705],
+        box: [482, 616, 608, 720],
         title: 'Falsche Spiegelung',
         text: 'Die verchromte Espressomaschine spiegelt eine Umgebung, die nicht zur Szene davor passt.',
       },
       {
-        box: [525, 225, 645, 345],
+        box: [546, 0, 691, 129],
         title: 'Bildschirm zur falschen Seite',
         text: 'Der Laptop am Fenster zeigt seinen Bildschirm zur falschen Seite – nicht von der davorsitzenden Person weg.',
       },
@@ -152,7 +152,7 @@ export const errorSpecimens: ErrorSpecimen[] = [
     category: 'physics',
     spots: [
       {
-        box: [175, 615, 490, 800],
+        box: [175, 615, 335, 823],
         title: 'Spiegelung stimmt nicht',
         text: 'In der Glastrennwand spiegeln sich die Deckenlampen und das Schild falsch – ein Bruch, der kaum auffällt, weil das Bild sonst überzeugend wirkt. Genau das ist der Maskierungseffekt.',
       },
