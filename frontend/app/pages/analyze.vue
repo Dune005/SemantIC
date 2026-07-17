@@ -472,8 +472,36 @@ function focusFooterBypass() {
 
 // „Als PDF exportieren" → Browser-Druckdialog (report-print.md: window.print(),
 // kein jsPDF/html2canvas). Die ReportPrintView ist nur im @media print sichtbar.
+// document.title wird temporär gesetzt, damit das gespeicherte PDF einen
+// sprechenden Dateinamen erhält; afterprint stellt den Tab-Titel zurück
+// (feuert auch bei abgebrochenem Druckdialog). Restore ist idempotent und
+// läuft bei einem print()-Fehler sofort.
+let printTitleActive = false
 function exportPdf() {
-  window.print()
+  if (printTitleActive) {
+    window.print()
+    return
+  }
+  const previousTitle = document.title
+  const restoreTitle = () => {
+    document.title = previousTitle
+    printTitleActive = false
+  }
+  const now = new Date()
+  const stamp = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, '0'),
+    String(now.getDate()).padStart(2, '0'),
+  ].join('-')
+  printTitleActive = true
+  document.title = `SemantIC-Pruefbefund_${stamp}`
+  window.addEventListener('afterprint', restoreTitle, { once: true })
+  try {
+    window.print()
+  } catch {
+    window.removeEventListener('afterprint', restoreTitle)
+    restoreTitle()
+  }
 }
 </script>
 
@@ -703,6 +731,10 @@ function exportPdf() {
       <Button variant="secondary" @click="fullReset">Neues Bild prüfen</Button>
       <Button variant="secondary" @click="exportPdf">Als PDF exportieren</Button>
     </div>
+    <!-- Browser-Kopf-/Fusszeilen (URL, Datum) sind per CSS nicht zuverlässig
+         unterdrückbar → statischer Hinweis statt Toast (der wäre vor dem
+         blockierenden window.print() unsichtbar, Codex-Review). -->
+    <p class="result-print-tip">Für ein sauberes PDF im Druckdialog «Kopf- und Fusszeilen» deaktivieren.</p>
   </div>
 
   <!-- Druckansicht (report-print.md): im Screen verborgen, im @media print sichtbar.
@@ -1178,6 +1210,14 @@ textarea.field::placeholder {
   width: min(1380px, 100%);
   margin: 0 auto;
   padding: 0 clamp(20px, 4vw, 48px);
+}
+.result-print-tip {
+  width: min(1380px, 100%);
+  margin: 8px auto 0;
+  padding: 0 clamp(20px, 4vw, 48px);
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--muted);
 }
 
 /* Druck (report-print.md §3): interaktive Stage + Seitenkopf + Cockpit-Result ausblenden –

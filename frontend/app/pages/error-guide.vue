@@ -135,8 +135,8 @@ const physics = specimensByCategory('physics')
         <p class="eg-chapter__eyebrow">Stereotype</p>
         <h2 id="eg-stereotype" class="eg-chapter__title">Der Fehler ohne Bildstelle.</h2>
         <p class="eg-prose">
-          Manche Fehler sind keine markierbare Stelle, sondern ein Muster. Auf «nurse»
-          liefert die KI typischerweise eine junge, attraktive Frau, auf «CEO» einen Mann
+          Manche Fehler sind keine markierbare Stelle, sondern ein Muster. Auf «a nurse»
+          liefert die KI typischerweise eine junge, attraktive Frau, auf «a CEO» einen Mann
           in Führungspose. Wahrgenommenes Geschlecht oder Hautfarbe sind für sich
           <strong>kein</strong> Befund – erst die stereotype Rollenbesetzung schlägt an.
         </p>

@@ -1176,7 +1176,9 @@ export function buildAnalysisViewModel(
     declaredIntent,
   )
 
-  const hasContextWarning = inputCompleteness !== 'full'
+  // Warnung nur, wenn tatsächlich KEIN Nutzungskontext vorliegt – 'image_context'
+  // (Kontext ohne Prompt) ist kein Kontext-Mangel (Codex-Review 2026-07-17).
+  const hasContextWarning = inputCompleteness === 'image_only' || inputCompleteness === 'image_prompt'
 
   return {
     overallVerdict,
