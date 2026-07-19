@@ -165,6 +165,7 @@ textarea {
     print-color-adjust: exact;
   }
 
-  /* Seitenraender fuer den PDF-Export (report-print.md §3). */
-  @page { margin: 16mm 14mm; }
+  /* Seitenformat + -raender fuer den PDF-Export (report-print.md §3;
+     verdichtet fuer das 2-Seiten-Ziel des Prüfbefunds). */
+  @page { size: A4; margin: 12mm; }
 }
