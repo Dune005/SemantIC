@@ -18,8 +18,8 @@
   --gutter:         clamp(20px, 5vw, 48px); /* seitliches Container-Padding */
   --header-h:       64px;                   /* feste Header-Hoehe (Desktop) */
 }
-@media (max-width: 859px) {
-  :root { --header-h: 56px; }               /* Mobile-Header (Hamburger ab 859px, s. AppHeader) */
+@media (max-width: 939px) {
+  :root { --header-h: 56px; }               /* Mobile-Header (Hamburger ab 939px, s. AppHeader) */
 }
 
 /* ------------------------------------------------------------ */
@@ -37,6 +37,9 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-size-adjust: 100%;
+  /* Scrollbar-Spur immer reservieren: Seiten ohne Scroll-Inhalt (z.B. /analyze
+     in hohen Fenstern) verschieben sonst Header/Inhalt um die Scrollbar-Breite. */
+  scrollbar-gutter: stable;
 }
 
 /* ------------------------------------------------------------ */
