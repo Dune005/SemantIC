@@ -242,7 +242,7 @@ useReveal(page, '.reveal')
             v-if="showMotion"
             ref="heroVideo"
             class="hero__visual"
-            poster="/landing/hero-loop-poster.jpg"
+            poster="/landing/hero-loop-leine-poster.jpg"
             autoplay
             muted
             loop
@@ -250,16 +250,16 @@ useReveal(page, '.reveal')
             preload="metadata"
             aria-hidden="true"
           >
-            <source src="/landing/hero-loop.webm" type="video/webm" />
-            <source src="/landing/hero-loop.mp4" type="video/mp4" />
+            <source src="/landing/hero-loop-leine.webm" type="video/webm" />
+            <source src="/landing/hero-loop-leine.mp4" type="video/mp4" />
           </video>
           <img
             v-else
             class="hero__visual"
-            src="/landing/hero-loop-poster.jpg"
+            src="/landing/hero-loop-leine-poster.jpg"
             width="2752"
             height="1536"
-            alt="KI-generiertes Moodbild: Fotodrucke hängen an einer Leine im warmen Gegenlicht eines Ateliers."
+            alt="KI-generiertes Moodbild: Fotodrucke mit roten Prüfpunkten hängen an einer Leine im hellen Tageslicht, dazwischen ein Etikett mit dem Schriftzug SemantIC."
           />
           <span class="hero__fade" aria-hidden="true" />
           <span class="hero__chip">{{ showMotion ? 'KI-generiertes Moodvideo' : 'KI-generiertes Moodbild' }}</span>
@@ -1216,15 +1216,18 @@ useReveal(page, '.reveal')
 .hero__fade {
   position: absolute;
   inset: 0;
+  /* Rechts früher auf null (User-Feedback 2026-07-19): voller Schutz bleibt
+     hinter der Copy (bis ~40 %), danach fällt der Verlauf zügig ab, damit das
+     Video ab Textende nicht flau wirkt. */
   background: linear-gradient(
     90deg,
     var(--canvas) 0%,
-    var(--canvas) 34%,
-    rgba(238, 239, 233, 0.92) 46%,
-    rgba(238, 239, 233, 0.7) 56%,
-    rgba(238, 239, 233, 0.4) 67%,
-    rgba(238, 239, 233, 0.15) 80%,
-    rgba(238, 239, 233, 0) 94%
+    var(--canvas) 44%,
+    rgba(238, 239, 233, 0.9) 53%,
+    rgba(238, 239, 233, 0.55) 61%,
+    rgba(238, 239, 233, 0.22) 69%,
+    rgba(238, 239, 233, 0.06) 77%,
+    rgba(238, 239, 233, 0) 85%
   );
 }
 .hero__chip {
@@ -1279,18 +1282,44 @@ useReveal(page, '.reveal')
 /* RESPONSIVE + PRINT                                            */
 /* ============================================================ */
 @media (max-width: 959px) {
-  .hero__copy {
-    padding-block: clamp(48px, 9vh, 96px) clamp(28px, 4vh, 40px);
+  /* Mobil kein separater Bild-Block und kein Farb-Overlay (Codex-Review
+     2026-07-19): Das Medium sitzt als unten verankertes Fenster fester Höhe
+     im Hero; seine Oberkante läuft per mask-image ins Transparente aus, das
+     Bild blendet sich also selbst ein. Die geringere Höhe verkleinert den
+     Cover-Zoom → mehr Motivbreite (Klammern + SemantIC-Etikett sichtbar).
+     Gemeinsame Variable hält Copy-Abstand und Medienhöhe synchron. */
+  .hero {
+    --hero-mobile-media-h: clamp(200px, 30svh, 300px);
+    border-bottom-color: var(--line);
   }
-  .hero__media {
-    position: relative;
-    inset: auto;
-    height: 44vh;
-    min-height: 260px;
-    border-top: 1px solid var(--line);
+  .hero__copy {
+    /* Bewusste Überlappung: die letzte Copy-Zeile liegt auf der ausgeblendeten
+       Bildoberkante, damit Text und Medium ineinandergreifen statt zu stapeln. */
+    padding-block: clamp(48px, 9svh, 96px) calc(var(--hero-mobile-media-h) - 28px);
   }
   .hero__visual {
-    width: 100%;
+    /* Breiter als der Viewport + rechts verankert: die leere Wandfläche links
+       im Motiv ragt über den Bildschirmrand hinaus (Hero hat overflow:hidden),
+       die Print-Reihe füllt die Breite. */
+    inset: auto 0 0 auto;
+    width: 140%;
+    max-width: none;
+    height: var(--hero-mobile-media-h);
+    object-position: 50% 16%;
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(0, 0, 0, 0.14) 12%,
+      rgba(0, 0, 0, 0.6) 24%,
+      #000 36%
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(0, 0, 0, 0.14) 12%,
+      rgba(0, 0, 0, 0.6) 24%,
+      #000 36%
+    );
   }
   .hero__fade {
     display: none;
