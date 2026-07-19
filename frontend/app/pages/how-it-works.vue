@@ -36,7 +36,7 @@ useHead({
       <div class="page">
         <header class="hero__head">
           <p class="hero__kicker">So funktioniert SemantIC</p>
-          <h1>Was passiert, wenn du ein Bild prüfst.</h1>
+          <h1>Was passiert, wenn SemantIC dein Bild prüft.</h1>
           <p class="hero__lead">
             SemantIC nimmt ein KI-generiertes Bild und sieht es sich entlang von drei
             Dimensionen an: ob es physikalisch plausibel ist, ob es inhaltlich Sinn
@@ -201,14 +201,15 @@ useHead({
   </section>
 
   <!-- ================= 4 · MASKIERUNGS-CHECK (dunkle Bild-Sektion) =================
-       Das Pressekonferenz-Foto bleibt vollflächig sichtbar; der Text liegt in einer
-       opaken Ink-Tafel (Lesbarkeit vom Foto entkoppelt, AA-sicher), der Quadrant als
-       eigene helle Karte davor. Bezug: die „Oberfläche" des Bildes wird selbst zur
-       Folie, über der der Maskierungs-Quadrant das Prinzip erklärt. -->
+       Hintergrund: ruhige Fotopapier-Textur (KI-generiert, ohne Objekte – das
+       frühere Pressekonferenz-Foto wirkte hinter dem Scrim zu unruhig); der Text
+       liegt in einer opaken Ink-Tafel (Lesbarkeit vom Bild entkoppelt, AA-sicher),
+       der Quadrant als eigene helle Karte davor. Bezug: die „Oberfläche" des
+       Fotopapiers als Folie, über der der Maskierungs-Quadrant das Prinzip erklärt. -->
   <section class="section s4 section--ink" aria-labelledby="s4-title">
     <img
       class="s4__bg"
-      src="/landing/masking-press.webp"
+      src="/landing/bg-fotopapier-dark.webp"
       alt=""
       aria-hidden="true"
       loading="lazy"
@@ -392,8 +393,9 @@ useHead({
     </div>
   </section>
 
-  <!-- Auflockerung · KI-Moodbild (Werkstatt) vor dem Forschungsteil -->
-  <MoodBand src="/landing/specimen-werkstatt.webp" />
+  <!-- Auflockerung · KI-Moodbild (Prüfstapel mit roten Punkten) vor dem Forschungsteil:
+       nimmt das Sichten/Markieren vieler Bilder auf – Bezug zur Phase-1-Analyse. -->
+  <MoodBand src="/landing/band-pruefstapel.webp" />
 
   <!-- ================= 8 · WOHER DIE KRITERIEN STAMMEN ================= -->
   <section class="section" aria-labelledby="s8-title">
@@ -445,10 +447,10 @@ useHead({
   <!-- ================= SCHLUSS-CTA ================= -->
   <div class="page page--text">
     <div class="closing">
-      <h2>Genug Theorie. Prüf ein Bild<span class="closing__dot">.</span></h2>
+      <h2>Genug Theorie. Lass ein Bild prüfen<span class="closing__dot">.</span></h2>
       <div class="closing__cta">
         <Button as="a" href="/analyze" variant="primary" size="md">
-          Bild prüfen <span class="arrow" aria-hidden="true">→</span>
+          Bild prüfen lassen <span class="arrow" aria-hidden="true">→</span>
         </Button>
       </div>
     </div>

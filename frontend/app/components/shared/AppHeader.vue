@@ -8,7 +8,7 @@
 // Hero – Severity-Wörter/Kleintext sind hier tabu (tokens.css-Regel); Badge/Hint
 // sind neutral. Fokus-Ring lokal auf --ink-text umgestellt (base.css-Ink wäre
 // auf dunkler Fläche unsichtbar).
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { Menu, X } from 'lucide-vue-next'
 import Button from '~/components/ui/Button.vue'
 import Badge from '~/components/ui/Badge.vue'
@@ -21,9 +21,6 @@ const props = withDefaults(
   }>(),
   { active: undefined, bypassActive: false, rateLimitHint: null },
 )
-
-// Auf /analyze entfällt der CTA „Bild prüfen →" (header.html proto-note).
-const showCta = computed(() => props.active !== 'analyze')
 
 const menuOpen = ref(false)
 function toggleMenu() {
@@ -40,8 +37,9 @@ function closeMenu() {
       <NuxtLink to="/" class="brand" :aria-label="$t('header.brandAria')">
         <span class="brand__mark">SemantIC</span>
         <span class="brand__divider" aria-hidden="true" />
-        <!-- Wortlaut folgt dem Hero-Kicker (F4-Entscheid: «Validator» abgeschwächt);
-             finale Wahl trifft der Bearbeiter im Browser-Review. -->
+        <!-- Brand-Claim «AI Visual Integrity Check» (F4-Entscheid: «Validator» abgeschwächt).
+             Bewusst NICHT identisch mit dem Hero-Kicker der Landing – der nennt die drei
+             Prüfdimensionen, um die Dopplung Header/Hero zu vermeiden. -->
         <span class="brand__kicker">{{ $t('header.brandKicker') }}</span>
       </NuxtLink>
 
@@ -55,8 +53,10 @@ function closeMenu() {
       <div class="header-actions">
         <span v-if="rateLimitHint" class="rate-hint">{{ rateLimitHint }}</span>
         <Badge v-if="bypassActive" mode="neutral" :label="$t('header.badgeDemo')" class="badge-on-dark" />
-        <!-- CTA wie v16-g: Mess-Punkt + Text statt weisser Kachel (kein Pfeil). -->
-        <NuxtLink v-if="showCta" to="/analyze" class="header-cta">
+        <!-- CTA wie v16-g: Mess-Punkt + Text statt weisser Kachel (kein Pfeil).
+             Bewusst auch auf /analyze sichtbar, sonst springt die Kopfzeile beim
+             Seitenwechsel (rechte Gruppe rückt zusammen). -->
+        <NuxtLink to="/analyze" class="header-cta">
           <span class="header-cta__dot" aria-hidden="true" />{{ $t('header.cta') }}
         </NuxtLink>
         <LangSwitcher />
@@ -93,7 +93,10 @@ function closeMenu() {
         >
           {{ $t('header.nav.errorGuide') }}
         </NuxtLink>
-        <Button v-if="showCta" as="a" href="/analyze" variant="inverse" size="md" class="mt-[14px] w-full" @click="closeMenu">
+        <!-- Auf /analyze weggelassen: der Anchor lädt die Seite voll neu und würde
+             Upload/Eingaben verwerfen; im Overlay-Panel entsteht dadurch kein
+             Layout-Springen (anders als beim Desktop-CTA). -->
+        <Button v-if="active !== 'analyze'" as="a" href="/analyze" variant="inverse" size="md" class="mt-[14px] w-full" @click="closeMenu">
           {{ $t('header.cta') }} →
         </Button>
         <div class="mobile-nav__lang">
@@ -293,10 +296,11 @@ function closeMenu() {
   min-height: 44px;
 }
 
-/* Nav-Umschaltung ab 859px (vorher 719px): der dritte Desktop-Nav-Link «Typische Bildfehler»
-   sprengt die Kopfzeile bei 720–768px (Codex-P1, Overflow verifiziert). Mobile-Menü greift
-   deshalb früher; --header-h zieht in base.css auf denselben Breakpoint nach. */
-@media (max-width: 859px) {
+/* Nav-Umschaltung ab 939px (vorher 859px): mit dem längeren CTA «Bild prüfen lassen»
+   bricht «Typische Bildfehler» bei 860–940px zweizeilig um (Codex-Befund, verifiziert).
+   Mobile-Menü greift deshalb früher; --header-h zieht in base.css auf denselben
+   Breakpoint nach. */
+@media (max-width: 939px) {
   .app-header__inner {
     height: 56px;
   }

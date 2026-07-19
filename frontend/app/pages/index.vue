@@ -14,9 +14,11 @@
 // isolation in den Root-Stacking-Kontext, daher hält ihn nur ein negativer
 // z-index zuverlässig UNTER allen Sektionen UND dem globalen Footer (im Browser
 // verifiziert). Der Body trägt bereits --page-bg als Grundton hinter den Dots.
-// F4: einziger verifizierter Bildbefund = Mikrofon-Logos (Physik, rote Zone).
-// Semantik/Bias zeigen am Platzhalterbild eine NEUTRALE «Beispiel-Prüfbereich»-
-// Markierung (kein erfundener roter Befund). Echtes Beispielbild folgt später.
+// Beispielbild Kachel 1: FL_nurse_04 aus dem Phase-1-Prompt-Set (blindspot-nurse.webp)
+// – trägt verifizierte Befunde in allen drei Dimensionen (Stethoskop/Physik,
+// Namensschild/Semantik, Rollenbild/Bias); der frühere «Beispiel-Prüfbereich»-
+// Demo-Zustand des Platzhalters entfällt damit. Kachel 2 behält bewusst das
+// Pressekonferenz-Bild (zweites, eigenständiges Beispiel).
 import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import Button from '~/components/ui/Button.vue'
 import { useReveal } from '~/composables/useReveal'
@@ -27,12 +29,15 @@ useHead({
     {
       name: 'description',
       content:
-        'SemantIC prüft KI-generierte Bilder vor der Veröffentlichung auf physikalische Kohärenz, semantische Konsistenz und Bias – ein Forschungsprototyp aus der Bachelorarbeit «Visual Bias im KI-generierten Bild».',
+        'SemantIC entstand aus der Analyse von 144 KI-generierten Bildern – ein Forschungsprototyp, der Bilder auf physikalische Kohärenz, semantische Konsistenz und Bias prüft.',
     },
   ],
 })
 
-const KICKER = 'AI Visual Integrity Check'
+// Hero-Kicker: bewusst NICHT der Brand-Claim «AI Visual Integrity Check» (der
+// steht schon im Header direkt darüber) – stattdessen die drei Prüfdimensionen,
+// die der Lead danach ausformuliert.
+const KICKER = 'Physik · Semantik · Bias'
 
 // ---- Hero-Video-Gate: nur fine-pointer ohne reduced-motion bekommt das Video --
 const showMotion = ref(false)
@@ -49,18 +54,19 @@ onMounted(async () => {
 })
 
 // ---- Prüfregler-Exponat (reaktiver Port des v16-g/v18-Reglers) ----------------
-const reveal = ref(72) // Default: Mikrofon-Zone (28–58 %) + Chip vollständig sichtbar
+const reveal = ref(80) // Default: Stethoskop-Zone (Physik) + Chip vollständig sichtbar
 // Grip-Position separat geklemmt, damit das Label bei 0/100 nicht aus dem Rahmen läuft.
 const gripLeft = computed(() => `${Math.min(96, Math.max(4, reveal.value))}%`)
 
 // ---- Dimensions-Umschalter (Segmented-Control, kein role=tablist) -------------
-// DIMS strukturiert (kein v-html). `kind`: 'crit' = verifizierter Befund (rote
-// Zone), 'demo' = neutrale illustrative Markierung (kein behaupteter Befund).
+// DIMS strukturiert (kein v-html). Alle drei Dimensionen tragen am Nurse-Bild
+// einen verifizierten Befund (rote Zone) – der frühere 'demo'-Zustand entfällt.
 type DimKey = 'phys' | 'sem' | 'bias'
 interface Dim {
   label: string
-  kind: 'crit' | 'demo'
   chip: string
+  /* Zonen nahe der Oberkante tragen den Chip UNTER der Zone (sonst ragt er aus dem Rahmen). */
+  chipBelow?: boolean
   zone: { left: string; top: string; width: string; height: string }
   strong: string
   body: string
@@ -68,27 +74,25 @@ interface Dim {
 const DIMS: Record<DimKey, Dim> = {
   phys: {
     label: 'Physik',
-    kind: 'crit',
-    chip: 'Mikrofon-Logos: Zeichensalat',
-    zone: { left: '28%', top: '78%', width: '30%', height: '16%' },
+    chip: 'Stethoskop-Knoten',
+    zone: { left: '32%', top: '42%', width: '34%', height: '36%' },
     strong: 'Licht, Schatten, Material.',
-    body: 'Hier sichtbar: Die Senderlogos auf den Mikrofonen sind unleserlicher Zeichensalat – ein generativer Artefakt, der im Gesamteindruck untergeht.',
+    body: 'Hier sichtbar: Das Stethoskop ist unmöglich verschlungen – Schlauch, Bügel und Band laufen so zusammen, dass es sich real nicht tragen liesse. Ein Strukturfehler, der im Gesamteindruck untergeht.',
   },
   sem: {
     label: 'Semantik',
-    kind: 'demo',
-    chip: 'Beispielbereich · kein Befund',
-    zone: { left: '52%', top: '40%', width: '26%', height: '20%' },
+    chip: 'Fremdes Foto',
+    zone: { left: '40%', top: '82%', width: '15%', height: '15%' },
     strong: 'Inhalt, Kontext, Logik.',
-    body: 'Passt die Szene zusammen? Stimmen Rolle, Anordnung und Beziehung der Elemente – oder wirkt das Bild nur stimmig, ohne inhaltlich zu tragen? An diesem Beispielbild ist kein eigener Semantik-Befund markiert.',
+    body: 'Passt die Szene zusammen? Hier nicht: Das Namensschild zeigt das Foto einer anderen Person, Name und Beschriftung sind Zeichensalat – ein Kontextbruch mitten im Bild.',
   },
   bias: {
     label: 'Bias',
-    kind: 'demo',
-    chip: 'Beispielbereich · kein Befund',
-    zone: { left: '20%', top: '30%', width: '34%', height: '24%' },
+    chip: 'Rollenklischee',
+    chipBelow: true,
+    zone: { left: '39%', top: '5%', width: '23%', height: '28%' },
     strong: 'Darstellung, Rolle, Machtdynamik.',
-    body: 'Geschlecht und Hautfarbe werden nur beschrieben, nie bewertet. Bias greift erst bei einem echten, wiederkehrenden Muster – nicht beim einzelnen Merkmal. An diesem Beispielbild ist kein eigener Bias-Befund markiert.',
+    body: 'Geschlecht und Hautfarbe werden nur beschrieben, nie bewertet. Bewertet wird das Muster: Die Pflegefachperson ist wie selbstverständlich als junge, makellose Frau besetzt – ein Rollen- und Körperklischee, das Bildgeneratoren immer wieder reproduzieren.',
   },
 }
 const dim = ref<DimKey>('phys')
@@ -220,13 +224,14 @@ useReveal(page, '.reveal')
               Überzeugend ist <span class="nowrap">nicht genug<span class="end">.</span></span>
             </h1>
             <p class="hero__sub">
-              SemantIC prüft KI-generierte Bilder vor der Veröffentlichung auf physikalische
-              Kohärenz, semantische Konsistenz und Bias – und markiert dir die Stellen,
-              die du vor der Publikation selbst prüfen solltest.
+              SemantIC entstand aus der Analyse von 144 KI-generierten Bildern: ein
+              Forschungsprototyp, der deine Bilder auf physikalische Kohärenz, semantische
+              Konsistenz und Bias prüft – und dir die Stellen markiert, die einen
+              zweiten Blick verdienen.
             </p>
             <div class="hero__cta">
               <Button as="a" href="/analyze" variant="primary" size="md">
-                Bild prüfen <span aria-hidden="true">→</span>
+                Bild prüfen lassen <span aria-hidden="true">→</span>
               </Button>
               <NuxtLink to="/how-it-works" class="hero__how">Wie das funktioniert</NuxtLink>
             </div>
@@ -307,17 +312,17 @@ useReveal(page, '.reveal')
                 <div class="spec__stage">
                   <div class="spec__frame">
                     <img
-                      src="/landing/masking-press.webp"
+                      src="/landing/blindspot-nurse.webp"
                       width="1616"
-                      height="1024"
+                      height="1212"
                       loading="lazy"
-                      alt="KI-generiertes Beispielbild: Frau spricht an einer Pressekonferenz in mehrere Mikrofone."
+                      alt="KI-generiertes Beispielbild: Junge Pflegefachfrau mit Stethoskop und Namensschild in einem Spitalkorridor."
                     />
                     <!-- Befund-Layer: per clip-path vom Regler freigegeben. -->
                     <div class="spec__anno" :style="{ clipPath: `inset(0 ${100 - reveal}% 0 0)` }">
                       <span class="spec__tint" aria-hidden="true" />
-                      <span class="spec__zone" :class="`spec__zone--${current.kind}`" :style="zoneStyle">
-                        <span class="spec__chip" :class="{ 'spec__chip--demo': current.kind === 'demo' }">{{ current.chip }}</span>
+                      <span class="spec__zone spec__zone--crit" :style="zoneStyle">
+                        <span class="spec__chip" :class="{ 'spec__chip--below': current.chipBelow }">{{ current.chip }}</span>
                       </span>
                     </div>
                     <div class="spec__divider" aria-hidden="true" :style="{ left: gripLeft }">
@@ -436,8 +441,8 @@ useReveal(page, '.reveal')
         <img
           class="band__img"
           src="/landing/band-printstudio.webp"
-          width="1536"
-          height="560"
+          width="2752"
+          height="1536"
           loading="lazy"
           alt="KI-generiertes Moodbild: Prüftisch mit ausgelegten Fotodrucken, eine Hand setzt eine rote Markierung."
         />
@@ -489,11 +494,11 @@ useReveal(page, '.reveal')
       <!-- ================= SCHLUSS-CTA · dunkel ================= -->
       <section class="closer" aria-labelledby="closer-head">
         <div class="closer__inner">
-          <h2 id="closer-head" class="closer__head">Prüf dein Bild, bevor es jemand anders tut<span class="dot-end">.</span></h2>
+          <h2 id="closer-head" class="closer__head">Lass dein Bild prüfen, bevor es jemand anderes tut<span class="dot-end">.</span></h2>
           <p class="closer__body">Ein Bild ablegen, kurz warten, einen Befund lesen. Keine Anmeldung.</p>
           <div class="closer__cta">
             <Button as="a" href="/analyze" variant="inverse" size="md">
-              Jetzt ein Bild prüfen <span class="arrow" aria-hidden="true">→</span>
+              Jetzt prüfen lassen <span class="arrow" aria-hidden="true">→</span>
             </Button>
           </div>
         </div>
@@ -686,7 +691,7 @@ useReveal(page, '.reveal')
   display: block;
   width: 100%;
   height: auto;
-  aspect-ratio: 1616 / 1024;
+  aspect-ratio: 1616 / 1212;
 }
 .spec__anno {
   position: absolute;
@@ -698,19 +703,19 @@ useReveal(page, '.reveal')
   background: var(--canvas);
   opacity: 0.18;
 }
-/* Befund-Zone: verifizierter Befund (Physik) = rot; Demo (Sem/Bias) = neutral. */
+/* Befund-Zone: alle drei Dimensionen zeigen am Nurse-Bild einen verifizierten
+   Befund (rot); der frühere neutrale Demo-Zustand ist entfallen. */
 .spec__zone {
   position: absolute;
 }
 .spec__zone--crit {
   border: 1.5px solid var(--crit);
 }
-.spec__zone--demo {
-  border: 1.5px dashed var(--line-strong);
-}
 .spec__chip {
   position: absolute;
-  left: 0;
+  /* Rechtsbündig an der Zone: so liegt der Chip über der aufgedeckten Befund-
+     Fläche links und wird vom Regler-Divider nicht angeschnitten. */
+  right: 0;
   bottom: calc(100% + 6px);
   display: inline-block;
   padding: 3px 8px;
@@ -723,9 +728,18 @@ useReveal(page, '.reveal')
   color: var(--ink-soft);
   white-space: nowrap;
 }
-.spec__chip--demo {
-  color: var(--muted);
-  font-style: italic;
+.spec__chip--below {
+  bottom: auto;
+  top: calc(100% + 6px);
+}
+/* Sehr schmale Screens: kompaktere Chip-Typo, sonst ragt der rechtsbündige Chip
+   links über den Bildrahmen hinaus (overflow:hidden schneidet ihn dann an). */
+@media (max-width: 379px) {
+  .spec__chip {
+    font-size: 8.5px;
+    letter-spacing: 0.03em;
+    padding: 3px 6px;
+  }
 }
 .spec__divider {
   position: absolute;

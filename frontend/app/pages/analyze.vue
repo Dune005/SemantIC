@@ -506,14 +506,9 @@ function exportPdf() {
 </script>
 
 <template>
-  <div v-if="state !== 'result'" class="page-head">
-    <p class="page-kicker">Tool · /analyze</p>
-    <h1>Bild prüfen</h1>
-    <p class="lead">
-      Leg ein KI-generiertes Bild ab, ergänze zwei kurze Angaben zur Verwendung – und SemantIC prüft
-      Physik, Semantik und Bias, bevor du es veröffentlichst.
-    </p>
-  </div>
+  <!-- Kein sichtbarer Seitenkopf mehr: Kicker/H1/Lead doppelten Stage-Strip und
+       Dropzone-Titel (Nutzer-Feedback). Die h1 bleibt für A11y/Struktur unsichtbar. -->
+  <h1 v-if="state !== 'result'" class="sr-only">Bild prüfen</h1>
 
   <!-- TOOL-STAGE (schmale Eingabe-Karte; Result rendert ausserhalb als volles Cockpit) -->
   <section v-if="state !== 'result'" class="stage" :data-state="state" aria-label="Bildprüfung – Eingabe und Ablauf">
@@ -713,6 +708,30 @@ function exportPdf() {
     </div>
   </section>
 
+  <!-- Einordnungs-Hinweise: was die Prüfung leistet – und was nicht. Bewusst vor
+       dem Absenden sichtbar (nur Input-Zustände, im Result übernimmt das Cockpit). -->
+  <aside v-if="state !== 'result'" class="caveats" aria-labelledby="caveats-title">
+    <p id="caveats-title" class="caveats__kicker">Gut zu wissen</p>
+    <div class="caveats__grid">
+      <div class="caveats__item">
+        <h2>Hinweise, keine Urteile</h2>
+        <p>SemantIC markiert Auffälligkeiten – die Einschätzung und die Entscheidung bleiben bei dir.</p>
+      </div>
+      <div class="caveats__item">
+        <h2>Selber gegenprüfen</h2>
+        <p>Schau dir die markierten Stellen im Original an, bevor du das Bild verwendest.</p>
+      </div>
+      <div class="caveats__item">
+        <h2>Modelle können sich irren</h2>
+        <p>Die Prüfung basiert auf KI-Modellen – einzelne Befunde können fehlen oder falsch sitzen.</p>
+      </div>
+      <div class="caveats__item">
+        <h2>Läufe können abweichen</h2>
+        <p>Wird dasselbe Bild mehrfach geprüft, können die Hinweise leicht unterschiedlich ausfallen.</p>
+      </div>
+    </div>
+  </aside>
+
   <!-- RESULT: Diagnose-Cockpit voll breit, AUSSERHALB der schmalen .stage-Karte (E5-Swap).
        BefundKarte.vue bleibt als Fallback-Datei im Repo – Rückkehr = diesen Zweig wieder mit
        <BefundKarte :vm="resultVm" :image-url="imageUrl" :submitted-usage-form="submittedUsageForm"
@@ -753,41 +772,57 @@ function exportPdf() {
 </template>
 
 <style scoped>
-.page-head {
-  max-width: 760px;
-  margin: 32px auto 8px;
-}
-.page-kicker {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-weight: 500;
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--subtle);
-}
-.page-head h1 {
-  font-family: 'IBM Plex Sans', system-ui, sans-serif;
-  font-weight: 700;
-  font-size: 26px;
-  letter-spacing: -0.02em;
-  margin-top: 6px;
-  color: var(--ink);
-}
-.page-head .lead {
-  color: var(--muted);
-  font-size: 15px;
-  margin-top: 8px;
-  max-width: var(--container-text);
-}
 
 /* Tool-Stage */
 .stage {
   max-width: 760px;
-  margin: 0 auto 56px;
+  margin: 44px auto 56px;
   background: var(--surface);
   border: 1.5px solid var(--ink);
   border-radius: var(--r);
   overflow: hidden;
+}
+
+/* Einordnungs-Hinweise unter der Eingabe-Karte: bewusst leiser als die Stage
+   (Hairline statt Ink-Rahmen), damit sie informieren, ohne zu konkurrieren. */
+.caveats {
+  max-width: 760px;
+  margin: -24px auto 64px;
+  padding: 20px 24px 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+}
+.caveats__kicker {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-weight: 500;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--subtle);
+  margin-bottom: 14px;
+}
+.caveats__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 28px;
+}
+.caveats__item h2 {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--ink);
+  margin-bottom: 3px;
+}
+.caveats__item p {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  margin: 0;
+}
+@media (max-width: 639px) {
+  .caveats__grid {
+    grid-template-columns: 1fr;
+  }
 }
 .stage__strip {
   background: var(--ink);
@@ -1224,8 +1259,8 @@ textarea.field::placeholder {
    sichtbar bleibt nur die ReportPrintView (ausserhalb der .stage). AppHeader/
    AppFooter blenden sich global via .no-print aus. */
 @media print {
-  .page-head,
   .stage,
+  .caveats,
   .result-stage {
     display: none !important;
   }
