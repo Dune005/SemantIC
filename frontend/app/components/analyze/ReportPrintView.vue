@@ -35,7 +35,6 @@ import {
   DIMENSION_DESC,
   READING_MODE_DESC,
   INPUT_COMPLETENESS_LABELS,
-  NORMATIVE_VERDICT_LABELS,
   NORMATIVE_ASPECT_LABELS,
   HINT_SEVERITY_TO_SEVERITY,
   HINT_SEVERITY_LABEL,
@@ -171,7 +170,8 @@ function ruleQuestionFor(h: ConsolidatedHint): { id: string; question: string } 
 // Anzeige-Text der Gruppe: mit Belegen trägt das Kategorie-Tag die Kopfzeile
 // (kein generischer Satz mehr). Ohne Belege bleibt ein Satz stehen – für
 // Halluzination als positiver, nicht lokalisierter Befund präzisiert; für
-// bias_combined als Verweis, wenn die Bias-Achsen die Details ohnehin liefern.
+// bias_combined und masking als Verweis, wenn die jeweilige Detail-Sektion
+// («Bias-Achsen» bzw. «Maskierung & Bildwirkung») die Inhalte ohnehin liefert.
 function groupText(h: ConsolidatedHint, evidenceCount: number): string | null {
   if (evidenceCount > 0) return null
   if (h.topic === 'hallucination') {
@@ -179,6 +179,9 @@ function groupText(h: ConsolidatedHint, evidenceCount: number): string | null {
   }
   if (h.topic === 'bias_combined' && vm.value.biasAxesDetails.length > 0) {
     return 'Mehrere Bias-Indikatoren erkannt – Details unter «Bias-Achsen».'
+  }
+  if (h.topic === 'masking' && hasFactualMasking.value) {
+    return 'Maskierungs-Hinweis erkannt – Details unter «Maskierung & Bildwirkung».'
   }
   return h.text
 }
@@ -236,6 +239,40 @@ const notReported = computed(() => {
   if (!hasNormative.value) parts.push('normative Bildwirkung nicht einschlägig')
   if (!hasBiasAxes.value) parts.push('keine Bias-Achsen abgeleitet')
   return parts
+})
+
+// Laien-Übersetzung der normativen Bildwirkung (nur Print – der Screen behält
+// die Fachbegriffe in der Progressive Disclosure). «Idealisierende Norm: mittel»
+// und die NORMATIVE_*-Notes waren für Nicht-Fachpublikum unverständlich
+// (Nutzer-Feedback 2026-07-17). Gleiche Datenlage, klarere Sprache; die
+// Intent-Differenzierung der high-Notes bleibt erhalten.
+const NORMATIVE_DEGREE_WORD: Record<string, string> = {
+  low: 'kaum',
+  medium: 'erkennbar',
+  high: 'stark',
+}
+const normativeSentence = computed(() => {
+  const word = NORMATIVE_DEGREE_WORD[vm.value.normativeMasking.verdict]
+  return word ? `Das Bild idealisiert die gezeigte Szene ${word}.` : null
+})
+const PRINT_NORMATIVE_HIGH_NOTES: Record<string, string> = {
+  affirmative:
+    'Die idealisierte Darstellung im Begleittext offen benennen – sie ist kein automatischer Ausschlussgrund.',
+  critical:
+    'Die Idealisierung ist hier genau der Punkt der Kritik – im Begleittext ausdrücklich benennen.',
+  illustrative:
+    'Als neutrales Beispielbild ungeeignet – im Begleittext benennen, dass die Darstellung idealisiert ist.',
+  unspecified:
+    'Vor der Verwendung prüfen, ob die idealisierte Darstellung zum Einsatz passt.',
+}
+const printNormativeNote = computed(() => {
+  if (!vm.value.normativeMaskingNote) return null
+  const v = vm.value.normativeMasking.verdict
+  if (v === 'high') return PRINT_NORMATIVE_HIGH_NOTES[vm.value.intentAssessment.declaredIntent] ?? null
+  if (v === 'medium') {
+    return 'Beim Veröffentlichen im Begleittext einordnen, dass die Darstellung idealisiert ist.'
+  }
+  return null
 })
 
 // Leseart: EINE Maskierungs-Logik-Zeile (keine Dopplung mit READING_MODE_DESC –
@@ -456,14 +493,14 @@ const readingModeLogic = computed(
           </ul>
         </div>
         <div v-if="hasNormative" class="print-subblock">
-          <p class="print-sublabel">Normative Bildwirkung</p>
-          <p class="print-line">Idealisierende Norm: {{ NORMATIVE_VERDICT_LABELS[vm.normativeMasking.verdict] }}.</p>
+          <p class="print-sublabel">Idealisierung (normative Bildwirkung)</p>
+          <p v-if="normativeSentence" class="print-line">{{ normativeSentence }}</p>
           <p v-if="vm.normativeMasking.reasoning" class="print-sub">{{ vm.normativeMasking.reasoning }}</p>
           <div v-if="vm.normativeMasking.aspects.length" class="print-chips">
             <Chip v-for="a in [...new Set(vm.normativeMasking.aspects)]" :key="a" :label="NORMATIVE_ASPECT_LABELS[a]" />
           </div>
-          <p v-if="vm.normativeMaskingNote" class="print-note-line">
-            <span class="pn-label">Hinweis</span>{{ vm.normativeMaskingNote }}
+          <p v-if="printNormativeNote" class="print-note-line">
+            <span class="pn-label">Hinweis</span>{{ printNormativeNote }}
           </p>
         </div>
       </section>
@@ -486,13 +523,15 @@ const readingModeLogic = computed(
         </div>
       </section>
 
-      <!-- Sichtbare Bildmarkierung (Provenienzmarker – kein Befund, getrennt von P/A/K/M-Spots) -->
+      <!-- Sichtbare Bildmarkierung (Provenienzmarker – kein Befund, getrennt von
+           P/A/K/M-Spots). Bewusst leichte Sublabel-Überschrift: nur 1–2 Zeilen
+           Inhalt, eine volle H2 würde die Mini-Sektion übergewichten. -->
       <section v-if="vm.provenanceMarkers.length" class="print-block">
-        <h2 class="print-h2">Sichtbare Bildmarkierung</h2>
-        <p v-for="(m, i) in vm.provenanceMarkers" :key="i" class="print-line">
+        <h2 class="print-h2 print-h2--light">Sichtbare Bildmarkierung</h2>
+        <p v-for="(m, i) in vm.provenanceMarkers" :key="i" class="print-sub print-sub--first">
           {{ m.description }} – Erkennungssicherheit: {{ m.confidence === 'high' ? 'hoch' : 'mittel' }}
         </p>
-        <p class="print-sub">
+        <p class="print-caption print-caption--tight">
           Unverifizierte Modellbeobachtung; keine Aussage über Herkunft, Echtheit oder Urheberschaft.
         </p>
       </section>
@@ -542,13 +581,12 @@ const readingModeLogic = computed(
 }
 
 /* ── Grundgerüst (Variante C, Halbgeviertstrich, kein Links-Streifen) ── */
+/* Sektionstrennung übernimmt die unterstrichene Überschrift (print-h2) –
+   die frühere Bottom-Hairline pro Block entfällt (sonst Doppellinien). */
 .print-block {
-  margin-bottom: 11px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--line-soft);
+  margin-bottom: 13px;
 }
 .print-page--details .print-block:last-child {
-  border-bottom: none;
   margin-bottom: 0;
 }
 
@@ -583,15 +621,29 @@ const readingModeLogic = computed(
   max-width: 78ch;
 }
 
-/* Block-Überschrift */
+/* Block-Überschrift – bewusst prominent (Nutzer-Feedback 2026-07-17: Sektionen
+   auf Seite 2 waren schwer zu überfliegen): dezenter vollflächiger Balken als
+   Gliederungsband (print-color-adjust: exact stellt den Druck sicher; kein
+   Links-Akzent-Streifen). */
 .print-h2 {
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-size: 10px;
-  letter-spacing: 0.14em;
+  font-size: 12px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  background: var(--surface-2);
+  border-radius: 2px;
+}
+/* Leichte Variante für Mini-Sektionen (1–2 Zeilen Inhalt) */
+.print-h2--light {
+  font-size: 9.5px;
   font-weight: 600;
   color: var(--ink-soft);
-  margin-bottom: 8px;
+  padding: 3px 8px;
+  margin-bottom: 4px;
 }
 /* ── Urteilskarte (Cockpit-Anmutung, print-flach: Hairlines statt Flächen) ── */
 .print-verdict-card {
@@ -932,11 +984,18 @@ const readingModeLogic = computed(
   margin-top: 3px;
 }
 .print-caption {
-  margin-top: 8px;
+  margin-top: 6px;
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
   font-size: 8.5px;
   letter-spacing: 0.03em;
   color: var(--subtle);
+}
+.print-caption--tight {
+  margin-top: 2px;
+}
+.print-sub--first {
+  margin-top: 0;
+  color: var(--ink);
 }
 .print-chips {
   display: flex;
@@ -950,6 +1009,11 @@ const readingModeLogic = computed(
   display: flex;
   flex-direction: column;
   gap: 7px;
+}
+/* Hairline zwischen den Karten, damit die Befunde nicht ineinanderfliessen. */
+.print-finding + .print-finding {
+  border-top: 1px solid var(--line-soft);
+  padding-top: 7px;
 }
 .pf-head {
   display: flex;
@@ -981,7 +1045,7 @@ const readingModeLogic = computed(
   line-height: 1.45;
 }
 .pf-question {
-  margin: 4px 0 0 14px;
+  margin: 3px 0 0 14px;
   font-size: 10.5px;
   color: var(--ink-soft);
   line-height: 1.4;
@@ -1037,23 +1101,23 @@ const readingModeLogic = computed(
 
 /* ── Maskierung & Bildwirkung ── */
 .print-subblock + .print-subblock {
-  margin-top: 9px;
-  padding-top: 8px;
+  margin-top: 8px;
+  padding-top: 7px;
   border-top: 1px solid var(--line-soft);
 }
 .print-sublabel {
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-size: 8.5px;
+  font-size: 9.5px;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--subtle);
+  color: var(--ink-soft);
   margin-bottom: 3px;
 }
 
 /* ── Bias-Achsen ── */
 .print-axis {
-  margin-top: 7px;
+  margin-top: 5px;
 }
 .print-axis__head {
   font-size: 11.5px;
@@ -1064,8 +1128,8 @@ const readingModeLogic = computed(
 
 /* ── Prüffragen-Restliste (ohne zugeordneten Befund) ── */
 .print-extra-questions {
-  margin-top: 9px;
-  padding-top: 8px;
+  margin-top: 7px;
+  padding-top: 6px;
   border-top: 1px solid var(--line-soft);
   display: flex;
   flex-direction: column;
