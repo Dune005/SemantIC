@@ -1,11 +1,12 @@
-// vue-i18n-Optionen (Frontend 1.8). fallbackLocale = de: solange en.json leer ist,
-// faellt jede EN-Ansicht auf die deutschen Texte zurueck (Mechanik-Vorbereitung).
+// vue-i18n-Optionen (Frontend 1.8, i18n-Seitentexte-Migration ab 2026-07-20).
+// fallbackLocale = de: fehlt ein en-Key, faellt die EN-Ansicht auf den deutschen Text zurueck.
 export default defineI18nConfig(() => ({
   legacy: false,
   fallbackLocale: 'de',
-  // en.json ist in der Mechanik-Phase bewusst leer -> JEDER en-Key faellt auf de zurueck.
-  // Ohne diese Flags spammt vue-i18n im Dev pro EN-Ansicht Dutzende Fallback-Warnings.
-  // Bei echten EN-Texten missingWarn wieder aktivieren, um Luecken zu finden.
-  missingWarn: false,
-  fallbackWarn: false,
+  // Waehrend/nach der Seitentext-Migration AN: jede echte Luecke (de-Key ohne en-Pendant)
+  // wird im Dev als Warnung sichtbar. Der Analyse-Report rendert hartcodiertes Deutsch
+  // (laeuft nicht ueber $t) und erzeugt daher KEINE Warnungen – Warnungen markieren also
+  // ausschliesslich echte Luecken in den migrierten Seiten-/Chrome-Namespaces.
+  missingWarn: true,
+  fallbackWarn: true,
 }))

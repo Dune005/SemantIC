@@ -2,8 +2,9 @@
 // LangSwitcher (Frontend 1.8) – Globe-Trigger + aufklappbares Dropdown (reka-ui, die
 // shadcn-vue-Basis; A11y/Keyboard/Escape liefert reka-ui). Bewahrt das Design-System:
 // Trigger im dunklen Header (--ink-*), schwebendes Panel hell (--surface/--line/--ink),
-// IBM Plex, kein Links-Akzentstreifen. switchTo() ruft setLocale + persistiert den Cookie
-// (useLanguageSwitch). EN faellt bis zur Textmigration auf DE zurueck (en.json leer).
+// IBM Plex, kein Links-Akzentstreifen. switchTo() ruft nur setLocale (useLanguageSwitch);
+// die Cookie-Persistenz uebernimmt die eingebaute Browser-Erkennung (detectBrowserLanguage,
+// cookieKey 'i18n_locale'). EN faellt bis zur Textmigration auf DE zurueck (en.json leer).
 import {
   DropdownMenuRoot,
   DropdownMenuTrigger,

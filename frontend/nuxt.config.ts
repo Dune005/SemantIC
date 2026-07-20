@@ -13,18 +13,27 @@ export default defineNuxtConfig({
     port: 3500,
   },
   modules: ['@nuxtjs/tailwindcss', '@nuxtjs/i18n'],
-  // Mehrsprachigkeit DE/EN – Mechanik (Frontend 1.8). EN ist waehlbar, faellt aber
-  // bis zur Textmigration auf DE zurueck (en.json leer). Default DE, keine URL-Praefixe.
+  // Mehrsprachigkeit DE/EN (Frontend 1.8; Seitentext-Migration 2026-07-20 abgeschlossen).
+  // Default DE, keine URL-Praefixe. Automatische Browser-Erkennung beim Erstbesuch AN,
+  // seit die EN-Texte existieren (vorher aus, weil ein EN-Browser nur den de-Fallback gesehen haette).
   i18n: {
     defaultLocale: 'de',
     strategy: 'no_prefix',
     vueI18n: 'i18n.config.ts',
-    // Cookie-Persistenz der MANUELLEN Wahl loesen wir selbst (plugins/i18n-persist.client.ts
-    // + composables/useLanguageSwitch.ts), NICHT ueber detectBrowserLanguage: dessen
-    // Browser-Erkennung wuerde den Erstbesuch je nach Accept-Language auf EN schicken.
-    // detectBrowserLanguage:false => Erstbesuch IMMER de (defaultLocale), Wahl persistiert
-    // ueber unseren Cookie. (Codex-P1: false deaktiviert die eingebaute Cookie-Persistenz.)
-    detectBrowserLanguage: false,
+    // Erstbesuch ohne Cookie: Locale aus Accept-Language (en->EN, sonst/unbekannt->DE).
+    // useCookie + derselbe cookieKey wie die manuelle Wahl ('i18n_locale') => EINE Quelle der
+    // Wahrheit: setLocale() schreibt diesen Cookie selbst (v10: setLocaleSuspend -> setCookieLocale),
+    // die SSR-Erkennung liest ihn beim Init (Server + Client identisch). Kein zweiter,
+    // konkurrierender Cookie, keine app.vue-Reapply-Logik mehr noetig. Die manuelle Wahl gewinnt,
+    // weil der Cookie VOR Accept-Language ausgewertet wird; alwaysRedirect:false verhindert
+    // zusaetzlich, dass spaetere Navigationen erneut aus Accept-Language erkennen.
+    detectBrowserLanguage: {
+      useCookie: true,
+      cookieKey: 'i18n_locale',
+      redirectOn: 'root',
+      fallbackLocale: 'de',
+      alwaysRedirect: false,
+    },
     locales: [
       { code: 'de', name: 'Deutsch', language: 'de-CH', file: 'de.json' },
       { code: 'en', name: 'English', language: 'en-US', file: 'en.json' },
