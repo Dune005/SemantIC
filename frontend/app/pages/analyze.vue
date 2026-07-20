@@ -8,7 +8,7 @@
 // → DiagnoseCockpit. usage_form bleibt frontend-only (nie im API-Body). Fehler werden über
 // mapFetchError(HTTP-Status → ErrorKind) abgebildet; rateLimitHint/bypassActive kommen
 // aus den Response-Headern in den geteilten Chrome-State (useState).
-import { ref, computed, onBeforeUnmount } from 'vue'
+import { ref, computed, onBeforeUnmount, onMounted } from 'vue'
 import Button from '~/components/ui/Button.vue'
 import TileSelect from '~/components/ui/TileSelect.vue'
 import WaitState from '~/components/analyze/WaitState.vue'
@@ -18,6 +18,7 @@ import ReportPrintView from '~/components/analyze/ReportPrintView.vue'
 import type { AnalysisViewModel, UsageForm } from '~/types/analysis'
 import { buildAnalysisViewModel } from '~/composables/useAnalysisView'
 import type { SemanticAnalysisResult } from '@pipeline/analyze'
+import type { QuotaResponse } from '~~/server/api/quota.get'
 
 useHead({ title: 'Bild prüfen – SemantIC' })
 
@@ -161,6 +162,24 @@ const apiMediaType = ref<string | null>(null)
 // Chrome-State (Header/Footer im Layout) ueber die Layout<->Page-Grenze teilen.
 const rateLimitHint = useState<string | null>('chrome:rateLimitHint', () => null)
 const bypassActive = useState<boolean>('chrome:bypassActive', () => false)
+
+// Tageslimit-Stand schon beim Oeffnen der Seite zeigen. Client-only: der Stand
+// haengt an der IP und darf nicht ins SSR-Caching geraten. Fehler bleiben still –
+// die Anzeige ist eine Zusatzinfo, kein Teil des Analyse-Flows.
+onMounted(async () => {
+  try {
+    const quota = await $fetch<QuotaResponse>('/api/quota')
+    if (quota.state === 'bypass') {
+      bypassActive.value = true
+      return
+    }
+    if (quota.state === 'ok' && quota.remaining != null && quota.limit != null) {
+      rateLimitHint.value = `Noch ${quota.remaining} von ${quota.limit} heute frei`
+    }
+  } catch {
+    // Anzeige bleibt leer – exakt der Zustand vor diesem Feature.
+  }
+})
 
 const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp']
 // Client-Downscale (error-taxonomy.md §0). Base64-Ziel bewusst < Server-Limit (4.5 MB).
@@ -349,10 +368,17 @@ async function runAnalysis() {
     })
     if (signal.aborted) return
     // rateLimitHint + bypassActive aus den Response-Headern (Spec §6.6).
+    // Das Tageslimit kommt aus dem Header, nicht als Literal – sonst laeuft die
+    // Anzeige beim naechsten Limit-Wechsel wieder aus dem Server-Wert heraus.
     const remaining = res.headers.get('x-ratelimit-remaining')
     if (remaining != null) {
       const n = Number(remaining)
-      rateLimitHint.value = Number.isFinite(n) ? `Noch ${n} von 3 heute frei` : null
+      const total = Number(res.headers.get('x-ratelimit-limit'))
+      rateLimitHint.value = Number.isFinite(n)
+        ? Number.isFinite(total)
+          ? `Noch ${n} von ${total} heute frei`
+          : `Noch ${n} heute frei`
+        : null
     }
     if (res.headers.get('x-ratelimit-bypass') === '1') bypassActive.value = true
 

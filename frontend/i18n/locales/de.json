@@ -31,7 +31,7 @@
   },
   "bypass": {
     "label": "Zugangscode (Demo)",
-    "hint": "Hebt das Tageslimit (3 Analysen / 24 h) für die Begutachtung auf. Der Zugang gilt 30 Tage für diesen Browser.",
+    "hint": "Hebt das Tageslimit (5 Analysen / 24 h) für die Begutachtung auf. Der Zugang gilt 30 Tage für diesen Browser.",
     "placeholder": "Code eingeben",
     "submit": "Einlösen",
     "success": "Zugang aktiv – das Tageslimit ist für diesen Browser 30 Tage aufgehoben.",
