@@ -1,5 +1,5 @@
 // IP-Rate-Limit + Bypass-Check (Etappe 6, IMPLEMENTATION-PLAN §6.1/§6.2).
-// Reihenfolge: Pfad-Guard -> Bypass-Cookie -> IP-Limit (3/24h Sliding).
+// Reihenfolge: Pfad-Guard -> Bypass-Cookie -> IP-Limit (5/24h Sliding).
 // Nur POST /api/analyze wird limitiert; /api/bypass/redeem, GET und statische
 // Routen laufen frei durch (redeem hat einen eigenen Brute-Force-Bucket).
 

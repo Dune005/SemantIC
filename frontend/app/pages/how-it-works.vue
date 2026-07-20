@@ -60,15 +60,15 @@ useHead({
             KI-Bildgeneratoren optimieren auf das, was sofort als „gut" gelesen wird:
             Schärfe, Farbe, Licht, Komposition. Auf die inhaltliche Stimmigkeit –
             Logik der Szene, Proportionen, Klischees – optimieren sie weit weniger.
-            Bilder werden so zuverlässig schön, aber nur zufällig richtig.
+            Bilder werden so zuverlässig schön, aber nicht zuverlässig richtig.
           </p>
           <p>
             Die Folge ist das eigentliche Problem: Ein überzeugendes Bild lädt nicht
             dazu ein, genauer hinzusehen. Die Oberfläche beruhigt das Auge, und
-            Schwächen rutschen durch. Diesen Mechanismus nennen wir
-            <strong>Maskierung</strong> – die Arbeitsthese hinter SemantIC: Je
-            überzeugender ein Bild wirkt, desto eher kann seine Oberfläche die
-            kritische Prüfung erschweren.
+            Schwächen rutschen durch. Diesen Zusammenhang nennen wir
+            <strong>Maskierung</strong> – die Arbeitsthese hinter SemantIC: Eine
+            überzeugende Oberfläche kann die kritische Prüfung erschweren. Die Studie
+            dahinter stützt diese Annahme, beweisen kann sie sie nicht.
           </p>
         </div>
 
@@ -77,10 +77,11 @@ useHead({
           <p class="card__kicker">Theoriebezug</p>
           <p>
             Dieser Effekt ist nicht nur eine Beobachtung, sondern lässt sich
-            wissenschaftlich einordnen. Neuere Forschung zeigt, dass künstliche
-            neuronale Netze visuelle Eigenschaften priorisieren, während Menschen
-            Bilder stärker über ihre Bedeutung erfassen. SemantIC setzt genau in diese
-            Lücke: Es schaut dorthin, wo das Auge zu schnell zufrieden ist.
+            wissenschaftlich einordnen. Neuere Forschung zeigt an KI-Erkennungssystemen,
+            dass künstliche neuronale Netze visuelle Eigenschaften priorisieren, während
+            Menschen Bilder stärker über ihre Bedeutung erfassen. Dass dasselbe für
+            Bildgeneratoren gilt, ist die Annahme dieser Arbeit. SemantIC setzt genau in
+            diese Lücke: Es schaut dorthin, wo das Auge zu schnell zufrieden ist.
           </p>
         </Card>
       </div>
@@ -475,7 +476,7 @@ useHead({
 .hero {
   position: relative;
   width: 100%;
-  min-height: clamp(420px, 64vh, 620px);
+  min-height: var(--hero-min-h);
   display: flex;
   align-items: flex-end;
   overflow: hidden;

@@ -17,6 +17,9 @@
   --container-text: 720px;                  /* Lesespalte (Langtext) */
   --gutter:         clamp(20px, 5vw, 48px); /* seitliches Container-Padding */
   --header-h:       64px;                   /* feste Header-Hoehe (Desktop) */
+  /* Gemeinsame Hero-Mindesthoehe der Unterseiten (how-it-works, error-guide).
+     Zentral, damit die Seiten beim Wechsel nicht unterschiedlich hoch springen. */
+  --hero-min-h:     clamp(420px, 64vh, 620px);
 }
 @media (max-width: 939px) {
   :root { --header-h: 56px; }               /* Mobile-Header (Hamburger ab 939px, s. AppHeader) */

@@ -1,6 +1,6 @@
 // Rate-Limit-Infrastruktur (Etappe 6, IMPLEMENTATION-PLAN §6.2).
 // Lazy Singleton: zwei Sliding-Window-Limiter auf einer Upstash-Redis-Instanz.
-//   - analyze: 3 Analysen / 24 h pro IP (Kostenschutz fuer /api/analyze)
+//   - analyze: 5 Analysen / 24 h pro IP (Kostenschutz fuer /api/analyze)
 //   - bypass:  Brute-Force-Bremse fuer /api/bypass/redeem (5 Versuche / 10 min)
 //
 // getLimiters() gibt null zurueck, wenn die Upstash-ENV fehlt – der Aufrufer
@@ -31,7 +31,7 @@ export function getLimiters(): Limiters | null {
   cached = {
     analyze: new Ratelimit({
       redis,
-      limiter: Ratelimit.slidingWindow(3, '24 h'),
+      limiter: Ratelimit.slidingWindow(5, '24 h'),
       prefix: 'semantic:analyze',
       analytics: false,
     }),

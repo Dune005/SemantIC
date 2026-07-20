@@ -74,15 +74,17 @@ interface Dim {
 const DIMS: Record<DimKey, Dim> = {
   phys: {
     label: 'Physik',
-    chip: 'Stethoskop-Knoten',
-    zone: { left: '32%', top: '42%', width: '34%', height: '36%' },
+    chip: 'Stethoskop',
+    // Eng auf den Ohrbügel: dort laufen die Metallrohre unmöglich zusammen.
+    zone: { left: '48%', top: '56%', width: '17%', height: '22%' },
     strong: 'Licht, Schatten, Material.',
     body: 'Hier sichtbar: Das Stethoskop ist unmöglich verschlungen – Schlauch, Bügel und Band laufen so zusammen, dass es sich real nicht tragen liesse. Ein Strukturfehler, der im Gesamteindruck untergeht.',
   },
   sem: {
     label: 'Semantik',
     chip: 'Fremdes Foto',
-    zone: { left: '40%', top: '82%', width: '15%', height: '15%' },
+    // Auf die Ausweiskarte selbst, nicht auf Clip und Band darueber.
+    zone: { left: '41%', top: '86%', width: '14%', height: '12%' },
     strong: 'Inhalt, Kontext, Logik.',
     body: 'Passt die Szene zusammen? Hier nicht: Das Namensschild zeigt das Foto einer anderen Person, Name und Beschriftung sind Zeichensalat – ein Kontextbruch mitten im Bild.',
   },
@@ -281,15 +283,15 @@ useReveal(page, '.reveal')
             <p class="lead reveal r2">
               KI-Bildgeneratoren sind gut darin, Bilder schön zu machen – und deutlich
               schlechter darin, sie <em>richtig</em> zu machen: physikalisch plausibel,
-              inhaltlich passend, frei von Klischees. Die visuelle Perfektion überdeckt
-              diese Schwächen: Ein Bild wirkt so überzeugend, dass du gar nicht erst
-              hinschaust, ob es auch hält. Diesen Effekt nennen wir <em>Maskierung</em> –
+              inhaltlich passend, frei von Klischees. Die visuelle Perfektion kann
+              diese Schwächen überdecken: Wo ein Bild überzeugt, bleibt der prüfende
+              Blick leichter aus. Diesen Effekt nennen wir <em>Maskierung</em> –
               ihm arbeitet SemantIC entgegen.
             </p>
 
             <p class="switch-hint reveal r2">
-              Dasselbe Beispielbild, drei Blickwinkel: Physik, Semantik und Bias.
-              Wechsle die Dimension und zieh den Regler in die Befund-Ansicht.
+              Dasselbe Bild, drei Blickwinkel: Physik, Semantik und Bias.
+              Wechsle die Dimension – der Befund wechselt mit.
             </p>
 
             <!-- Segmented-Control statt role=tablist (Codex-Review): Buttons mit
@@ -341,8 +343,13 @@ useReveal(page, '.reveal')
                     :aria-valuetext="`${reveal} Prozent der Befund-Ansicht sichtbar`"
                   />
                 </div>
+                <!-- Bedienhinweis eigenstaendig und kontraststark: als Teil der
+                     grauen Caption ging er unter (Feedback 2026-07-20). -->
+                <p class="spec__pull">
+                  <span aria-hidden="true">◂▸</span> Regler durch das Bild ziehen
+                </p>
                 <figcaption class="spec__card">
-                  Beispiel-Exponat · KI-generiert · Demo-Ansicht – zieh den Regler für die Befund-Ansicht
+                  Bild aus dem Studienkorpus dieser Arbeit · KI-generiert · Befunde manuell markiert
                 </figcaption>
             </figure>
 
@@ -367,7 +374,8 @@ useReveal(page, '.reveal')
               SemantIC bewertet zwei Dinge strikt getrennt: wie ein Bild <em>wirkt</em>
               (Ästhetik) und was es inhaltlich <em>hält</em> (Integrität). So wird sichtbar,
               wenn ein Bild besser aussieht, als es ist – der Nährboden für Maskierung.
-              Wie der Maskierungs-Check im Detail funktioniert, zeigt die Erklärseite.
+              Wie der Maskierungs-Check im Detail funktioniert, steht unter
+              <NuxtLink to="/how-it-works">Funktionsweise</NuxtLink>.
             </p>
 
             <!-- Bild-Paar oben: Gesamteindruck + Detail-Crop. -->
@@ -460,8 +468,7 @@ useReveal(page, '.reveal')
             <p class="lead reveal r2">
               Die Kriterien, nach denen SemantIC prüft, stammen aus einer eigenen
               qualitativen Inhaltsanalyse von 144 KI-generierten Bildern – wie daraus
-              die Prüfung wurde und wo ihre Grenzen liegen, steht offen auf der
-              Erklärseite.
+              die Prüfung wurde und wo ihre Grenzen liegen, ist offen dokumentiert.
             </p>
 
             <div class="facts reveal r2">
@@ -671,7 +678,11 @@ useReveal(page, '.reveal')
 /* Passepartout direkt auf dem <figure> – so bleibt figcaption ein direkter
    figure-Kind (valide Caption-Zuordnung, Codex-Review). */
 .spec {
-  max-width: 460px;
+  /* Volle Tafel-Innenbreite (760px - 2x72px Padding): das Exponat nutzt den
+     Raum, den die Tafel ohnehin bereitstellt, und schliesst bündig mit der
+     Textspalte ab. Breiter waere moeglich, laesst aber bei 4:3 Bild und
+     Befundtext nicht mehr gemeinsam in den Viewport passen. */
+  max-width: 616px;
   margin: 0 auto;
   border: 1px solid var(--line);
   border-radius: var(--r);
@@ -778,8 +789,25 @@ useReveal(page, '.reveal')
   outline: 2px solid var(--ink);
   outline-offset: 3px;
 }
+/* Bedienhinweis: kraeftiger als die Caption, damit er nicht in der grauen
+   Fusszeile verschwindet. Bewusst ohne Rahmen/Flaeche – er soll auffallen,
+   aber nicht als klickbarer Button missverstanden werden. */
+.spec__pull {
+  margin: clamp(14px, 2.4vw, 20px) 0 0;
+  text-align: center;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+.spec__pull span {
+  margin-right: 4px;
+  color: var(--muted);
+}
 .spec__card {
-  margin-top: clamp(14px, 2.4vw, 22px);
+  margin-top: clamp(8px, 1.4vw, 12px);
   text-align: center;
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
   font-size: 11px;
@@ -871,6 +899,15 @@ useReveal(page, '.reveal')
 }
 .wall--ink .lead em {
   color: var(--ink-text);
+}
+/* Fliesstext-Link auf dunkler Tafel: die globale a-Regel setzt --ink (dunkel)
+   und waere hier unlesbar. */
+.wall--ink .lead a {
+  color: var(--ink-text);
+  text-decoration-color: var(--ink-text-muted);
+}
+.wall--ink .lead a:hover {
+  text-decoration-color: var(--ink-text);
 }
 
 /* ---- Bild-Paar ---- */
@@ -1381,6 +1418,10 @@ useReveal(page, '.reveal')
 @media print {
   .closer,
   .band {
+    display: none;
+  }
+  /* Bedienhinweis auf Papier sinnlos – der Regler laesst sich nicht ziehen. */
+  .spec__pull {
     display: none;
   }
   .lp__grid {

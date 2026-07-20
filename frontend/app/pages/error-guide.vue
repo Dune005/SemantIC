@@ -53,11 +53,12 @@ const physics = specimensByCategory('physics')
       <div class="page page--text">
         <h2 id="eg-intro" class="sr-only">Einleitung</h2>
         <p class="eg-prose eg-prose--lead">
-          KI-Bildgeneratoren optimieren auf das, was sofort überzeugt – auf die
-          inhaltliche Stimmigkeit einer Szene weit weniger. Je makelloser die
-          Oberfläche, desto leichter rutscht ein Fehler darunter durch: der
-          <strong>Maskierungseffekt</strong>, die Arbeitsthese hinter SemantIC –
-          <NuxtLink to="/how-it-works">warum das so ist, steht auf der Erklärseite</NuxtLink>.
+          Diese Seite geht vier Fehlerbereiche durch: Körper und Anatomie, die Logik
+          einer Szene, Licht und Raum – und Rollenbilder, die sich an keiner einzelnen
+          Bildstelle festmachen lassen. Dass solche Brüche unter einer überzeugenden
+          Oberfläche untergehen können, nennt SemantIC den
+          <strong>Maskierungseffekt</strong> –
+          <NuxtLink to="/how-it-works">hergeleitet wird er unter Funktionsweise</NuxtLink>.
         </p>
         <p class="eg-prose">
           Die Beispiele auf dieser Seite stammen aus dem empirischen Teil der
@@ -118,8 +119,8 @@ const physics = specimensByCategory('physics')
         <p class="eg-prose">
           Die häufigste Fehlerart im Korpus – und meist die subtilste. Spiegelungen, die
           nicht zur Szene davor passen, Bildschirme, die zur falschen Seite zeigen: Details,
-          die kaum auffallen, weil das Bild sonst überzeugend wirkt. Genau hier zeigt sich
-          der Maskierungseffekt in Reinform.
+          die kaum auffallen, weil das Bild sonst überzeugend wirkt. Genau hier setzt
+          der Maskierungseffekt an.
         </p>
       </div>
       <div class="page">
@@ -216,7 +217,7 @@ const physics = specimensByCategory('physics')
 /* ============================================================ */
 .eg-hero {
   position: relative;
-  min-height: clamp(430px, 68vh, 660px);
+  min-height: var(--hero-min-h);
   display: flex;
   align-items: flex-end;
   overflow: hidden;

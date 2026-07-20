@@ -91,7 +91,7 @@ const ERROR_PRESETS: Record<ErrorKind, ErrorPreset> = {
   rate_limited: {
     title: 'Tageslimit erreicht',
     message:
-      'Pro Browser-Verbindung sind 3 Analysen in 24 Stunden möglich – das schützt die Kosten dieses Lehrprojekts. Du hast das Limit für heute ausgeschöpft. Morgen sind wieder 3 Analysen frei. Für eine Demo oder als Gutachter:in kannst du das Limit sofort aufheben: Trag den Zugangscode im Feld „Zugangscode" unten im Footer ein.',
+      'Pro Browser-Verbindung sind 5 Analysen in 24 Stunden möglich – das schützt die Kosten dieses Lehrprojekts. Du hast das Limit für heute ausgeschöpft. Morgen sind wieder 5 Analysen frei. Für eine Demo oder als Gutachter:in kannst du das Limit sofort aufheben: Trag den Zugangscode im Feld „Zugangscode" unten im Footer ein.',
     severity: 'warn',
     primaryAction: { label: 'Zugangscode eingeben', event: 'focusBypass' },
     secondaryAction: { label: 'Verstanden', event: 'dismiss' },

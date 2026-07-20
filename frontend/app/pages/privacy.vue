@@ -83,7 +83,7 @@ useHead({ title: 'Datenschutz – SemantIC' })
           <tr>
             <td>Technische Daten</td>
             <td>IP-Adresse, Zeitstempel</td>
-            <td>Bei jeder Analyse (für das Tageslimit von 3 Analysen pro 24 Stunden) und beim Einlösen eines Zugangscodes</td>
+            <td>Bei jeder Analyse (für das Tageslimit von 5 Analysen pro 24 Stunden) und beim Einlösen eines Zugangscodes</td>
           </tr>
           <tr>
             <td>Bypass-Cookie</td>
