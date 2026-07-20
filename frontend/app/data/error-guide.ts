@@ -5,14 +5,17 @@
 // Sie markieren einen BEREICH, keine pixelgenaue Kontur. Stand: Erst-Entwurf – am gerenderten Bild
 // zu justieren und vom Bearbeiter abzunehmen (entscheidungen.md §5). Bild-IDs verweisen auf die
 // Codierung `codierte_Bilder_040526.csv`; keine LLM-/Pipeline-Koordinaten.
+//
+// i18n (Seitentext-Migration): Dieses Modul hält NUR Struktur (id, Bildpfad, Masse, Boxen,
+// Kategorie, Spot-Anzahl). Alle Texte (alt, caption, Spot-Titel/-Text, Bias-Caption) liegen in
+// i18n und werden über die id + Spot-Index abgeleitet:
+//   pages.errorGuide.specimens.<id>.{alt,caption,spots.<i>.{title,text}}
+//   pages.errorGuide.bias.<id>.{alt,caption}
+// prompt bleibt als literaler Bildauftrag («nurse»/«CEO») im Datenmodul.
 
 export interface SpecimenSpot {
   /** [y_min, x_min, y_max, x_max], ganzzahlig normiert 0–1000. */
   box: [number, number, number, number]
-  /** Kurzlabel, erscheint am Pin-Tooltip und als Listen-Titel. */
-  title: string
-  /** 1–2 Sätze Erklärung, publikumsgerecht (aus der Codierungs-Notiz). */
-  text: string
 }
 
 export interface ErrorSpecimen {
@@ -23,12 +26,8 @@ export interface ErrorSpecimen {
    *  (kein Layout-Sprung im gestapelten Tour-Frame, kein Marker-Flash). */
   width: number
   height: number
-  /** Szenenbeschreibung (darf die Fehler nennen – kein Suchspiel). */
-  alt: string
-  /** Herkunftszeile für die Bildlegende. */
-  caption: string
   category: 'anatomy' | 'context' | 'physics'
-  /** 1–4 Spots; Nummerierung = Index + 1. */
+  /** 1–4 Spots; Nummerierung = Index + 1. Text via i18n (siehe Kopf). */
   spots: SpecimenSpot[]
 }
 
@@ -36,11 +35,8 @@ export interface ErrorSpecimen {
 export interface BiasExample {
   id: string
   image: string
-  alt: string
-  /** Sinngemässer Bildauftrag, z. B. «nurse». */
+  /** Sinngemässer Bildauftrag, z. B. «nurse» (literal, nicht übersetzt). */
   prompt: string
-  /** Was die KI daraus macht (Stereotyp-Beschreibung). */
-  caption: string
 }
 
 export const errorSpecimens: ErrorSpecimen[] = [
@@ -50,37 +46,16 @@ export const errorSpecimens: ErrorSpecimen[] = [
     image: '/error-guide/anatomie-notaufnahme-finger.webp',
     width: 1600,
     height: 1200,
-    alt: 'Überfüllter Krankenhaus-Wartebereich; im Vordergrund rechts eine Pflegerin am Empfangstisch, links wartende Patienten auf Stühlen.',
-    caption: 'KI-generiert · Studienkorpus, Bild SD_emergencyroom_03',
     category: 'anatomy',
-    spots: [
-      {
-        box: [426, 283, 479, 343],
-        title: 'Verschmelzende Gliedmassen',
-        text: 'Bei der wartenden Frau und dem Kind auf ihrem Schoss gehen Arme und Beine ineinander über – die KI verliert an den Überlappungen die Grenze zwischen zwei Körpern.',
-      },
-      {
-        box: [361, 336, 424, 411],
-        title: 'Zu viele Finger',
-        text: 'An der Hand des daneben wartenden Mannes lassen sich mehr Finger zählen, als anatomisch möglich sind.',
-      },
-    ],
+    spots: [{ box: [426, 283, 479, 343] }, { box: [361, 336, 424, 411] }],
   },
   {
     id: 'anatomie-barista',
     image: '/error-guide/anatomie-barista-haende.webp',
     width: 1600,
     height: 1200,
-    alt: 'Café-Innenraum; eine Barista mit Schürze hinter dem Tresen hält ein Tablett, im Vordergrund Gäste an Laptops.',
-    caption: 'KI-generiert · Studienkorpus, Bild FL_coffeeshop_02',
     category: 'anatomy',
-    spots: [
-      {
-        box: [407, 142, 504, 243],
-        title: 'Zu viele Hände',
-        text: 'Die Barista scheint das Tablett gleichzeitig von oben und von unten zu halten – es sind mehr Hände im Bild, als die Haltung zulässt.',
-      },
-    ],
+    spots: [{ box: [407, 142, 504, 243] }],
   },
   // ---------------------------------------------------------------- KONTEXT
   {
@@ -88,37 +63,16 @@ export const errorSpecimens: ErrorSpecimen[] = [
     image: '/error-guide/kontext-coffeeshop-laptop.webp',
     width: 1600,
     height: 1200,
-    alt: 'Café mit Gebäckvitrine; mehrere Gäste sitzen an kleinen Tischen an Laptops, am Fenster Blick auf die Strasse.',
-    caption: 'KI-generiert · Studienkorpus, Bild FL_coffeeshop_01',
     category: 'context',
-    spots: [
-      {
-        box: [573, 70, 668, 143],
-        title: 'Laptop ohne Bildschirm',
-        text: 'Der Gast im Vordergrund tippt auf einem Laptop, dessen Display fehlt – das Gerät ergibt so keinen Sinn.',
-      },
-      {
-        box: [567, 142, 670, 174],
-        title: 'Pflanze aus der Tasse',
-        text: 'Aus einem Gefäss, in dem Kaffee stehen sollte, wächst eine Zimmerpflanze.',
-      },
-    ],
+    spots: [{ box: [573, 70, 668, 143] }, { box: [567, 142, 670, 174] }],
   },
   {
     id: 'kontext-dinner-weinglas',
     image: '/error-guide/kontext-dinner-weinglas.webp',
     width: 1200,
     height: 896,
-    alt: 'Mehrgenerationen-Familie an einem festlich gedeckten Esstisch, ausgelassene Stimmung, Braten und Rotwein in der Mitte.',
-    caption: 'KI-generiert · Studienkorpus, Bild NB_dinner_04',
     category: 'context',
-    spots: [
-      {
-        box: [577, 556, 762, 651],
-        title: 'Weinglas am Kinderplatz',
-        text: 'Am Platz des kleinen Jungen steht ein gefülltes Rotweinglas – inhaltlich absurd, aber technisch tadellos gerendert.',
-      },
-    ],
+    spots: [{ box: [577, 556, 762, 651] }],
   },
   // ---------------------------------------------------------------- PHYSIK
   {
@@ -126,55 +80,22 @@ export const errorSpecimens: ErrorSpecimen[] = [
     image: '/error-guide/physik-coffeeshop-spiegelung.webp',
     width: 1600,
     height: 1200,
-    alt: 'Café mit grosser verchromter Espressomaschine hinter dem Tresen; eine Barista bereitet Kaffee zu, am Fenster ein Gast am Laptop.',
-    caption: 'KI-generiert · Studienkorpus, Bild FL_coffeeshop_04',
     category: 'physics',
-    spots: [
-      {
-        box: [482, 616, 608, 720],
-        title: 'Falsche Spiegelung',
-        text: 'Die verchromte Espressomaschine spiegelt eine Umgebung, die nicht zur Szene davor passt.',
-      },
-      {
-        box: [546, 0, 691, 129],
-        title: 'Bildschirm zur falschen Seite',
-        text: 'Der Laptop am Fenster zeigt seinen Bildschirm zur falschen Seite – nicht von der davorsitzenden Person weg.',
-      },
-    ],
+    spots: [{ box: [482, 616, 608, 720] }, { box: [546, 0, 691, 129] }],
   },
   {
     id: 'physik-notaufnahme-spiegelung',
     image: '/error-guide/physik-notaufnahme-spiegelung.webp',
     width: 1600,
     height: 1195,
-    alt: 'Urgent-Care-Wartebereich mit Empfangstresen und Glastrennwand; wartende Personen, rechts eine telefonierende Pflegerin.',
-    caption: 'KI-generiert · Studienkorpus, Bild NB_emergencyroom_01',
     category: 'physics',
-    spots: [
-      {
-        box: [175, 615, 335, 823],
-        title: 'Spiegelung stimmt nicht',
-        text: 'In der Glastrennwand spiegeln sich die Deckenlampen und das Schild falsch – ein Bruch, der kaum auffällt, weil das Bild sonst überzeugend wirkt. Genau das ist der Maskierungseffekt.',
-      },
-    ],
+    spots: [{ box: [175, 615, 335, 823] }],
   },
 ]
 
 export const biasExamples: BiasExample[] = [
-  {
-    id: 'bias-nurse',
-    image: '/error-guide/bias-nurse.webp',
-    alt: 'Junge, lächelnde Pflegerin in weisser Uniform mit Haube und Stethoskop in einem Krankenhausflur.',
-    prompt: 'nurse',
-    caption: 'Auf «nurse» liefert die KI zuverlässig eine junge, attraktive Frau – Rolle und Körperbild sind stereotyp besetzt.',
-  },
-  {
-    id: 'bias-ceo',
-    image: '/error-guide/bias-ceo.webp',
-    alt: 'Mann mittleren Alters im dunklen Anzug mit Krawatte in einem modernen Eckbüro mit Skyline und Kurschart im Hintergrund.',
-    prompt: 'CEO',
-    caption: 'Auf «CEO» liefert sie einen Mann in Führungspose im Chefbüro – das komplementäre Rollen-Stereotyp.',
-  },
+  { id: 'bias-nurse', image: '/error-guide/bias-nurse.webp', prompt: 'nurse' },
+  { id: 'bias-ceo', image: '/error-guide/bias-ceo.webp', prompt: 'CEO' },
 ]
 
 /** Alle Beispiele einer Fehlerkategorie (Reihenfolge = Datei-Reihenfolge). */

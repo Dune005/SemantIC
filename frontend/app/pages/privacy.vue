@@ -8,178 +8,166 @@
 //
 // [D2] Verantwortliche Stelle, Kontakt-Mail und Gültig-ab-Datum sind seit
 // 2026-07-10 ausgefüllt (Claudio Riz, claudio.riz@stud.fhgr.ch).
-useHead({ title: 'Datenschutz – SemantIC' })
+// i18n (Frontend, Seitentext-Migration): Prosa/Tabellen aus pages.privacy.*,
+// Titel als Getter -> folgt dem Sprachwechsel ohne Reload.
+const { t } = useI18n()
+useHead({ title: () => t('seo.privacy.title') })
 </script>
 
 <template>
   <article class="doc">
     <header class="doc__head">
-      <p class="doc__kicker">Datenschutz · revDSG</p>
-      <h1>Datenschutzerklärung</h1>
-      <p class="doc__valid">
-        Gilt ab 10. Juli 2026 · Schweizer Datenschutzrecht (revDSG)
-      </p>
+      <p class="doc__kicker">{{ $t('pages.privacy.kicker') }}</p>
+      <h1>{{ $t('pages.privacy.h1') }}</h1>
+      <p class="doc__valid">{{ $t('pages.privacy.valid') }}</p>
     </header>
 
-    <p class="doc__lead">
-      SemantIC verarbeitet so wenige Daten wie möglich. Hier liest du, welche Daten
-      wann anfallen, an wen sie weitergegeben werden und wie lange sie bleiben.
-    </p>
+    <p class="doc__lead">{{ $t('pages.privacy.lead') }}</p>
 
-    <nav class="doc__toc" aria-label="Inhaltsverzeichnis">
-      <NuxtLink to="#verantwortlicher">1 Verantwortliche Stelle</NuxtLink> ·
-      <NuxtLink to="#worum">2 Worum geht es?</NuxtLink> ·
-      <NuxtLink to="#daten">3 Welche Daten</NuxtLink> ·
-      <NuxtLink to="#drittanbieter">4 An wen übermittelt</NuxtLink> ·
-      <NuxtLink to="#dauer">5 Speicherdauer</NuxtLink> ·
-      <NuxtLink to="#rechte">6 Deine Rechte</NuxtLink> ·
-      <NuxtLink to="#cookies">7 Cookies und Tracking</NuxtLink> ·
-      <NuxtLink to="#sicherheit">8 Sicherheit</NuxtLink> ·
-      <NuxtLink to="#stand">9 Stand</NuxtLink>
+    <nav class="doc__toc" :aria-label="$t('pages.privacy.toc.aria')">
+      <NuxtLink to="#verantwortlicher">{{ $t('pages.privacy.toc.responsible') }}</NuxtLink> ·
+      <NuxtLink to="#worum">{{ $t('pages.privacy.toc.about') }}</NuxtLink> ·
+      <NuxtLink to="#daten">{{ $t('pages.privacy.toc.data') }}</NuxtLink> ·
+      <NuxtLink to="#drittanbieter">{{ $t('pages.privacy.toc.thirdParties') }}</NuxtLink> ·
+      <NuxtLink to="#dauer">{{ $t('pages.privacy.toc.retention') }}</NuxtLink> ·
+      <NuxtLink to="#rechte">{{ $t('pages.privacy.toc.rights') }}</NuxtLink> ·
+      <NuxtLink to="#cookies">{{ $t('pages.privacy.toc.cookies') }}</NuxtLink> ·
+      <NuxtLink to="#sicherheit">{{ $t('pages.privacy.toc.security') }}</NuxtLink> ·
+      <NuxtLink to="#stand">{{ $t('pages.privacy.toc.status') }}</NuxtLink>
     </nav>
 
     <section id="verantwortlicher">
-      <h2><span class="num">1</span>Verantwortliche Stelle</h2>
-      <p>Verantwortlich für die Bearbeitung der Personendaten ist:</p>
-      <p><strong>Claudio Riz</strong></p>
+      <h2><span class="num">1</span>{{ $t('pages.privacy.responsible.title') }}</h2>
+      <p>{{ $t('pages.privacy.responsible.p1') }}</p>
+      <p><strong>{{ $t('pages.privacy.responsible.name') }}</strong></p>
+      <p>{{ $t('pages.privacy.responsible.p2') }}</p>
       <p>
-        SemantIC ist ein Lehrprojekt im Rahmen der Bachelorarbeit „Visual Bias im
-        KI-generierten Bild" im Studiengang Multimedia-Production an der FH Graubünden.
-        Verantwortlich für Inhalt und Betrieb des Tools ist der Bearbeiter als
-        Privatperson, nicht die FH Graubünden.
-      </p>
-      <p>
-        Bei Fragen zum Datenschutz erreichst du die verantwortliche Stelle unter:
+        {{ $t('pages.privacy.responsible.contact') }}
         <strong><a href="mailto:claudio.riz@stud.fhgr.ch">claudio.riz@stud.fhgr.ch</a></strong>
       </p>
     </section>
 
     <section id="worum">
-      <h2><span class="num">2</span>Worum geht es?</h2>
-      <p>
-        SemantIC prüft KI-generierte Bilder vor der Veröffentlichung. Für diese Prüfung
-        wird dein Bild kurzzeitig an externe Dienste übermittelt. Es wird nichts
-        dauerhaft gespeichert – kein Account, keine Datenbank, kein Bildarchiv.
-      </p>
+      <h2><span class="num">2</span>{{ $t('pages.privacy.about.title') }}</h2>
+      <p>{{ $t('pages.privacy.about.p') }}</p>
     </section>
 
     <section id="daten">
-      <h2><span class="num">3</span>Welche Daten werden bearbeitet?</h2>
+      <h2><span class="num">3</span>{{ $t('pages.privacy.data.title') }}</h2>
       <table>
         <thead>
-          <tr><th>Datenkategorie</th><th>Inhalt</th><th>Wann</th></tr>
+          <tr>
+            <th>{{ $t('pages.privacy.data.head.category') }}</th>
+            <th>{{ $t('pages.privacy.data.head.content') }}</th>
+            <th>{{ $t('pages.privacy.data.head.when') }}</th>
+          </tr>
         </thead>
         <tbody>
           <tr>
-            <td>Bild</td>
-            <td>Das von dir hochgeladene Bild, base64-kodiert</td>
-            <td>Bei jedem Klick auf „Bild prüfen"</td>
+            <td>{{ $t('pages.privacy.data.rows.image.cat') }}</td>
+            <td>{{ $t('pages.privacy.data.rows.image.content') }}</td>
+            <td>{{ $t('pages.privacy.data.rows.image.when') }}</td>
           </tr>
           <tr>
-            <td>Optionale Angaben</td>
-            <td>Nutzungskontext und Original-Prompt (Freitext, je ≤ 2 000 Zeichen) sowie die redaktionelle Haltung (feste Auswahl)</td>
-            <td>Nur wenn du sie angibst</td>
+            <td>{{ $t('pages.privacy.data.rows.optional.cat') }}</td>
+            <td>{{ $t('pages.privacy.data.rows.optional.content') }}</td>
+            <td>{{ $t('pages.privacy.data.rows.optional.when') }}</td>
           </tr>
           <tr>
-            <td>Technische Daten</td>
-            <td>IP-Adresse, Zeitstempel</td>
-            <td>Bei jeder Analyse (für das Tageslimit von 5 Analysen pro 24 Stunden) und beim Einlösen eines Zugangscodes</td>
+            <td>{{ $t('pages.privacy.data.rows.technical.cat') }}</td>
+            <td>{{ $t('pages.privacy.data.rows.technical.content') }}</td>
+            <td>{{ $t('pages.privacy.data.rows.technical.when') }}</td>
           </tr>
           <tr>
-            <td>Bypass-Cookie</td>
-            <td>Ein HMAC-signierter Wert ohne personenbezogenen Inhalt</td>
-            <td>Nur wenn du einen Zugangscode eingelöst hast</td>
+            <td>{{ $t('pages.privacy.data.rows.bypassCookie.cat') }}</td>
+            <td>{{ $t('pages.privacy.data.rows.bypassCookie.content') }}</td>
+            <td>{{ $t('pages.privacy.data.rows.bypassCookie.when') }}</td>
           </tr>
           <tr>
-            <td>Sprach-Cookie</td>
-            <td>Deine Sprachwahl (z.&nbsp;B. „de"), kein personenbezogener Inhalt</td>
-            <td>Nur wenn du die Sprache manuell umschaltest</td>
+            <td>{{ $t('pages.privacy.data.rows.langCookie.cat') }}</td>
+            <td>{{ $t('pages.privacy.data.rows.langCookie.content') }}</td>
+            <td>{{ $t('pages.privacy.data.rows.langCookie.when') }}</td>
           </tr>
           <tr>
-            <td>Server-Logs</td>
-            <td>Vercel-Standard-Logs (angefragter Pfad, Status, Dauer)</td>
-            <td>Bei jeder Anfrage</td>
+            <td>{{ $t('pages.privacy.data.rows.serverLogs.cat') }}</td>
+            <td>{{ $t('pages.privacy.data.rows.serverLogs.content') }}</td>
+            <td>{{ $t('pages.privacy.data.rows.serverLogs.when') }}</td>
           </tr>
         </tbody>
       </table>
       <p>
-        <strong>Nicht verarbeitet werden:</strong> Name, E-Mail-Adresse, Accounts, Standortdaten,
-        Geräte-IDs oder Browser-Fingerprinting.
+        <strong>{{ $t('pages.privacy.data.notProcessedLabel') }}</strong>
+        {{ $t('pages.privacy.data.notProcessedBody') }}
       </p>
     </section>
 
     <section id="drittanbieter">
-      <h2><span class="num">4</span>An wen werden Daten übermittelt?</h2>
-      <p>
-        Für die Analyse arbeitet SemantIC mit externen Dienstleistern. An sie wird nur
-        das übermittelt, was der jeweilige Schritt braucht:
-      </p>
+      <h2><span class="num">4</span>{{ $t('pages.privacy.thirdParties.title') }}</h2>
+      <p>{{ $t('pages.privacy.thirdParties.intro') }}</p>
       <table>
         <thead>
-          <tr><th>Anbieter</th><th>Sitz</th><th>Zweck</th><th>Was übermittelt wird</th></tr>
+          <tr>
+            <th>{{ $t('pages.privacy.thirdParties.head.provider') }}</th>
+            <th>{{ $t('pages.privacy.thirdParties.head.location') }}</th>
+            <th>{{ $t('pages.privacy.thirdParties.head.purpose') }}</th>
+            <th>{{ $t('pages.privacy.thirdParties.head.transmitted') }}</th>
+          </tr>
         </thead>
         <tbody>
           <tr>
-            <td>Google LLC (Gemini API)</td>
-            <td>USA</td>
-            <td>Bildanalyse</td>
-            <td>Bild und optionale Angaben (Nutzungskontext, Original-Prompt, redaktionelle Haltung)</td>
+            <td>{{ $t('pages.privacy.thirdParties.rows.google.provider') }}</td>
+            <td>{{ $t('pages.privacy.thirdParties.rows.google.loc') }}</td>
+            <td>{{ $t('pages.privacy.thirdParties.rows.google.purpose') }}</td>
+            <td>{{ $t('pages.privacy.thirdParties.rows.google.data') }}</td>
           </tr>
           <tr>
-            <td>Anthropic, PBC (Claude API)</td>
-            <td>USA</td>
-            <td>Ästhetik-Bewertung</td>
-            <td>nur das Bild, keine Texte</td>
+            <td>{{ $t('pages.privacy.thirdParties.rows.anthropic.provider') }}</td>
+            <td>{{ $t('pages.privacy.thirdParties.rows.anthropic.loc') }}</td>
+            <td>{{ $t('pages.privacy.thirdParties.rows.anthropic.purpose') }}</td>
+            <td>{{ $t('pages.privacy.thirdParties.rows.anthropic.data') }}</td>
           </tr>
           <tr>
-            <td>Modal Labs, Inc. (Rechen-Endpoints)</td>
-            <td>USA</td>
-            <td>Ästhetik-Referenzwert (LAION) und Bild-Text-Abgleich (CLIP)</td>
-            <td>Bild; für den Bild-Text-Abgleich zusätzlich Nutzungskontext und Original-Prompt (nicht die redaktionelle Haltung)</td>
+            <td>{{ $t('pages.privacy.thirdParties.rows.modal.provider') }}</td>
+            <td>{{ $t('pages.privacy.thirdParties.rows.modal.loc') }}</td>
+            <td>{{ $t('pages.privacy.thirdParties.rows.modal.purpose') }}</td>
+            <td>{{ $t('pages.privacy.thirdParties.rows.modal.data') }}</td>
           </tr>
           <!-- [D2 erledigt 2026-07-10] Upstash-Dashboard verifiziert: AWS eu-central-1 (Frankfurt), Free Tier ohne Read-Replicas -->
           <tr>
-            <td>Upstash, Inc. (Redis, EU-Region)</td>
-            <td>EU</td>
-            <td>Tageslimit-Zähler und Schutz vor dem Durchprobieren von Zugangscodes</td>
-            <td>IP-Adresse, Zeitstempel</td>
+            <td>{{ $t('pages.privacy.thirdParties.rows.upstash.provider') }}</td>
+            <td>{{ $t('pages.privacy.thirdParties.rows.upstash.loc') }}</td>
+            <td>{{ $t('pages.privacy.thirdParties.rows.upstash.purpose') }}</td>
+            <td>{{ $t('pages.privacy.thirdParties.rows.upstash.data') }}</td>
           </tr>
           <tr>
-            <td>Vercel Inc. (Hosting)</td>
-            <td>USA</td>
-            <td>Auslieferung der Webseite und Betrieb der Funktionen</td>
-            <td>Alle Anfragedaten – bei einer Analyse laufen auch Bild und Texte durch die Vercel-Funktion – sowie Funktions-Logs</td>
+            <td>{{ $t('pages.privacy.thirdParties.rows.vercel.provider') }}</td>
+            <td>{{ $t('pages.privacy.thirdParties.rows.vercel.loc') }}</td>
+            <td>{{ $t('pages.privacy.thirdParties.rows.vercel.purpose') }}</td>
+            <td>{{ $t('pages.privacy.thirdParties.rows.vercel.data') }}</td>
           </tr>
           <tr>
-            <td>Google LLC (Fonts)</td>
-            <td>USA</td>
-            <td>Auslieferung der Schriften (IBM Plex)</td>
-            <td>IP-Adresse, User-Agent und angeforderte Schrift-URL, bei jedem Seitenaufruf</td>
+            <td>{{ $t('pages.privacy.thirdParties.rows.fonts.provider') }}</td>
+            <td>{{ $t('pages.privacy.thirdParties.rows.fonts.loc') }}</td>
+            <td>{{ $t('pages.privacy.thirdParties.rows.fonts.purpose') }}</td>
+            <td>{{ $t('pages.privacy.thirdParties.rows.fonts.data') }}</td>
           </tr>
         </tbody>
       </table>
       <p>
-        <strong>Übermittlung in die USA:</strong> Bei Google, Anthropic, Modal und Vercel findet
-        eine Datenübermittlung in die USA statt. Google, Anthropic und Vercel sind unter dem
-        Swiss-U.S. Data Privacy Framework (DPF) zertifiziert. Die Schweiz hat das DPF als
-        Adäquanz-Mechanismus anerkannt – die Übermittlung an DPF-zertifizierte
-        US-Unternehmen ist damit nach revDSG zulässig. Modal ist nicht DPF-zertifiziert;
-        hier stützt sich die Übermittlung auf die EU-Standardvertragsklauseln (SCC) im
-        Auftragsverarbeitungsvertrag von Modal, der das Schweizer Datenschutzrecht
-        ausdrücklich einbezieht. Der Rate-Limit-Zähler bei Upstash liegt in der EU-Region,
-        hier findet keine Übermittlung in ein Drittland statt.
+        <strong>{{ $t('pages.privacy.thirdParties.usaLabel') }}</strong>
+        {{ $t('pages.privacy.thirdParties.usaBody') }}
       </p>
-      <p><strong>Datenschutzerklärungen der Anbieter:</strong></p>
+      <p><strong>{{ $t('pages.privacy.thirdParties.policiesHeading') }}</strong></p>
       <ul>
         <li>Google LLC: <a href="https://policies.google.com/privacy">https://policies.google.com/privacy</a></li>
         <li>
           Anthropic: <a href="https://privacy.claude.com/en/">https://privacy.claude.com/en/</a>
-          (verbindlich für die API:
+          ({{ $t('pages.privacy.thirdParties.anthropicApiNote') }}
           <a href="https://platform.claude.com/docs/en/legal-center/privacy">https://platform.claude.com/docs/en/legal-center/privacy</a>)
         </li>
         <li>
           Modal Labs, Inc.: <a href="https://modal.com/legal/privacy-policy">https://modal.com/legal/privacy-policy</a>
-          (Speicherfristen und Sicherheit:
+          ({{ $t('pages.privacy.thirdParties.modalSecurityNote') }}
           <a href="https://modal.com/docs/guide/security">https://modal.com/docs/guide/security</a>)
         </li>
         <li>Vercel Inc.: <a href="https://vercel.com/legal/privacy-policy">https://vercel.com/legal/privacy-policy</a></li>
@@ -188,104 +176,108 @@ useHead({ title: 'Datenschutz – SemantIC' })
     </section>
 
     <section id="dauer">
-      <h2><span class="num">5</span>Wie lange werden Daten gespeichert?</h2>
+      <h2><span class="num">5</span>{{ $t('pages.privacy.retention.title') }}</h2>
       <table>
         <thead>
-          <tr><th>Daten</th><th>Aufbewahrung</th></tr>
+          <tr>
+            <th>{{ $t('pages.privacy.retention.head.data') }}</th>
+            <th>{{ $t('pages.privacy.retention.head.retention') }}</th>
+          </tr>
         </thead>
         <tbody>
           <tr>
-            <td>Bild</td>
-            <td>Auf dem SemantIC-Server nicht gespeichert. Es liegt nur während der Analyse im Arbeitsspeicher und wird danach verworfen. Keine Datenbank, kein Schreibzugriff auf die Festplatte.</td>
+            <td>{{ $t('pages.privacy.retention.rows.image.label') }}</td>
+            <td>{{ $t('pages.privacy.retention.rows.image.value') }}</td>
           </tr>
           <tr>
-            <td>Texte</td>
-            <td>Wie das Bild – nur während der Analyse im Arbeitsspeicher.</td>
+            <td>{{ $t('pages.privacy.retention.rows.texts.label') }}</td>
+            <td>{{ $t('pages.privacy.retention.rows.texts.value') }}</td>
           </tr>
           <tr>
-            <td>Bei Modal (Referenzwert, Abgleich)</td>
-            <td>Ein- und Ausgaben der Rechen-Endpoints werden verschlüsselt zwischengespeichert und spätestens nach 7 Tagen gelöscht (gemäss Modal-Dokumentation).</td>
+            <td>{{ $t('pages.privacy.retention.rows.modal.label') }}</td>
+            <td>{{ $t('pages.privacy.retention.rows.modal.value') }}</td>
           </tr>
           <tr>
-            <td>Tageslimit-Zähler (IP)</td>
-            <td>Maximal 24 Stunden, dann automatisch gelöscht.</td>
+            <td>{{ $t('pages.privacy.retention.rows.dailyLimit.label') }}</td>
+            <td>{{ $t('pages.privacy.retention.rows.dailyLimit.value') }}</td>
           </tr>
           <tr>
-            <td>Bypass-Cookie</td>
-            <td>Im Browser, maximal 30 Tage. Du kannst es jederzeit über die Browser-Einstellungen löschen.</td>
+            <td>{{ $t('pages.privacy.retention.rows.bypassCookie.label') }}</td>
+            <td>{{ $t('pages.privacy.retention.rows.bypassCookie.value') }}</td>
           </tr>
           <tr>
-            <td>Sprach-Cookie</td>
-            <td>Im Browser, maximal 1 Jahr. Ebenfalls jederzeit über die Browser-Einstellungen löschbar.</td>
+            <td>{{ $t('pages.privacy.retention.rows.langCookie.label') }}</td>
+            <td>{{ $t('pages.privacy.retention.rows.langCookie.value') }}</td>
           </tr>
           <tr>
-            <td>Server-Logs (Vercel)</td>
-            <td>Im aktuellen Vercel-Tarif (Hobby) maximal 1 Stunde.</td>
+            <td>{{ $t('pages.privacy.retention.rows.serverLogs.label') }}</td>
+            <td>{{ $t('pages.privacy.retention.rows.serverLogs.value') }}</td>
           </tr>
           <tr>
-            <td>Bei den übrigen Analyse-Anbietern</td>
-            <td>Nach deren eigenen Richtlinien – darauf haben wir keinen Einfluss, deshalb sind oben ihre Datenschutzerklärungen verlinkt.</td>
+            <td>{{ $t('pages.privacy.retention.rows.others.label') }}</td>
+            <td>{{ $t('pages.privacy.retention.rows.others.value') }}</td>
           </tr>
         </tbody>
       </table>
     </section>
 
     <section id="rechte">
-      <h2><span class="num">6</span>Deine Rechte</h2>
-      <p>Nach revDSG hast du das Recht auf:</p>
+      <h2><span class="num">6</span>{{ $t('pages.privacy.rights.title') }}</h2>
+      <p>{{ $t('pages.privacy.rights.intro') }}</p>
       <ul>
-        <li><strong>Auskunft</strong> über die zu dir bearbeiteten Daten</li>
-        <li><strong>Berichtigung</strong> unrichtiger Daten</li>
+        <li><strong>{{ $t('pages.privacy.rights.access.term') }}</strong> {{ $t('pages.privacy.rights.access.desc') }}</li>
+        <li><strong>{{ $t('pages.privacy.rights.correction.term') }}</strong> {{ $t('pages.privacy.rights.correction.desc') }}</li>
         <li>
-          <strong>Löschung</strong> – soweit überhaupt Daten vorliegen; bei SemantIC ist das sehr
-          beschränkt, weil nichts dauerhaft gespeichert wird
+          <strong>{{ $t('pages.privacy.rights.deletion.term') }}</strong> {{ $t('pages.privacy.rights.deletion.desc') }}
         </li>
-        <li><strong>Datenübertragbarkeit</strong></li>
-        <li><strong>Widerspruch</strong> gegen die Bearbeitung</li>
+        <li><strong>{{ $t('pages.privacy.rights.portability.term') }}</strong></li>
+        <li><strong>{{ $t('pages.privacy.rights.objection.term') }}</strong> {{ $t('pages.privacy.rights.objection.desc') }}</li>
       </ul>
+      <i18n-t keypath="pages.privacy.rights.complaint" tag="p" scope="global">
+        <template #right>
+          <strong>{{ $t('pages.privacy.rights.complaintRight') }}</strong>
+        </template>
+      </i18n-t>
       <p>
-        Ausserdem hast du ein <strong>Beschwerderecht beim Eidgenössischen Datenschutz- und
-        Öffentlichkeitsbeauftragten (EDÖB)</strong>.
-      </p>
-      <p>
-        Für Anfragen wendest du dich an die verantwortliche Stelle:
+        {{ $t('pages.privacy.rights.contact') }}
         <strong><a href="mailto:claudio.riz@stud.fhgr.ch">claudio.riz@stud.fhgr.ch</a></strong>.
       </p>
     </section>
 
     <section id="cookies">
-      <h2><span class="num">7</span>Cookies und Tracking</h2>
-      <p>
-        SemantIC setzt <strong>kein</strong> Tracking ein – kein Google Analytics, kein Plausible,
-        kein Matomo, keine Werbe-Cookies, keine Drittparty-Cookies.
-      </p>
-      <p>
-        SemantIC setzt genau zwei Cookies, beide rein funktional: Den
-        <strong>Bypass-Cookie</strong> – er wird nur gesetzt, wenn du selbst einen Zugangscode
-        einlöst, ist HMAC-signiert (also nicht fälschbar), enthält keinen personenbezogenen
-        Inhalt und läuft nach 30 Tagen ab. Und den <strong>Sprach-Cookie</strong> – er merkt
-        sich deine Sprachwahl, wenn du sie manuell umschaltest, und läuft nach einem Jahr ab.
-        Beide sind technisch für ihre Funktion nötig und dienen keinem Tracking – deshalb
-        braucht SemantIC keinen Cookie-Banner.
-      </p>
+      <h2><span class="num">7</span>{{ $t('pages.privacy.cookies.title') }}</h2>
+      <i18n-t keypath="pages.privacy.cookies.p1" tag="p" scope="global">
+        <template #no>
+          <strong>{{ $t('pages.privacy.cookies.p1Emphasis') }}</strong>
+        </template>
+      </i18n-t>
+      <i18n-t keypath="pages.privacy.cookies.p2" tag="p" scope="global">
+        <template #bypass>
+          <strong>{{ $t('pages.privacy.cookies.p2Bypass') }}</strong>
+        </template>
+        <template #lang>
+          <strong>{{ $t('pages.privacy.cookies.p2Lang') }}</strong>
+        </template>
+      </i18n-t>
     </section>
 
     <section id="sicherheit">
-      <h2><span class="num">8</span>Sicherheit</h2>
+      <h2><span class="num">8</span>{{ $t('pages.privacy.security.title') }}</h2>
       <ul>
-        <li>Die gesamte Übertragung läuft verschlüsselt über HTTPS.</li>
-        <li>Der Bypass-Cookie ist HMAC-signiert und damit nicht fälschbar.</li>
-        <li>Ein IP-basiertes Tageslimit schützt vor Missbrauch.</li>
-        <li>Bilder werden zu keinem Zeitpunkt dauerhaft gespeichert.</li>
+        <li>{{ $t('pages.privacy.security.item1') }}</li>
+        <li>{{ $t('pages.privacy.security.item2') }}</li>
+        <li>{{ $t('pages.privacy.security.item3') }}</li>
+        <li>{{ $t('pages.privacy.security.item4') }}</li>
       </ul>
     </section>
 
     <section id="stand">
-      <h2><span class="num">9</span>Stand dieser Erklärung</h2>
-      <p>
-        Diese Datenschutzerklärung gilt ab <strong>10. Juli 2026</strong>. Bei
-        Änderungen wird das Datum aktualisiert.
-      </p>
+      <h2><span class="num">9</span>{{ $t('pages.privacy.status.title') }}</h2>
+      <i18n-t keypath="pages.privacy.status.p" tag="p" scope="global">
+        <template #date>
+          <strong>{{ $t('pages.privacy.status.date') }}</strong>
+        </template>
+      </i18n-t>
     </section>
   </article>
 </template>

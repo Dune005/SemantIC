@@ -4,14 +4,20 @@
 // FESTER Timeline (als „visualisiert die Prüfdimensionen" gerahmt). EHRLICHE Copy:
 // KEIN Fake-Fortschrittsbalken, KEINE Backend-Phasen. reduced-motion → statisch.
 // (calm-skeleton-Variante + zeitbasierte Props bewusst noch nicht – v2.)
-const dims = ['Physik', 'Semantik', 'Bias']
+// Dim-Namen aus i18n (common.dimensions), computed -> folgt dem Sprachwechsel ohne Reload.
+const { t } = useI18n()
+const dims = computed(() => [
+  t('common.dimensions.physics'),
+  t('common.dimensions.semantics'),
+  t('common.dimensions.bias'),
+])
 </script>
 
 <template>
   <div class="wait" role="status" aria-live="polite" aria-busy="true">
-    <h2 class="text-[19px] font-bold tracking-[-0.01em]">Wir prüfen drei Dimensionen</h2>
+    <h2 class="text-[19px] font-bold tracking-[-0.01em]">{{ $t('components.waitState.title') }}</h2>
     <p class="mx-auto mt-2 max-w-[480px] text-[13px] leading-relaxed text-muted">
-      Physikalische Kohärenz, semantische Konsistenz und Bias – das dauert meist 10 bis 30 Sekunden.
+      {{ $t('components.waitState.lead') }}
     </p>
     <div class="wait__dims mt-7 grid grid-cols-3 gap-3">
       <div v-for="d in dims" :key="d" class="wait__dim">
@@ -20,7 +26,7 @@ const dims = ['Physik', 'Semantik', 'Bias']
       </div>
     </div>
     <p class="mt-[22px] font-mono text-[11px] tracking-[0.06em] text-subtle">
-      ~ 10–30 s · keine Schritt-Granularität – die Pipeline liefert eine einzige Antwort.
+      {{ $t('components.waitState.note') }}
     </p>
   </div>
 </template>

@@ -1,6 +1,11 @@
 {
   "common": {
-    "skipToContent": "Zum Inhalt springen"
+    "skipToContent": "Zum Inhalt springen",
+    "dimensions": {
+      "physics": "Physik",
+      "semantics": "Semantik",
+      "bias": "Bias"
+    }
   },
   "header": {
     "brandAria": "SemantIC – zur Startseite",
@@ -36,5 +41,655 @@
     "submit": "Einlösen",
     "success": "Zugang aktiv – das Tageslimit ist für diesen Browser 30 Tage aufgehoben.",
     "error": "Code nicht erkannt. Bitte prüfe die Schreibweise."
+  },
+  "components": {
+    "moodBand": {
+      "chip": "KI-generiertes Moodbild"
+    },
+    "waitState": {
+      "title": "Wir prüfen drei Dimensionen",
+      "lead": "Physikalische Kohärenz, semantische Konsistenz und Bias – das dauert meist 10 bis 30 Sekunden.",
+      "note": "~ 10–30 s · keine Schritt-Granularität – die Pipeline liefert eine einzige Antwort."
+    },
+    "errorCard": {
+      "accessCodeHeading": "Zugangscode",
+      "accessCodeBody": "Gutachter:innen / Demo: Zugangscode im Footer-Feld eingeben – hebt das Tageslimit für 30 Tage auf.",
+      "resetAt": "Zurückgesetzt: {resetsAt}",
+      "techDetails": "Technische Angaben"
+    },
+    "pipelineDiagram": {
+      "step1Kicker": "Eingabe",
+      "step1Title": "Dein Bild",
+      "step1Sub": "+ optional Nutzungskontext & Original-Prompt",
+      "splitLabel": "Zwei getrennte Prüfungen · {parallel}",
+      "splitParallel": "parallel",
+      "splitAria": "Zwei parallele, getrennte Modell-Prüfungen",
+      "lane1Tag": "Prüfung 1 · Inhalt",
+      "lane1BodyLabel": "Integritäts-Analyse:",
+      "lane1BodyRest": "3 Dimensionen (Physik · Semantik · Bias) plus Research Layer → Integritäts-Score.",
+      "lane2Tag": "Prüfung 2 · Oberfläche",
+      "lane2BodyLabel": "Ästhetik-Bewertung:",
+      "lane2BodyRest": "nur die visuelle Wirkung, abgeglichen mit einem unabhängigen Referenzmodell → Ästhetik-Score.",
+      "merge": "{impact} und {substance} werden erst hier zusammengeführt – nie vorher.",
+      "mergeImpact": "Wirkung",
+      "mergeSubstance": "Substanz",
+      "step3Kicker": "Zusammenführung",
+      "step3Title": "Wirkung vs. Substanz",
+      "step3Sub": "Abgleich Ästhetik ↔ Integrität → Maskierungs-Hinweise (keine einzelne Kennzahl).",
+      "step4Kicker": "Befund",
+      "step4Title": "Dein Ergebnis",
+      "step4Sub": "Ampel · 3 Dimensionen · Leseart · Hinweise."
+    },
+    "guardrailList": {
+      "tendenzTag": "Tendenz",
+      "leitplankeTag": "Leitplanke",
+      "pairs": {
+        "0": { "tendenz": "Lässt sich von der schönen Oberfläche einnehmen.", "leitplanke": "Ästhetik wird getrennt bewertet – ohne Einfluss aufs inhaltliche Urteil." },
+        "1": { "tendenz": "Behauptet vage Eindrücke („wirkt komisch“).", "leitplanke": "Jeder Befund braucht einen sichtbaren Beleg am Bild – sonst zählt er nicht." },
+        "2": { "tendenz": "Antwortet frei und assoziativ.", "leitplanke": "Urteilt nur im festen Forschungs-Vokabular (Lesearten, Treiber, Fehlertypen)." },
+        "3": { "tendenz": "Hakt Bias-Kategorien vorschnell ab.", "leitplanke": "Geschlecht und Hautfarbe werden nur beschrieben; Bias nur bei echtem Muster (Rolle, Machtdynamik)." },
+        "4": { "tendenz": "Bleibt bei der ersten Einschätzung.", "leitplanke": "Deterministische Regeln prüfen das Ergebnis nach und korrigieren Widersprüche." }
+      }
+    },
+    "maskingQuadrant": {
+      "xAxisDefault": "Inhaltlich stimmig →",
+      "yAxisDefault": "Sieht gut aus →",
+      "pointDefault": "Beispiel",
+      "aria": "Verortungs-Schema. Waagrechte Achse: {x}. Senkrechte Achse: {y}. Das schraffierte Dreieck oben links ist die Maskierungs-Zone, in der die Ästhetik die Integrität übersteigt. Punkt für {pointLabel}: Ästhetik {aesthetic}, Integrität {integrity}.",
+      "zoneLabel": "Maskierungs-Zone",
+      "valueAesthetic": "Ästhetik {value}",
+      "valueIntegrity": "Integrität {value}",
+      "legendH3": "Oben links liegt die Gefahr",
+      "legendP": "Sitzt ein Bild weit oben links – viel Wirkung, wenig Substanz –, ist das der Nährboden für Maskierung. Je weiter ein Punkt die Diagonale nach oben links überschreitet, desto stärker übersteigt die Ästhetik die Integrität.",
+      "legendZoneTerm": "Schraffierte Zone",
+      "legendZoneDesc": "– Ästhetik übersteigt Integrität.",
+      "legendDiagTerm": "Diagonale",
+      "legendDiagDesc": "– Wirkung gleich Substanz (Gleichstand).",
+      "legendPointTerm": "Beispielpunkt"
+    },
+    "tileSelect": {
+      "required": "Pflicht"
+    }
+  },
+  "seo": {
+    "privacy": {
+      "title": "Datenschutz – SemantIC"
+    },
+    "errorGuide": {
+      "title": "Typische Bildfehler – SemantIC"
+    },
+    "howItWorks": {
+      "title": "So funktioniert SemantIC – SemantIC"
+    },
+    "index": {
+      "title": "SemantIC – Überzeugend ist nicht genug.",
+      "description": "SemantIC entstand aus der Analyse von 144 KI-generierten Bildern – ein Forschungsprototyp, der Bilder auf physikalische Kohärenz, semantische Konsistenz und Bias prüft."
+    },
+    "analyze": {
+      "title": "Bild prüfen – SemantIC"
+    }
+  },
+  "pages": {
+    "privacy": {
+      "kicker": "Datenschutz · revDSG",
+      "h1": "Datenschutzerklärung",
+      "valid": "Gilt ab 10. Juli 2026 · Schweizer Datenschutzrecht (revDSG)",
+      "lead": "SemantIC verarbeitet so wenige Daten wie möglich. Hier liest du, welche Daten wann anfallen, an wen sie weitergegeben werden und wie lange sie bleiben.",
+      "toc": {
+        "aria": "Inhaltsverzeichnis",
+        "responsible": "1 Verantwortliche Stelle",
+        "about": "2 Worum geht es?",
+        "data": "3 Welche Daten",
+        "thirdParties": "4 An wen übermittelt",
+        "retention": "5 Speicherdauer",
+        "rights": "6 Deine Rechte",
+        "cookies": "7 Cookies und Tracking",
+        "security": "8 Sicherheit",
+        "status": "9 Stand"
+      },
+      "responsible": {
+        "title": "Verantwortliche Stelle",
+        "p1": "Verantwortlich für die Bearbeitung der Personendaten ist:",
+        "name": "Claudio Riz",
+        "p2": "SemantIC ist ein Lehrprojekt im Rahmen der Bachelorarbeit „Visual Bias im KI-generierten Bild“ im Studiengang Multimedia-Production an der FH Graubünden. Verantwortlich für Inhalt und Betrieb des Tools ist der Bearbeiter als Privatperson, nicht die FH Graubünden.",
+        "contact": "Bei Fragen zum Datenschutz erreichst du die verantwortliche Stelle unter:"
+      },
+      "about": {
+        "title": "Worum geht es?",
+        "p": "SemantIC prüft KI-generierte Bilder vor der Veröffentlichung. Für diese Prüfung wird dein Bild kurzzeitig an externe Dienste übermittelt. Es wird nichts dauerhaft gespeichert – kein Account, keine Datenbank, kein Bildarchiv."
+      },
+      "data": {
+        "title": "Welche Daten werden bearbeitet?",
+        "head": { "category": "Datenkategorie", "content": "Inhalt", "when": "Wann" },
+        "rows": {
+          "image": { "cat": "Bild", "content": "Das von dir hochgeladene Bild, base64-kodiert", "when": "Bei jedem Klick auf „Bild prüfen“" },
+          "optional": { "cat": "Optionale Angaben", "content": "Nutzungskontext und Original-Prompt (Freitext, je ≤ 2 000 Zeichen) sowie die redaktionelle Haltung (feste Auswahl)", "when": "Nur wenn du sie angibst" },
+          "technical": { "cat": "Technische Daten", "content": "IP-Adresse, Zeitstempel", "when": "Bei jeder Analyse (für das Tageslimit von 5 Analysen pro 24 Stunden) und beim Einlösen eines Zugangscodes" },
+          "bypassCookie": { "cat": "Bypass-Cookie", "content": "Ein HMAC-signierter Wert ohne personenbezogenen Inhalt", "when": "Nur wenn du einen Zugangscode eingelöst hast" },
+          "langCookie": { "cat": "Sprach-Cookie", "content": "Deine Sprachwahl (z. B. „de“), kein personenbezogener Inhalt", "when": "Nur wenn du die Sprache manuell umschaltest" },
+          "serverLogs": { "cat": "Server-Logs", "content": "Vercel-Standard-Logs (angefragter Pfad, Status, Dauer)", "when": "Bei jeder Anfrage" }
+        },
+        "notProcessedLabel": "Nicht verarbeitet werden:",
+        "notProcessedBody": "Name, E-Mail-Adresse, Accounts, Standortdaten, Geräte-IDs oder Browser-Fingerprinting."
+      },
+      "thirdParties": {
+        "title": "An wen werden Daten übermittelt?",
+        "intro": "Für die Analyse arbeitet SemantIC mit externen Dienstleistern. An sie wird nur das übermittelt, was der jeweilige Schritt braucht:",
+        "head": { "provider": "Anbieter", "location": "Sitz", "purpose": "Zweck", "transmitted": "Was übermittelt wird" },
+        "rows": {
+          "google": { "provider": "Google LLC (Gemini API)", "loc": "USA", "purpose": "Bildanalyse", "data": "Bild und optionale Angaben (Nutzungskontext, Original-Prompt, redaktionelle Haltung)" },
+          "anthropic": { "provider": "Anthropic, PBC (Claude API)", "loc": "USA", "purpose": "Ästhetik-Bewertung", "data": "nur das Bild, keine Texte" },
+          "modal": { "provider": "Modal Labs, Inc. (Rechen-Endpoints)", "loc": "USA", "purpose": "Ästhetik-Referenzwert (LAION) und Bild-Text-Abgleich (CLIP)", "data": "Bild; für den Bild-Text-Abgleich zusätzlich Nutzungskontext und Original-Prompt (nicht die redaktionelle Haltung)" },
+          "upstash": { "provider": "Upstash, Inc. (Redis, EU-Region)", "loc": "EU", "purpose": "Tageslimit-Zähler und Schutz vor dem Durchprobieren von Zugangscodes", "data": "IP-Adresse, Zeitstempel" },
+          "vercel": { "provider": "Vercel Inc. (Hosting)", "loc": "USA", "purpose": "Auslieferung der Webseite und Betrieb der Funktionen", "data": "Alle Anfragedaten – bei einer Analyse laufen auch Bild und Texte durch die Vercel-Funktion – sowie Funktions-Logs" },
+          "fonts": { "provider": "Google LLC (Fonts)", "loc": "USA", "purpose": "Auslieferung der Schriften (IBM Plex)", "data": "IP-Adresse, User-Agent und angeforderte Schrift-URL, bei jedem Seitenaufruf" }
+        },
+        "usaLabel": "Übermittlung in die USA:",
+        "usaBody": "Bei Google, Anthropic, Modal und Vercel findet eine Datenübermittlung in die USA statt. Google, Anthropic und Vercel sind unter dem Swiss-U.S. Data Privacy Framework (DPF) zertifiziert. Die Schweiz hat das DPF als Adäquanz-Mechanismus anerkannt – die Übermittlung an DPF-zertifizierte US-Unternehmen ist damit nach revDSG zulässig. Modal ist nicht DPF-zertifiziert; hier stützt sich die Übermittlung auf die EU-Standardvertragsklauseln (SCC) im Auftragsverarbeitungsvertrag von Modal, der das Schweizer Datenschutzrecht ausdrücklich einbezieht. Der Rate-Limit-Zähler bei Upstash liegt in der EU-Region, hier findet keine Übermittlung in ein Drittland statt.",
+        "policiesHeading": "Datenschutzerklärungen der Anbieter:",
+        "anthropicApiNote": "verbindlich für die API:",
+        "modalSecurityNote": "Speicherfristen und Sicherheit:"
+      },
+      "retention": {
+        "title": "Wie lange werden Daten gespeichert?",
+        "head": { "data": "Daten", "retention": "Aufbewahrung" },
+        "rows": {
+          "image": { "label": "Bild", "value": "Auf dem SemantIC-Server nicht gespeichert. Es liegt nur während der Analyse im Arbeitsspeicher und wird danach verworfen. Keine Datenbank, kein Schreibzugriff auf die Festplatte." },
+          "texts": { "label": "Texte", "value": "Wie das Bild – nur während der Analyse im Arbeitsspeicher." },
+          "modal": { "label": "Bei Modal (Referenzwert, Abgleich)", "value": "Ein- und Ausgaben der Rechen-Endpoints werden verschlüsselt zwischengespeichert und spätestens nach 7 Tagen gelöscht (gemäss Modal-Dokumentation)." },
+          "dailyLimit": { "label": "Tageslimit-Zähler (IP)", "value": "Maximal 24 Stunden, dann automatisch gelöscht." },
+          "bypassCookie": { "label": "Bypass-Cookie", "value": "Im Browser, maximal 30 Tage. Du kannst es jederzeit über die Browser-Einstellungen löschen." },
+          "langCookie": { "label": "Sprach-Cookie", "value": "Im Browser, maximal 1 Jahr. Ebenfalls jederzeit über die Browser-Einstellungen löschbar." },
+          "serverLogs": { "label": "Server-Logs (Vercel)", "value": "Im aktuellen Vercel-Tarif (Hobby) maximal 1 Stunde." },
+          "others": { "label": "Bei den übrigen Analyse-Anbietern", "value": "Nach deren eigenen Richtlinien – darauf haben wir keinen Einfluss, deshalb sind oben ihre Datenschutzerklärungen verlinkt." }
+        }
+      },
+      "rights": {
+        "title": "Deine Rechte",
+        "intro": "Nach revDSG hast du das Recht auf:",
+        "access": { "term": "Auskunft", "desc": "über die zu dir bearbeiteten Daten" },
+        "correction": { "term": "Berichtigung", "desc": "unrichtiger Daten" },
+        "deletion": { "term": "Löschung", "desc": "– soweit überhaupt Daten vorliegen; bei SemantIC ist das sehr beschränkt, weil nichts dauerhaft gespeichert wird" },
+        "portability": { "term": "Datenübertragbarkeit" },
+        "objection": { "term": "Widerspruch", "desc": "gegen die Bearbeitung" },
+        "complaint": "Ausserdem hast du ein {right}.",
+        "complaintRight": "Beschwerderecht beim Eidgenössischen Datenschutz- und Öffentlichkeitsbeauftragten (EDÖB)",
+        "contact": "Für Anfragen wendest du dich an die verantwortliche Stelle:"
+      },
+      "cookies": {
+        "title": "Cookies und Tracking",
+        "p1": "SemantIC setzt {no} Tracking ein – kein Google Analytics, kein Plausible, kein Matomo, keine Werbe-Cookies, keine Drittparty-Cookies.",
+        "p1Emphasis": "kein",
+        "p2": "SemantIC setzt genau zwei Cookies, beide rein funktional: Den {bypass} – er wird nur gesetzt, wenn du selbst einen Zugangscode einlöst, ist HMAC-signiert (also nicht fälschbar), enthält keinen personenbezogenen Inhalt und läuft nach 30 Tagen ab. Und den {lang} – er merkt sich deine Sprachwahl, wenn du sie manuell umschaltest, und läuft nach einem Jahr ab. Beide sind technisch für ihre Funktion nötig und dienen keinem Tracking – deshalb braucht SemantIC keinen Cookie-Banner.",
+        "p2Bypass": "Bypass-Cookie",
+        "p2Lang": "Sprach-Cookie"
+      },
+      "security": {
+        "title": "Sicherheit",
+        "item1": "Die gesamte Übertragung läuft verschlüsselt über HTTPS.",
+        "item2": "Der Bypass-Cookie ist HMAC-signiert und damit nicht fälschbar.",
+        "item3": "Ein IP-basiertes Tageslimit schützt vor Missbrauch.",
+        "item4": "Bilder werden zu keinem Zeitpunkt dauerhaft gespeichert."
+      },
+      "status": {
+        "title": "Stand dieser Erklärung",
+        "p": "Diese Datenschutzerklärung gilt ab {date}. Bei Änderungen wird das Datum aktualisiert.",
+        "date": "10. Juli 2026"
+      }
+    },
+    "errorGuide": {
+      "hero": {
+        "imageAlt": "KI-generierte Café-Szene mit verchromter Espressomaschine – wirkt wie ein echtes Foto.",
+        "credit": "KI-generiert · Studienkorpus",
+        "kicker": "Typische Bildfehler · Bachelorarbeit",
+        "title": "Das makellose Bild und seine blinden Flecken.",
+        "lead": "KI-Bilder sehen zuverlässig gut aus – und genau das kann ihre Fehler verdecken. Auch die Szene hier ist komplett KI-generiert."
+      },
+      "intro": {
+        "srHeading": "Einleitung",
+        "lead": "Diese Seite geht vier Fehlerbereiche durch: Körper und Anatomie, die Logik einer Szene, Licht und Raum – und Rollenbilder, die sich an keiner einzelnen Bildstelle festmachen lassen. Dass solche Brüche unter einer überzeugenden Oberfläche untergehen können, nennt SemantIC den {effect} – {link}.",
+        "effect": "Maskierungseffekt",
+        "linkText": "hergeleitet wird er unter Funktionsweise",
+        "body": "Die Beispiele auf dieser Seite stammen aus dem empirischen Teil der Bachelorarbeit – 144 KI-generierte Bilder, systematisch codiert. Zwei von drei fotorealistischen Bildern darunter (71 von 106) trugen mindestens einen Fehler – in diesem Korpus die Regel, kein Ausreisser. Alle Markierungen weiter unten kommen aus dieser manuellen Codierung, nicht aus einem frischen Modelllauf. Es ist ein eigener Korpus, kein repräsentativer Querschnitt aller KI-Bilder."
+      },
+      "chapters": {
+        "anatomy": {
+          "eyebrow": "Anatomie",
+          "title": "Wenn Körper nicht zusammenpassen.",
+          "prose": "Der Klassiker unter den KI-Fehlern – im Korpus die seltenste der drei Fehlerarten, in dichten Szenen mit mehreren Personen aber weiterhin da. Wo sich Menschen überlappen, verliert die KI die Grenze zwischen zwei Körpern – Arme und Beine gehen ineinander über. Hände bleiben ihr eigenes Problem: mal ein Finger zu viel, mal eine Hand zu viel für die Haltung."
+        },
+        "context": {
+          "eyebrow": "Kontext",
+          "title": "Wenn die Szene keinen Sinn ergibt.",
+          "prose": "Diese Brüche findet keine Lupe und kein Detektor – nur der Abgleich mit dem Weltwissen. Ein Laptop ohne Bildschirm, eine Zimmerpflanze in der Kaffeetasse, ein gefülltes Weinglas am Kinderplatz: technisch tadellos gerendert, inhaltlich absurd. Weil das Bild sauber aussieht, fällt das Falsche erst beim zweiten Blick auf."
+        },
+        "physics": {
+          "eyebrow": "Physik",
+          "title": "Wenn Licht und Raum nicht stimmen.",
+          "prose": "Die häufigste Fehlerart im Korpus – und meist die subtilste. Spiegelungen, die nicht zur Szene davor passen, Bildschirme, die zur falschen Seite zeigen: Details, die kaum auffallen, weil das Bild sonst überzeugend wirkt. Genau hier setzt der Maskierungseffekt an."
+        },
+        "stereotype": {
+          "eyebrow": "Stereotype",
+          "title": "Der Fehler ohne Bildstelle.",
+          "prose": "Manche Fehler sind keine markierbare Stelle, sondern ein Muster. Auf «a nurse» liefert die KI typischerweise eine junge, attraktive Frau, auf «a CEO» einen Mann in Führungspose. Wahrgenommenes Geschlecht oder Hautfarbe sind für sich {no} Befund – erst die stereotype Rollenbesetzung schlägt an.",
+          "no": "kein"
+        },
+        "closing": {
+          "eyebrow": "Ausblick",
+          "title": "Der auffällige Fehler ist die Ausnahme – der subtile die Regel.",
+          "prose": "Die Suche nach dem sechsten Finger allein trägt nicht weit: Schon in diesem Korpus dominieren nicht die Anatomie-Artefakte, sondern Physik- und Kontextbrüche – und je stärker ein Bild kuratiert ist, desto schwerer fällt der Fehler auf. Reine Artefakt-Suche ist damit unzuverlässig. Deshalb prüft SemantIC nicht «echt oder gefälscht», sondern die {coherence} eines Bildes.",
+          "coherence": "Kohärenz",
+          "cta": "Bild prüfen",
+          "crossref": "Wie SemantIC daraus ein Urteil bildet, steht unter {link}.",
+          "crossrefLink": "So funktioniert SemantIC"
+        }
+      },
+      "specimen": {
+        "source": "Markierungen aus der manuellen Codierung (Phase 1)",
+        "markerAria": "Markierung {n}: {title}"
+      },
+      "specimens": {
+        "anatomie-notaufnahme": {
+          "alt": "Überfüllter Krankenhaus-Wartebereich; im Vordergrund rechts eine Pflegerin am Empfangstisch, links wartende Patienten auf Stühlen.",
+          "caption": "KI-generiert · Studienkorpus, Bild SD_emergencyroom_03",
+          "spots": {
+            "0": { "title": "Verschmelzende Gliedmassen", "text": "Bei der wartenden Frau und dem Kind auf ihrem Schoss gehen Arme und Beine ineinander über – die KI verliert an den Überlappungen die Grenze zwischen zwei Körpern." },
+            "1": { "title": "Zu viele Finger", "text": "An der Hand des daneben wartenden Mannes lassen sich mehr Finger zählen, als anatomisch möglich sind." }
+          }
+        },
+        "anatomie-barista": {
+          "alt": "Café-Innenraum; eine Barista mit Schürze hinter dem Tresen hält ein Tablett, im Vordergrund Gäste an Laptops.",
+          "caption": "KI-generiert · Studienkorpus, Bild FL_coffeeshop_02",
+          "spots": {
+            "0": { "title": "Zu viele Hände", "text": "Die Barista scheint das Tablett gleichzeitig von oben und von unten zu halten – es sind mehr Hände im Bild, als die Haltung zulässt." }
+          }
+        },
+        "kontext-coffeeshop-laptop": {
+          "alt": "Café mit Gebäckvitrine; mehrere Gäste sitzen an kleinen Tischen an Laptops, am Fenster Blick auf die Strasse.",
+          "caption": "KI-generiert · Studienkorpus, Bild FL_coffeeshop_01",
+          "spots": {
+            "0": { "title": "Laptop ohne Bildschirm", "text": "Der Gast im Vordergrund tippt auf einem Laptop, dessen Display fehlt – das Gerät ergibt so keinen Sinn." },
+            "1": { "title": "Pflanze aus der Tasse", "text": "Aus einem Gefäss, in dem Kaffee stehen sollte, wächst eine Zimmerpflanze." }
+          }
+        },
+        "kontext-dinner-weinglas": {
+          "alt": "Mehrgenerationen-Familie an einem festlich gedeckten Esstisch, ausgelassene Stimmung, Braten und Rotwein in der Mitte.",
+          "caption": "KI-generiert · Studienkorpus, Bild NB_dinner_04",
+          "spots": {
+            "0": { "title": "Weinglas am Kinderplatz", "text": "Am Platz des kleinen Jungen steht ein gefülltes Rotweinglas – inhaltlich absurd, aber technisch tadellos gerendert." }
+          }
+        },
+        "physik-coffeeshop-spiegelung": {
+          "alt": "Café mit grosser verchromter Espressomaschine hinter dem Tresen; eine Barista bereitet Kaffee zu, am Fenster ein Gast am Laptop.",
+          "caption": "KI-generiert · Studienkorpus, Bild FL_coffeeshop_04",
+          "spots": {
+            "0": { "title": "Falsche Spiegelung", "text": "Die verchromte Espressomaschine spiegelt eine Umgebung, die nicht zur Szene davor passt." },
+            "1": { "title": "Bildschirm zur falschen Seite", "text": "Der Laptop am Fenster zeigt seinen Bildschirm zur falschen Seite – nicht von der davorsitzenden Person weg." }
+          }
+        },
+        "physik-notaufnahme-spiegelung": {
+          "alt": "Urgent-Care-Wartebereich mit Empfangstresen und Glastrennwand; wartende Personen, rechts eine telefonierende Pflegerin.",
+          "caption": "KI-generiert · Studienkorpus, Bild NB_emergencyroom_01",
+          "spots": {
+            "0": { "title": "Spiegelung stimmt nicht", "text": "In der Glastrennwand spiegeln sich die Deckenlampen und das Schild falsch – ein Bruch, der kaum auffällt, weil das Bild sonst überzeugend wirkt. Genau das ist der Maskierungseffekt." }
+          }
+        }
+      },
+      "bias": {
+        "promptLabel": "Prompt: „{prompt}“",
+        "bias-nurse": {
+          "alt": "Junge, lächelnde Pflegerin in weisser Uniform mit Haube und Stethoskop in einem Krankenhausflur.",
+          "caption": "Auf «nurse» liefert die KI zuverlässig eine junge, attraktive Frau – Rolle und Körperbild sind stereotyp besetzt."
+        },
+        "bias-ceo": {
+          "alt": "Mann mittleren Alters im dunklen Anzug mit Krawatte in einem modernen Eckbüro mit Skyline und Kurschart im Hintergrund.",
+          "caption": "Auf «CEO» liefert sie einen Mann in Führungspose im Chefbüro – das komplementäre Rollen-Stereotyp."
+        }
+      }
+    },
+    "howItWorks": {
+      "hero": {
+        "credit": "KI-generiertes Moodbild",
+        "kicker": "So funktioniert SemantIC",
+        "title": "Was passiert, wenn SemantIC dein Bild prüft.",
+        "lead": "SemantIC nimmt ein KI-generiertes Bild und sieht es sich entlang von drei Dimensionen an: ob es physikalisch plausibel ist, ob es inhaltlich Sinn ergibt und welche Klischees es trägt. Auf dieser Seite zeigen wir dir, was das Tool tut, woher seine Kriterien kommen und – genauso wichtig – was es bewusst nicht tut."
+      },
+      "s1": {
+        "index": "01 · Die Idee dahinter",
+        "title": "Warum gute Bilder ihre eigenen Fehler verstecken.",
+        "lead": "KI-Bildgeneratoren optimieren auf das, was sofort als „gut“ gelesen wird: Schärfe, Farbe, Licht, Komposition. Auf die inhaltliche Stimmigkeit – Logik der Szene, Proportionen, Klischees – optimieren sie weit weniger. Bilder werden so zuverlässig schön, aber nicht zuverlässig richtig.",
+        "body": "Die Folge ist das eigentliche Problem: Ein überzeugendes Bild lädt nicht dazu ein, genauer hinzusehen. Die Oberfläche beruhigt das Auge, und Schwächen rutschen durch. Diesen Zusammenhang nennen wir {masking} – die Arbeitsthese hinter SemantIC: Eine überzeugende Oberfläche kann die kritische Prüfung erschweren. Die Studie dahinter stützt diese Annahme, beweisen kann sie sie nicht.",
+        "masking": "Maskierung",
+        "theoryKicker": "Theoriebezug",
+        "theoryBody": "Dieser Effekt ist nicht nur eine Beobachtung, sondern lässt sich wissenschaftlich einordnen. Neuere Forschung zeigt an KI-Erkennungssystemen, dass künstliche neuronale Netze visuelle Eigenschaften priorisieren, während Menschen Bilder stärker über ihre Bedeutung erfassen. Dass dasselbe für Bildgeneratoren gilt, ist die Annahme dieser Arbeit. SemantIC setzt genau in diese Lücke: Es schaut dorthin, wo das Auge zu schnell zufrieden ist."
+      },
+      "s2": {
+        "index": "02 · Der Ablauf",
+        "title": "Vom Bild zum Befund.",
+        "lead": "SemantIC trennt Inhalt und Ästhetik in zwei getrennte Bewertungsstränge – damit die Wirkung das inhaltliche Urteil nicht beschönigt. Die Ästhetik wird doppelt geschätzt: von einem Vision-Modell und einem unabhängigen Referenzmodell; weichen beide stark voneinander ab, weist der Befund das aus. Erst danach werden beide Ergebnisse zusammengeführt.",
+        "note": "Modellagnostisch – Gemini & Claude sind die aktuellen Standard-Modelle, austauschbar. Der Ästhetik-Score ist der Mittelwert aus Claude und einem unabhängigen Referenzmodell (LAION Aesthetic Predictor); weichen beide um 20 Punkte oder mehr ab, weist der Befund das aus, fällt die Referenz aus, zählt Claude allein. Gibst du Prompt oder Kontext an, läuft zusätzlich ein Bild-Text-Abgleich (CLIP) mit – ein reines Diagnosesignal ohne Einfluss auf Scores und Ampeln. Die Symbole sind stilisierte Platzhalter."
+      },
+      "s2b": {
+        "index": "02 · b · Die Leitplanken",
+        "title": "Die Leitplanken der Bewertung.",
+        "body1": "Ein Bildmodell allein neigt dazu, sich von visueller Perfektion leiten zu lassen. SemantIC legt der Bewertung deshalb Leitplanken an, die auf belegte, nachvollziehbare Urteile hinwirken.",
+        "body2": "Das macht die Bewertung disziplinierter und nachvollziehbarer. Wo das Tool an Grenzen stösst, legt SemantIC das offen (Abschnitt „Wir kennen die Grenzen“).",
+        "note": "„Maskiert → klar“: Tendenz gedämpft, Leitplanke scharf. Grösstenteils hart erzwungen (festes Schema & Prüfregeln); die Kriterien stammen aus 144 codierten Bildern."
+      },
+      "s3": {
+        "index": "03 · Die drei Dimensionen",
+        "title": "Was hinter Physik, Semantik und Bias steckt.",
+        "physics": {
+          "h3": "Physikalische Kohärenz",
+          "body": "Gehorcht das Bild den Naturgesetzen? Licht, Schatten, Anatomie, Proportionen, Materialien. Solche Brüche sind oft klein – aber sie verraten ein Bild zuverlässig, wenn man sie einmal sieht."
+        },
+        "semantics": {
+          "h3": "Semantische Konsistenz",
+          "body": "Ergibt die Szene Sinn – und passt sie zu deinem Kontext? Ein technisch sauberes Bild kann inhaltlich trotzdem danebenliegen: eine Situation, die so nicht stattfinden würde, oder die nicht zu deinem Beitrag passt."
+        },
+        "bias": {
+          "h3": "Bias und Stereotypisierung",
+          "body": "Welche Rollen, Posen, Klischees zeigt das Bild? Ein schönes Bild eines Klischees bleibt ein Klischee. Wichtig: Geschlecht oder Hautfarbe sind für sich kein Befund – erst eine stereotype Rollenbesetzung, Machtdynamik oder ein Kontextbruch schlägt an."
+        }
+      },
+      "s4": {
+        "index": "04 · Der Maskierungs-Check",
+        "title": "Wenn die Oberfläche stärker ist als der Inhalt.",
+        "body": "SemantIC bewertet getrennt, wie gut ein Bild aussieht (die Ästhetik) und wie gut es inhaltlich hält (die Integrität). Liegt die Wirkung deutlich über der Substanz, ist das der Nährboden für Maskierung – die perfekte Oberfläche kann Fehler überdecken, bevor du sie bemerkst. Eine einzelne Maskierungs-Kennzahl gibt es bewusst nicht; der Quadrant zeigt das Prinzip, nicht das Resultat einer Prüfung."
+      },
+      "s5": {
+        "index": "05 · Deine Angaben",
+        "title": "Warum du das Bild einordnen sollst.",
+        "body": "Bevor SemantIC prüft, fragen wir zwei Dinge: deine {stance} zum Bild und seine {form}. Beide rahmen nur die Empfehlung – sie verschieben weder den Score noch die Befunde.",
+        "stance": "Haltung",
+        "form": "Verwendungsform",
+        "optsAria": "Auswahl im Tool",
+        "haltungKicker": "Haltung",
+        "haltungH3": "Welche Funktion hat das Bild?",
+        "haltungChips": ["Standard", "Bestätigend", "Kritisch", "Illustrativ"],
+        "haltungHint": "Dieselbe Schwäche wiegt anders, je nachdem ob ein Bild ein Klischee bewusst zeigt oder es unreflektiert reproduziert.",
+        "verwendungKicker": "Verwendungsform",
+        "verwendungH3": "Wofür ist es gedacht?",
+        "verwendungChips": ["Headerbild", "Moodbild", "Symbolbild", "Illustration", "Social-Post", "Werbe-/Marketingbild", "Editorial-Bild"],
+        "verwendungHint": "Daraus leitet SemantIC ab, wie streng der Massstab sein sollte.",
+        "note": "Auswahl im Tool – hier nur zur Übersicht, nicht anklickbar."
+      },
+      "s6": {
+        "index": "06 · Hinweis statt Nachweis",
+        "title": "Warum SemantIC dir nichts beweist.",
+        "body": "SemantIC gibt keine harten Urteile, sondern begründete Hinweise: Jeder Befund zeigt, wo du genauer hinsehen solltest – nicht, dass ein Bild „falsch“ ist. Ob es in deinen Kontext passt, entscheidet kein Werkzeug für dich; die letzte Beurteilung bleibt bei dir.",
+        "isTitle": "Was SemantIC ist",
+        "isItems": [
+          "Ein Qualitäts- und Integritäts-Bewerter für KI-Bilder",
+          "Ein Werkzeug, das dir zeigt, wo du genauer hinsehen solltest",
+          "Eine Einordnung vor der Veröffentlichung – die Entscheidung bleibt bei dir"
+        ],
+        "isNotTitle": "Was SemantIC nicht ist",
+        "isNotItems": [
+          "Kein Fake- oder Deepfake-Detektor",
+          "Kein „echt oder gefälscht“-Verdikt über die Herkunft",
+          "Kein Ersatz für dein eigenes redaktionelles Urteil"
+        ]
+      },
+      "s7": {
+        "index": "07 · Validierte Grenzen",
+        "title": "Wir kennen die Grenzen – und legen sie offen.",
+        "body1": "Jede Grenze hier ist empirisch geprüft – in dokumentierten Testreihen gegen die menschliche Codierung, bei der Anatomie zusätzlich verblindet mit einem zweiten Vision-Modell. Du sollst wissen, wann du dich auf einen Befund verlassen kannst und wann dein eigener Blick gefragt ist.",
+        "cards": {
+          "0": { "kicker": "Im Test belastbar", "h3": "Die rote Ampel", "body": "Im dokumentierten Anatomie-Testlauf (16 Bilder, 42 Läufe) löste kein sauberes Bild einen roten Befund aus. Zeigt SemantIC rot, nimm es ernst – gelbe Hinweise können dagegen auch mal danebenliegen." },
+          "1": { "kicker": "Richtig lesen", "h3": "Grün heisst: nichts gefunden", "body": "Grün heisst „nichts gefunden“ – nicht „fehlerfrei“. Es fokussiert deine Sichtprüfung, ersetzt sie nicht." },
+          "2": { "kicker": "Bekannte Lücke", "h3": "Anatomie: Flag = Prüfauftrag", "body": "Lokale Hand- und Finger-Artefakte findet das Tool eher als strukturelle Körperfehler (Kopf, Gliedmassen, Beinstellung) – aber bildabhängig: In den Tests gab es übersehene wie fälschlich gemeldete Befunde, über zwei Vision-Modelle hinweg geprüft. Ein Anatomie-Flag ist deshalb ein Prüfauftrag an dich, keine Diagnose." },
+          "3": { "kicker": "Einordnung", "h3": "Schwere ist eine Einschätzung", "body": "Schwer, moderat, gering sind eine Einschätzung des Vision-Modells, keine Messung. Ob ein markierter Punkt publikationskritisch ist, entscheidet dein Blick aufs Bild." }
+        },
+        "body2": "Dieselben Tests zeigten auch Befunde, die ein menschlicher Blick übersehen hatte. Die Hinweise ergänzen deine Sichtprüfung – jeder Befund ist mit Markierung am Bild nachprüfbar gebaut."
+      },
+      "s8": {
+        "index": "08 · Woher die Kriterien stammen",
+        "title": "Forschung, kein generisches Modellwissen.",
+        "figureNum": "144",
+        "figureCap": "codierte Bilder",
+        "body1": "Die Prüflogik stützt sich auf eine eigene empirische Grundlage: eine qualitative Inhaltsanalyse von 144 KI-generierten Bildern. Daraus entstanden die wiederkehrenden Fehlerprofile, die Lesearten und die visuellen Treiber, mit denen das Tool arbeitet – der praktische Teil der Bachelorarbeit „Visual Bias im KI-generierten Bild“ (Multimedia-Production, FH Graubünden).",
+        "body2": "Die Pipeline wurde über dokumentierte Iterationen entwickelt und gegen die menschliche Codierung geprüft – die validierten Grenzen oben stammen aus genau diesen Tests. Sie ist bewusst modellagnostisch: Kriterien, Evidenz-Pflicht und Prüfregeln hängen an der Forschungsbasis, nicht an einem KI-Modell. Die eingesetzten Modelle sind austauschbar – das Prüfraster bleibt."
+      },
+      "s9": {
+        "index": "09 · Datenschutz",
+        "title": "Was mit deinem Bild passiert.",
+        "body": "Dein Bild wird zur Analyse an externe Dienste übermittelt und bei SemantIC selbst nicht gespeichert – was genau an wen geht und wie lange etwas aufbewahrt wird, steht in der Datenschutzerklärung.",
+        "cta": "Zur Datenschutzerklärung →"
+      },
+      "closing": {
+        "title": "Genug Theorie. Lass ein Bild prüfen",
+        "cta": "Bild prüfen lassen"
+      }
+    },
+    "index": {
+      "hero": {
+        "kicker": "Physik · Semantik · Bias",
+        "headline": "Überzeugend ist {tail}",
+        "headlineTail": "nicht genug",
+        "sub": "SemantIC entstand aus der Analyse von 144 KI-generierten Bildern: ein Forschungsprototyp, der deine Bilder auf physikalische Kohärenz, semantische Konsistenz und Bias prüft – und dir die Stellen markiert, die einen zweiten Blick verdienen.",
+        "cta": "Bild prüfen lassen",
+        "how": "Wie das funktioniert",
+        "micro": "Research Preview · entstanden im Rahmen einer Bachelorarbeit an der Fachhochschule Graubünden",
+        "mediaAlt": "KI-generiertes Moodbild: Fotodrucke mit roten Prüfpunkten hängen an einer Leine im hellen Tageslicht, dazwischen ein Etikett mit dem Schriftzug SemantIC.",
+        "chipVideo": "KI-generiertes Moodvideo"
+      },
+      "dims": {
+        "phys": {
+          "chip": "Stethoskop",
+          "strong": "Licht, Schatten, Material.",
+          "body": "Hier sichtbar: Das Stethoskop ist unmöglich verschlungen – Schlauch, Bügel und Band laufen so zusammen, dass es sich real nicht tragen liesse. Ein Strukturfehler, der im Gesamteindruck untergeht."
+        },
+        "sem": {
+          "chip": "Fremdes Foto",
+          "strong": "Inhalt, Kontext, Logik.",
+          "body": "Passt die Szene zusammen? Hier nicht: Das Namensschild zeigt das Foto einer anderen Person, Name und Beschriftung sind Zeichensalat – ein Kontextbruch mitten im Bild."
+        },
+        "bias": {
+          "chip": "Rollenklischee",
+          "strong": "Darstellung, Rolle, Machtdynamik.",
+          "body": "Geschlecht und Hautfarbe werden nur beschrieben, nie bewertet. Bewertet wird das Muster: Die Pflegefachperson ist wie selbstverständlich als junge, makellose Frau besetzt – ein Rollen- und Körperklischee, das Bildgeneratoren immer wieder reproduzieren."
+        }
+      },
+      "blindspot": {
+        "eyebrow": "Der blinde Fleck",
+        "title": "Ein Bild kann perfekt aussehen und trotzdem nicht stimmen.",
+        "lead": "KI-Bildgeneratoren sind gut darin, Bilder schön zu machen – und deutlich schlechter darin, sie {correct} zu machen: physikalisch plausibel, inhaltlich passend, frei von Klischees. Die visuelle Perfektion kann diese Schwächen überdecken: Wo ein Bild überzeugt, bleibt der prüfende Blick leichter aus. Diesen Effekt nennen wir {masking} – ihm arbeitet SemantIC entgegen.",
+        "correct": "richtig",
+        "masking": "Maskierung",
+        "switchHint": "Dasselbe Bild, drei Blickwinkel: Physik, Semantik und Bias. Wechsle die Dimension – der Befund wechselt mit.",
+        "dimsAria": "Prüf-Dimension wählen",
+        "specAlt": "KI-generiertes Beispielbild: Junge Pflegefachfrau mit Stethoskop und Namensschild in einem Spitalkorridor.",
+        "grip": "PRÜFUNG ◂▸ WIRKUNG",
+        "sliderAria": "Befund-Ansicht einblenden",
+        "sliderValueText": "{reveal} Prozent der Befund-Ansicht sichtbar",
+        "pull": "Regler durch das Bild ziehen",
+        "caption": "Bild aus dem Studienkorpus dieser Arbeit · KI-generiert · Befunde manuell markiert"
+      },
+      "masking": {
+        "eyebrow": "Die Maskierung",
+        "title": "Die Lücke zwischen schön und stimmig.",
+        "lead": "SemantIC bewertet zwei Dinge strikt getrennt: wie ein Bild {appears} (Ästhetik) und was es inhaltlich {holds} (Integrität). So wird sichtbar, wenn ein Bild besser aussieht, als es ist – der Nährboden für Maskierung. Wie der Maskierungs-Check im Detail funktioniert, steht unter {link}.",
+        "appears": "wirkt",
+        "holds": "hält",
+        "linkText": "Funktionsweise",
+        "pairAlt1": "KI-generiertes Beispielbild in der Gesamtansicht: Frau spricht an einer Pressekonferenz in mehrere Mikrofone.",
+        "pairCap1": "Gesamtwirkung – überzeugend",
+        "pairAlt2": "Detailausschnitt desselben Bildes: Die Senderlogos auf den Mikrofonen sind unleserlicher Zeichensalat.",
+        "pairCap2": "Detail – die Mikrofon-Logos sind Zeichensalat",
+        "formulaAria": "Wirkung gegenüber Substanz",
+        "lookTag": "Wirkung",
+        "lookName": "Wie ein Bild wirkt",
+        "lookTxt": "Die ästhetische Oberfläche – Stimmung, Schärfe, Komposition. Was auf den ersten Blick überzeugt.",
+        "substanceTag": "Substanz",
+        "substanceName": "Was es inhaltlich hält",
+        "substanceTxt": "Physik, Semantik, Bias. Was beim genauen Hinsehen trägt – oder eben nicht.",
+        "cap": "Beide werden bewusst getrennt bewertet – nie zu einer Zahl verschmolzen."
+      },
+      "context": {
+        "eyebrow": "Zur Einordnung",
+        "title": "Kein Echtheits-Detektor.",
+        "lead": "SemantIC sagt dir nicht, ob ein Bild „echt“ oder „KI“ ist, und sortiert nicht in „Fake“ und „nicht Fake“. Es bewertet die {quality} eines bereits als KI-generiert bekannten Bildes – schlechte KI gegen gute KI. Und jeder Befund ist ein Hinweis, kein Urteil.",
+        "quality": "Qualität"
+      },
+      "band": {
+        "aria": "Atelier-Einblick",
+        "alt": "KI-generiertes Moodbild: Prüftisch mit ausgelegten Fotodrucken, eine Hand setzt eine rote Markierung."
+      },
+      "research": {
+        "eyebrow": "Die Forschung dahinter",
+        "title": "Die Prüflogik kommt aus eigener Forschung.",
+        "lead": "Die Kriterien, nach denen SemantIC prüft, stammen aus einer eigenen qualitativen Inhaltsanalyse von 144 KI-generierten Bildern – wie daraus die Prüfung wurde und wo ihre Grenzen liegen, ist offen dokumentiert.",
+        "facts": {
+          "images": { "label": "codierte Bilder", "sub": "qualitative Inhaltsanalyse" },
+          "readings": { "label": "Lesearten", "sub": "WA · DA · CI · AA · MI" },
+          "drivers": { "label": "visuelle Treiber", "sub": "von Cinematic Lighting bis Bokeh" }
+        },
+        "link": "So funktioniert die Prüfung"
+      },
+      "closer": {
+        "title": "Lass dein Bild prüfen, bevor es jemand anderes tut",
+        "body": "Ein Bild ablegen, kurz warten, einen Befund lesen. Keine Anmeldung.",
+        "cta": "Jetzt prüfen lassen"
+      }
+    },
+    "analyze": {
+      "h1": "Bild prüfen",
+      "stageAria": "Bildprüfung – Eingabe und Ablauf",
+      "steps": {
+        "upload": "upload",
+        "input": "angaben",
+        "analysis": "analyse",
+        "finding": "befund"
+      },
+      "upload": {
+        "heading": "Bild prüfen",
+        "help": "Leg ein KI-generiertes Bild ab oder wähl eine Datei – den Rest fragen wir danach ab.",
+        "dropzoneAria": "Bild hierher ziehen oder Datei auswählen. JPEG, PNG oder WebP, bis 3.5 Megabyte.",
+        "dropPrimary": "Bild hierher ziehen",
+        "or": "oder",
+        "pick": "Datei auswählen",
+        "formats": "JPEG · PNG · WebP · bis 3.5 MB",
+        "dragMsg": "Loslassen, um das Bild zu laden"
+      },
+      "validating": {
+        "heading": "Bild wird verarbeitet …",
+        "help": "Grosse Bilder werden für die Analyse verkleinert – das passiert lokal in deinem Browser."
+      },
+      "preview": {
+        "alt": "Vorschau des hochgeladenen Bildes",
+        "placeholderAria": "Bildvorschau",
+        "placeholderLabel": "Bild · 4:5",
+        "label": "Dein Bild",
+        "remove": "Bild entfernen"
+      },
+      "collect": {
+        "kicker": "Schritt 2",
+        "heading": "Angaben zur Verwendung",
+        "lead": "Zwei kurze Angaben, damit die Empfehlung zu deinem Einsatz passt. Beide sind nötig, bevor du starten kannst."
+      },
+      "intent": {
+        "label": "Haltung",
+        "help": "Welche Funktion hat das Bild in deinem Beitrag?",
+        "error": "Es fehlt noch die Haltung.",
+        "options": {
+          "unspecified": { "label": "Standard", "hint": "keine besondere Haltung" },
+          "affirmative": { "label": "Bestätigend", "hint": "untermalt das Thema" },
+          "critical": { "label": "Kritisch", "hint": "ordnet ein / Negativbeispiel" },
+          "illustrative": { "label": "Illustrativ", "hint": "neutrales Beispielbild" }
+        }
+      },
+      "usage": {
+        "label": "Verwendungsform",
+        "help": "Wofür ist das Bild gedacht? Das bestimmt, wie streng der Massstab der Empfehlung ist.",
+        "error": "Es fehlt noch die Verwendungsform.",
+        "options": {
+          "header": { "label": "Headerbild", "hint": "Aufmacher zu einem Beitrag" },
+          "mood": { "label": "Moodbild", "hint": "stimmungsgebend, eher beiläufig" },
+          "symbol": { "label": "Symbolbild", "hint": "steht stellvertretend für ein Thema" },
+          "illustration": { "label": "Illustration", "hint": "bebildert einen Sachverhalt" },
+          "social": { "label": "Social-Post", "hint": "Beitrag für soziale Netzwerke" },
+          "advertising": { "label": "Werbe-/Marketingbild", "hint": "bewirbt ein Produkt oder Angebot" },
+          "editorial": { "label": "Editorial-Bild", "hint": "redaktioneller Einsatz mit Anspruch" }
+        }
+      },
+      "contextField": {
+        "summary": "Nutzungskontext hinzufügen",
+        "optional": "optional",
+        "label": "Nutzungskontext",
+        "help": "Bitte beschreibe kurz in 1 bis 2 Sätzen.",
+        "placeholder": "z. B. Aufmacher zu einem Artikel über Pflegeberufe in einer Tageszeitung",
+        "emptyHint": "Ohne Nutzungskontext bleibt die Einschätzung allgemeiner."
+      },
+      "promptField": {
+        "summary": "Original-Prompt hinzufügen",
+        "label": "Original-Prompt",
+        "help": "Der Text, mit dem das Bild generiert wurde.",
+        "placeholder": "z. B. a professional nurse in a hospital, photorealistic, soft light"
+      },
+      "submit": {
+        "start": "Analyse starten",
+        "hintReady": "Bereit – du kannst die Analyse starten.",
+        "hintBoth": "Wähl Haltung und Verwendungsform, dann kannst du starten."
+      },
+      "analyzing": {
+        "cancel": "Analyse abbrechen"
+      },
+      "caveats": {
+        "kicker": "Gut zu wissen",
+        "items": {
+          "0": { "title": "Hinweise, keine Urteile", "body": "SemantIC markiert Auffälligkeiten – die Einschätzung und die Entscheidung bleiben bei dir." },
+          "1": { "title": "Selber gegenprüfen", "body": "Schau dir die markierten Stellen im Original an, bevor du das Bild verwendest." },
+          "2": { "title": "Modelle können sich irren", "body": "Die Prüfung basiert auf KI-Modellen – einzelne Befunde können fehlen oder falsch sitzen." },
+          "3": { "title": "Läufe können abweichen", "body": "Wird dasselbe Bild mehrfach geprüft, können die Hinweise leicht unterschiedlich ausfallen." }
+        }
+      },
+      "result": {
+        "newImage": "Neues Bild prüfen",
+        "exportPdf": "Als PDF exportieren",
+        "printTip": "Für ein sauberes PDF im Druckdialog «Kopf- und Fusszeilen» deaktivieren."
+      },
+      "quota": {
+        "remaining": "Noch {n} von {total} heute frei",
+        "remainingNoTotal": "Noch {n} heute frei"
+      },
+      "actions": {
+        "chooseOther": "Anderes Bild wählen",
+        "retry": "Erneut versuchen",
+        "newImage": "Neues Bild prüfen",
+        "enterCode": "Zugangscode eingeben",
+        "understood": "Verstanden"
+      },
+      "errors": {
+        "unsupported_type": {
+          "title": "Format wird nicht unterstützt",
+          "message": "SemantIC prüft JPEG-, PNG- und WebP-Bilder. Dieses Format kann es nicht lesen. Speicher das Bild als JPEG, PNG oder WebP und leg es noch einmal ab."
+        },
+        "too_large": {
+          "title": "Bild zu gross",
+          "message": "Diese Datei überschreitet das Limit von 3.5 MB. Grössere Bilder verkleinern wir normalerweise automatisch – hier hat das nicht gereicht. Exportier das Bild etwas kleiner (oder als JPEG) und versuch es erneut."
+        },
+        "downscale_failed": {
+          "title": "Bild liess sich nicht verkleinern",
+          "message": "Beim lokalen Verkleinern des Bildes ist etwas schiefgelaufen – die Datei ist möglicherweise beschädigt oder ungewöhnlich kodiert. Versuch es mit einer neu exportierten Version des Bildes."
+        },
+        "rate_limited": {
+          "title": "Tageslimit erreicht",
+          "message": "Pro Browser-Verbindung sind 5 Analysen in 24 Stunden möglich – das schützt die Kosten dieses Lehrprojekts. Du hast das Limit für heute ausgeschöpft. Morgen sind wieder 5 Analysen frei. Für eine Demo oder als Gutachter:in kannst du das Limit sofort aufheben: Trag den Zugangscode im Feld „Zugangscode“ unten im Footer ein."
+        },
+        "timeout": {
+          "title": "Analyse hat zu lange gebraucht",
+          "message": "Die Prüfung dauert normalerweise zehn bis dreissig Sekunden. Diesmal kam innerhalb der Wartezeit keine Antwort zurück – meist ein vorübergehendes Problem beim Analyse-Dienst. Versuch es gleich noch einmal. Deine Eingaben bleiben erhalten."
+        },
+        "provider_error": {
+          "title": "Analyse momentan nicht möglich",
+          "message": "Der Dienst, der dein Bild prüft, hat einen Fehler gemeldet oder ist gerade nicht erreichbar. Das liegt nicht an deinem Bild. Warte einen Moment und versuch es erneut. Deine Eingaben bleiben erhalten."
+        },
+        "unknown": {
+          "title": "Etwas ist schiefgelaufen",
+          "message": "Die Analyse wurde unerwartet abgebrochen. Was genau passiert ist, konnten wir nicht eindeutig zuordnen. Versuch es noch einmal. Wenn es erneut auftritt, lad das Bild neu hoch und starte frisch."
+        }
+      }
+    }
   }
 }

@@ -40,7 +40,7 @@ function toggleActive(i: number) {
       @hover="onHover"
     />
 
-    <figcaption class="specimen__caption">{{ specimen.caption }}</figcaption>
+    <figcaption class="specimen__caption">{{ $t(`pages.errorGuide.specimens.${specimen.id}.caption`) }}</figcaption>
 
     <ol class="specimen__list">
       <li
@@ -53,13 +53,13 @@ function toggleActive(i: number) {
       >
         <span class="specimen__num" aria-hidden="true">{{ i + 1 }}</span>
         <span class="specimen__body">
-          <span class="specimen__title">{{ spot.title }}</span>
-          <span class="specimen__text">{{ spot.text }}</span>
+          <span class="specimen__title">{{ $t(`pages.errorGuide.specimens.${specimen.id}.spots.${i}.title`) }}</span>
+          <span class="specimen__text">{{ $t(`pages.errorGuide.specimens.${specimen.id}.spots.${i}.text`) }}</span>
         </span>
       </li>
     </ol>
 
-    <p class="specimen__source">Markierungen aus der manuellen Codierung (Phase 1)</p>
+    <p class="specimen__source">{{ $t('pages.errorGuide.specimen.source') }}</p>
   </figure>
 </template>
 

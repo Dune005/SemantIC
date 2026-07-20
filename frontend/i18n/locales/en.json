@@ -1,1 +1,695 @@
-{}
+{
+  "common": {
+    "skipToContent": "Skip to content",
+    "dimensions": {
+      "physics": "Physics",
+      "semantics": "Semantics",
+      "bias": "Bias"
+    }
+  },
+  "header": {
+    "brandAria": "SemantIC – to homepage",
+    "brandKicker": "AI Visual Integrity Check",
+    "navAria": "Main navigation",
+    "nav": {
+      "tool": "Tool",
+      "howItWorks": "How it works",
+      "errorGuide": "Typical image flaws"
+    },
+    "badgeDemo": "Demo access active",
+    "cta": "Check an image",
+    "menuOpen": "Open menu",
+    "menuClose": "Close menu",
+    "langAria": "Select language"
+  },
+  "footer": {
+    "aboutText": "SemantIC checks AI-generated images before publication for physical coherence, semantic consistency and bias – and shows you verifiable cues where an image may not hold, in substance, what its impression promises. Read more under {link}.",
+    "aboutLink": "How it works",
+    "bypassHeading": "Access",
+    "projectHeading": "Project",
+    "projectText": "SemantIC is the teaching project of the bachelor's thesis “Visual Bias in the AI-generated Image” (Multimedia Production, FH Graubünden). It is a review assistant for content professionals, not a fake detector – a research prototype that is being developed empirically.",
+    "linksAria": "Footer links",
+    "linkHowItWorks": "How it works",
+    "linkErrorGuide": "Typical image flaws",
+    "linkPrivacy": "Privacy",
+    "copyright": "© 2026 Claudio Riz · FH Graubünden · Teaching project · Version 1.10"
+  },
+  "bypass": {
+    "label": "Access code (demo)",
+    "hint": "Lifts the daily limit (5 analyses / 24 h) for review purposes. Access is valid for 30 days on this browser.",
+    "placeholder": "Enter code",
+    "submit": "Redeem",
+    "success": "Access active – the daily limit is lifted on this browser for 30 days.",
+    "error": "Code not recognized. Please check the spelling."
+  },
+  "components": {
+    "moodBand": {
+      "chip": "AI-generated mood image"
+    },
+    "waitState": {
+      "title": "We check three dimensions",
+      "lead": "Physical coherence, semantic consistency and bias – this usually takes 10 to 30 seconds.",
+      "note": "~ 10–30 s · no step granularity – the pipeline returns a single response."
+    },
+    "errorCard": {
+      "accessCodeHeading": "Access code",
+      "accessCodeBody": "Reviewers / demo: enter the access code in the footer field – it lifts the daily limit for 30 days.",
+      "resetAt": "Resets: {resetsAt}",
+      "techDetails": "Technical details"
+    },
+    "pipelineDiagram": {
+      "step1Kicker": "Input",
+      "step1Title": "Your image",
+      "step1Sub": "+ optional usage context & original prompt",
+      "splitLabel": "Two separate checks · {parallel}",
+      "splitParallel": "parallel",
+      "splitAria": "Two parallel, separate model checks",
+      "lane1Tag": "Check 1 · Content",
+      "lane1BodyLabel": "Integrity analysis:",
+      "lane1BodyRest": "3 dimensions (physics · semantics · bias) plus research layer → integrity score.",
+      "lane2Tag": "Check 2 · Surface",
+      "lane2BodyLabel": "Aesthetic assessment:",
+      "lane2BodyRest": "the visual appeal only, reconciled with an independent reference model → aesthetic score.",
+      "merge": "{impact} and {substance} are brought together only here – never before.",
+      "mergeImpact": "Appeal",
+      "mergeSubstance": "Substance",
+      "step3Kicker": "Merge",
+      "step3Title": "Appeal vs. substance",
+      "step3Sub": "Reconciling aesthetics ↔ integrity → masking cues (no single metric).",
+      "step4Kicker": "Finding",
+      "step4Title": "Your result",
+      "step4Sub": "Traffic light · 3 dimensions · reading mode · cues."
+    },
+    "guardrailList": {
+      "tendenzTag": "Tendency",
+      "leitplankeTag": "Guardrail",
+      "pairs": {
+        "0": { "tendenz": "Gets won over by the beautiful surface.", "leitplanke": "Aesthetics are assessed separately – with no influence on the judgment on substance." },
+        "1": { "tendenz": "Asserts vague impressions (“looks off”).", "leitplanke": "Every finding needs visible evidence on the image – otherwise it doesn't count." },
+        "2": { "tendenz": "Answers freely and associatively.", "leitplanke": "Judges only within the fixed research vocabulary (reading modes, drivers, error types)." },
+        "3": { "tendenz": "Ticks off bias categories too hastily.", "leitplanke": "Gender and skin tone are only described; bias only on a real pattern (role, power dynamic)." },
+        "4": { "tendenz": "Sticks with the first assessment.", "leitplanke": "Deterministic rules re-check the result and correct contradictions." }
+      }
+    },
+    "maskingQuadrant": {
+      "xAxisDefault": "Coherent in substance →",
+      "yAxisDefault": "Looks good →",
+      "pointDefault": "Example",
+      "aria": "Positioning schema. Horizontal axis: {x}. Vertical axis: {y}. The hatched triangle at the top left is the masking zone, where aesthetics exceed integrity. Point for {pointLabel}: aesthetics {aesthetic}, integrity {integrity}.",
+      "zoneLabel": "Masking zone",
+      "valueAesthetic": "Aesthetics {value}",
+      "valueIntegrity": "Integrity {value}",
+      "legendH3": "The danger is at the top left",
+      "legendP": "If an image sits far to the top left – lots of appeal, little substance – that is the breeding ground for masking. The further a point crosses the diagonal towards the top left, the more strongly aesthetics exceed integrity.",
+      "legendZoneTerm": "Hatched zone",
+      "legendZoneDesc": "– aesthetics exceed integrity.",
+      "legendDiagTerm": "Diagonal",
+      "legendDiagDesc": "– appeal equals substance (parity).",
+      "legendPointTerm": "Example point"
+    },
+    "tileSelect": {
+      "required": "Required"
+    }
+  },
+  "seo": {
+    "privacy": {
+      "title": "Privacy – SemantIC"
+    },
+    "errorGuide": {
+      "title": "Typical image flaws – SemantIC"
+    },
+    "howItWorks": {
+      "title": "How SemantIC works – SemantIC"
+    },
+    "index": {
+      "title": "SemantIC – Convincing isn't enough.",
+      "description": "SemantIC grew out of the analysis of 144 AI-generated images – a research prototype that checks images for physical coherence, semantic consistency and bias."
+    },
+    "analyze": {
+      "title": "Check an image – SemantIC"
+    }
+  },
+  "pages": {
+    "privacy": {
+      "kicker": "Privacy · revDSG",
+      "h1": "Privacy Policy",
+      "valid": "Effective 10 July 2026 · Swiss data protection law (revDSG)",
+      "lead": "SemantIC processes as little data as possible. Here you can read which data arises when, to whom it is passed on and how long it stays.",
+      "toc": {
+        "aria": "Table of contents",
+        "responsible": "1 Responsible party",
+        "about": "2 What is this about?",
+        "data": "3 Which data",
+        "thirdParties": "4 Who receives it",
+        "retention": "5 Retention",
+        "rights": "6 Your rights",
+        "cookies": "7 Cookies and tracking",
+        "security": "8 Security",
+        "status": "9 Status"
+      },
+      "responsible": {
+        "title": "Responsible party",
+        "p1": "The party responsible for processing personal data is:",
+        "name": "Claudio Riz",
+        "p2": "SemantIC is a teaching project within the bachelor's thesis “Visual Bias in the AI-generated Image” in the Multimedia Production degree programme at FH Graubünden. Responsible for the content and operation of the tool is the author as a private individual, not FH Graubünden.",
+        "contact": "For questions about data protection you can reach the responsible party at:"
+      },
+      "about": {
+        "title": "What is this about?",
+        "p": "SemantIC checks AI-generated images before publication. For this check, your image is briefly transmitted to external services. Nothing is stored permanently – no account, no database, no image archive."
+      },
+      "data": {
+        "title": "Which data is processed?",
+        "head": { "category": "Data category", "content": "Content", "when": "When" },
+        "rows": {
+          "image": { "cat": "Image", "content": "The image you upload, base64-encoded", "when": "Every time you click “Check image”" },
+          "optional": { "cat": "Optional details", "content": "Usage context and original prompt (free text, each ≤ 2,000 characters) plus the editorial stance (fixed selection)", "when": "Only if you provide them" },
+          "technical": { "cat": "Technical data", "content": "IP address, timestamp", "when": "For every analysis (for the daily limit of 5 analyses per 24 hours) and when redeeming an access code" },
+          "bypassCookie": { "cat": "Bypass cookie", "content": "An HMAC-signed value with no personal content", "when": "Only if you have redeemed an access code" },
+          "langCookie": { "cat": "Language cookie", "content": "Your language choice (e.g. “de”), no personal content", "when": "Only if you switch the language manually" },
+          "serverLogs": { "cat": "Server logs", "content": "Vercel standard logs (requested path, status, duration)", "when": "For every request" }
+        },
+        "notProcessedLabel": "Not processed:",
+        "notProcessedBody": "Name, email address, accounts, location data, device IDs or browser fingerprinting."
+      },
+      "thirdParties": {
+        "title": "Who is data transmitted to?",
+        "intro": "For the analysis, SemantIC works with external service providers. Only what each step needs is transmitted to them:",
+        "head": { "provider": "Provider", "location": "Location", "purpose": "Purpose", "transmitted": "What is transmitted" },
+        "rows": {
+          "google": { "provider": "Google LLC (Gemini API)", "loc": "USA", "purpose": "Image analysis", "data": "Image and optional details (usage context, original prompt, editorial stance)" },
+          "anthropic": { "provider": "Anthropic, PBC (Claude API)", "loc": "USA", "purpose": "Aesthetic assessment", "data": "only the image, no texts" },
+          "modal": { "provider": "Modal Labs, Inc. (compute endpoints)", "loc": "USA", "purpose": "Aesthetic reference value (LAION) and image-text matching (CLIP)", "data": "Image; for image-text matching also usage context and original prompt (not the editorial stance)" },
+          "upstash": { "provider": "Upstash, Inc. (Redis, EU region)", "loc": "EU", "purpose": "Daily-limit counter and protection against brute-forcing access codes", "data": "IP address, timestamp" },
+          "vercel": { "provider": "Vercel Inc. (hosting)", "loc": "USA", "purpose": "Delivery of the website and operation of the functions", "data": "All request data – during an analysis, image and texts also pass through the Vercel function – plus function logs" },
+          "fonts": { "provider": "Google LLC (Fonts)", "loc": "USA", "purpose": "Delivery of the fonts (IBM Plex)", "data": "IP address, user agent and requested font URL, on every page load" }
+        },
+        "usaLabel": "Transfer to the USA:",
+        "usaBody": "With Google, Anthropic, Modal and Vercel, a data transfer to the USA takes place. Google, Anthropic and Vercel are certified under the Swiss-U.S. Data Privacy Framework (DPF). Switzerland has recognized the DPF as an adequacy mechanism – transfer to DPF-certified US companies is therefore permitted under the revDSG. Modal is not DPF-certified; here the transfer relies on the EU Standard Contractual Clauses (SCC) in Modal's data processing agreement, which explicitly includes Swiss data protection law. The rate-limit counter at Upstash is located in the EU region; no transfer to a third country takes place here.",
+        "policiesHeading": "Providers' privacy policies:",
+        "anthropicApiNote": "binding for the API:",
+        "modalSecurityNote": "retention periods and security:"
+      },
+      "retention": {
+        "title": "How long is data stored?",
+        "head": { "data": "Data", "retention": "Retention" },
+        "rows": {
+          "image": { "label": "Image", "value": "Not stored on the SemantIC server. It is only held in memory during the analysis and discarded afterwards. No database, no write access to disk." },
+          "texts": { "label": "Texts", "value": "Like the image – only in memory during the analysis." },
+          "modal": { "label": "At Modal (reference value, matching)", "value": "Inputs and outputs of the compute endpoints are cached in encrypted form and deleted after 7 days at the latest (per Modal documentation)." },
+          "dailyLimit": { "label": "Daily-limit counter (IP)", "value": "Maximum 24 hours, then deleted automatically." },
+          "bypassCookie": { "label": "Bypass cookie", "value": "In the browser, maximum 30 days. You can delete it at any time via your browser settings." },
+          "langCookie": { "label": "Language cookie", "value": "In the browser, maximum 1 year. Likewise deletable at any time via your browser settings." },
+          "serverLogs": { "label": "Server logs (Vercel)", "value": "On the current Vercel plan (Hobby), maximum 1 hour." },
+          "others": { "label": "At the other analysis providers", "value": "According to their own policies – we have no influence over this, which is why their privacy policies are linked above." }
+        }
+      },
+      "rights": {
+        "title": "Your rights",
+        "intro": "Under the revDSG you have the right to:",
+        "access": { "term": "Access", "desc": "to the data processed about you" },
+        "correction": { "term": "Rectification", "desc": "of inaccurate data" },
+        "deletion": { "term": "Erasure", "desc": "– where any data exists at all; with SemantIC this is very limited because nothing is stored permanently" },
+        "portability": { "term": "Data portability" },
+        "objection": { "term": "Objection", "desc": "to the processing" },
+        "complaint": "You also have the {right}.",
+        "complaintRight": "right to lodge a complaint with the Federal Data Protection and Information Commissioner (FDPIC)",
+        "contact": "For requests, please contact the responsible party:"
+      },
+      "cookies": {
+        "title": "Cookies and tracking",
+        "p1": "SemantIC uses {no} tracking – no Google Analytics, no Plausible, no Matomo, no advertising cookies, no third-party cookies.",
+        "p1Emphasis": "no",
+        "p2": "SemantIC sets exactly two cookies, both purely functional: The {bypass} – it is only set if you redeem an access code yourself, is HMAC-signed (i.e. not forgeable), contains no personal content and expires after 30 days. And the {lang} – it remembers your language choice when you switch manually, and expires after one year. Both are technically necessary for their function and serve no tracking – which is why SemantIC needs no cookie banner.",
+        "p2Bypass": "bypass cookie",
+        "p2Lang": "language cookie"
+      },
+      "security": {
+        "title": "Security",
+        "item1": "All transmission runs encrypted over HTTPS.",
+        "item2": "The bypass cookie is HMAC-signed and therefore not forgeable.",
+        "item3": "An IP-based daily limit protects against misuse.",
+        "item4": "Images are never stored permanently."
+      },
+      "status": {
+        "title": "Status of this policy",
+        "p": "This privacy policy applies from {date}. The date is updated when changes are made.",
+        "date": "10 July 2026"
+      }
+    },
+    "errorGuide": {
+      "hero": {
+        "imageAlt": "AI-generated café scene with a chrome espresso machine – looks like a real photo.",
+        "credit": "AI-generated · study corpus",
+        "kicker": "Typical image flaws · Bachelor's thesis",
+        "title": "The flawless image and its blind spots.",
+        "lead": "AI images reliably look good – and that is exactly what can hide their flaws. The scene here, too, is entirely AI-generated."
+      },
+      "intro": {
+        "srHeading": "Introduction",
+        "lead": "This page walks through four types of flaw: body and anatomy, the logic of a scene, light and space – and role imagery that cannot be pinned to any single spot in the picture. That such breaks can slip past under a convincing surface is what SemantIC calls the {effect} – {link}.",
+        "effect": "masking effect",
+        "linkText": "it is derived under How it works",
+        "body": "The examples on this page come from the empirical part of the bachelor's thesis – 144 AI-generated images, systematically coded. Two of three photorealistic images among them (71 of 106) carried at least one flaw – the rule in this corpus, not an outlier. All markings below come from this manual coding, not from a fresh model run. It is a corpus of its own, not a representative cross-section of all AI images."
+      },
+      "chapters": {
+        "anatomy": {
+          "eyebrow": "Anatomy",
+          "title": "When bodies don't fit together.",
+          "prose": "The classic among AI flaws – the rarest of the three flaw types in the corpus, but still present in dense scenes with several people. Where people overlap, the AI loses the boundary between two bodies – arms and legs merge into one another. Hands remain a problem of their own: sometimes one finger too many, sometimes one hand too many for the pose."
+        },
+        "context": {
+          "eyebrow": "Context",
+          "title": "When the scene makes no sense.",
+          "prose": "No magnifier and no detector finds these breaks – only a comparison with world knowledge does. A laptop with no screen, a houseplant in the coffee cup, a full wine glass at a child's place: technically rendered flawlessly, yet absurd in substance. Because the image looks clean, what is wrong only registers on a second look."
+        },
+        "physics": {
+          "eyebrow": "Physics",
+          "title": "When light and space don't add up.",
+          "prose": "The most common flaw type in the corpus – and usually the most subtle. Reflections that don't match the scene in front of them, screens facing the wrong way: details that barely register because the image otherwise looks convincing. This is exactly where the masking effect comes in."
+        },
+        "stereotype": {
+          "eyebrow": "Stereotypes",
+          "title": "The flaw with no spot in the picture.",
+          "prose": "Some flaws are not a markable spot but a pattern. For “a nurse” the AI typically delivers a young, attractive woman; for “a CEO” a man in a leadership pose. Perceived gender or skin tone are in themselves {no} finding – only the stereotyped casting of the role sets it off.",
+          "no": "no"
+        },
+        "closing": {
+          "eyebrow": "Outlook",
+          "title": "The conspicuous flaw is the exception – the subtle one is the rule.",
+          "prose": "Hunting for the sixth finger alone doesn't get you far: even in this corpus it is not the anatomy artefacts that dominate but physics and context breaks – and the more strongly an image is curated, the harder the flaw is to spot. Pure artefact hunting is therefore unreliable. That is why SemantIC checks not “real or fake” but the {coherence} of an image.",
+          "coherence": "coherence",
+          "cta": "Check image",
+          "crossref": "How SemantIC forms a verdict from this is explained under {link}.",
+          "crossrefLink": "How SemantIC works"
+        }
+      },
+      "specimen": {
+        "source": "Markings from the manual coding (Phase 1)",
+        "markerAria": "Marker {n}: {title}"
+      },
+      "specimens": {
+        "anatomie-notaufnahme": {
+          "alt": "Crowded hospital waiting area; in the foreground right a nurse at the reception desk, on the left patients waiting on chairs.",
+          "caption": "AI-generated · study corpus, image SD_emergencyroom_03",
+          "spots": {
+            "0": { "title": "Merging limbs", "text": "With the waiting woman and the child on her lap, arms and legs merge into one another – at the overlaps the AI loses the boundary between two bodies." },
+            "1": { "title": "Too many fingers", "text": "On the hand of the man waiting beside her, more fingers can be counted than are anatomically possible." }
+          }
+        },
+        "anatomie-barista": {
+          "alt": "Café interior; a barista in an apron behind the counter holds a tray, in the foreground guests at laptops.",
+          "caption": "AI-generated · study corpus, image FL_coffeeshop_02",
+          "spots": {
+            "0": { "title": "Too many hands", "text": "The barista seems to hold the tray from above and below at the same time – there are more hands in the image than the pose allows." }
+          }
+        },
+        "kontext-coffeeshop-laptop": {
+          "alt": "Café with a pastry display; several guests sit at small tables with laptops, a view onto the street at the window.",
+          "caption": "AI-generated · study corpus, image FL_coffeeshop_01",
+          "spots": {
+            "0": { "title": "Laptop with no screen", "text": "The guest in the foreground types on a laptop whose display is missing – the device makes no sense that way." },
+            "1": { "title": "Plant out of the cup", "text": "A houseplant grows out of a vessel that should hold coffee." }
+          }
+        },
+        "kontext-dinner-weinglas": {
+          "alt": "Multi-generation family at a festively laid dinner table, cheerful mood, roast and red wine in the centre.",
+          "caption": "AI-generated · study corpus, image NB_dinner_04",
+          "spots": {
+            "0": { "title": "Wine glass at a child's place", "text": "At the little boy's place stands a full glass of red wine – absurd in substance, yet technically rendered flawlessly." }
+          }
+        },
+        "physik-coffeeshop-spiegelung": {
+          "alt": "Café with a large chrome espresso machine behind the counter; a barista prepares coffee, a guest at a laptop by the window.",
+          "caption": "AI-generated · study corpus, image FL_coffeeshop_04",
+          "spots": {
+            "0": { "title": "Wrong reflection", "text": "The chrome espresso machine reflects surroundings that don't match the scene in front of it." },
+            "1": { "title": "Screen facing the wrong way", "text": "The laptop at the window shows its screen facing the wrong way – not away from the person sitting in front of it." }
+          }
+        },
+        "physik-notaufnahme-spiegelung": {
+          "alt": "Urgent-care waiting area with a reception counter and glass partition; people waiting, on the right a nurse on the phone.",
+          "caption": "AI-generated · study corpus, image NB_emergencyroom_01",
+          "spots": {
+            "0": { "title": "Reflection doesn't match", "text": "In the glass partition the ceiling lights and the sign are reflected incorrectly – a break that barely registers because the image otherwise looks convincing. That is precisely the masking effect." }
+          }
+        }
+      },
+      "bias": {
+        "promptLabel": "Prompt: “{prompt}”",
+        "bias-nurse": {
+          "alt": "Young, smiling nurse in a white uniform with cap and stethoscope in a hospital corridor.",
+          "caption": "For “nurse” the AI reliably delivers a young, attractive woman – role and body image are cast in a stereotyped way."
+        },
+        "bias-ceo": {
+          "alt": "Middle-aged man in a dark suit and tie in a modern corner office with a skyline and stock chart in the background.",
+          "caption": "For “CEO” it delivers a man in a leadership pose in the executive office – the complementary role stereotype."
+        }
+      }
+    },
+    "howItWorks": {
+      "hero": {
+        "credit": "AI-generated mood image",
+        "kicker": "How SemantIC works",
+        "title": "What happens when SemantIC checks your image.",
+        "lead": "SemantIC takes an AI-generated image and looks at it along three dimensions: whether it is physically plausible, whether it makes sense in substance, and which clichés it carries. On this page we show you what the tool does, where its criteria come from and – just as importantly – what it deliberately does not do."
+      },
+      "s1": {
+        "index": "01 · The idea behind it",
+        "title": "Why good images hide their own flaws.",
+        "lead": "AI image generators optimize for what reads as “good” at first glance: sharpness, colour, light, composition. They optimize far less for coherence in substance – the logic of the scene, proportions, clichés. Images thus become reliably beautiful, but not reliably correct.",
+        "body": "The consequence is the real problem: a convincing image does not invite a closer look. The surface puts the eye at ease, and weaknesses slip through. We call this connection {masking} – the working hypothesis behind SemantIC: a convincing surface can make critical scrutiny harder. The study behind it supports this assumption; it cannot prove it.",
+        "masking": "masking",
+        "theoryKicker": "Theoretical basis",
+        "theoryBody": "This effect is not just an observation; it can be placed scientifically. Recent research on AI detection systems shows that artificial neural networks prioritize visual properties, whereas humans grasp images more through their meaning. That the same holds for image generators is the assumption of this thesis. SemantIC steps into exactly this gap: it looks where the eye is satisfied too quickly."
+      },
+      "s2": {
+        "index": "02 · The process",
+        "title": "From image to finding.",
+        "lead": "SemantIC separates content and aesthetics into two distinct assessment tracks – so that appeal does not gloss over the judgment on substance. Aesthetics are estimated twice: by a vision model and an independent reference model; if the two diverge strongly, the finding says so. Only afterwards are both results brought together.",
+        "note": "Model-agnostic – Gemini & Claude are the current standard models, interchangeable. The aesthetic score is the average of Claude and an independent reference model (LAION Aesthetic Predictor); if the two diverge by 20 points or more, the finding says so; if the reference fails, Claude counts alone. If you provide a prompt or context, an image-text comparison (CLIP) also runs – a pure diagnostic signal with no influence on scores and traffic lights. The symbols are stylized placeholders."
+      },
+      "s2b": {
+        "index": "02 · b · The guardrails",
+        "title": "The guardrails of the assessment.",
+        "body1": "An image model on its own tends to be led by visual perfection. SemantIC therefore applies guardrails to the assessment that push towards substantiated, traceable judgments.",
+        "body2": "That makes the assessment more disciplined and more traceable. Where the tool reaches its limits, SemantIC discloses that (section “We know the limits”).",
+        "note": "“Masked → clear”: tendency dampened, guardrail sharp. Largely hard-enforced (fixed schema & check rules); the criteria come from 144 coded images."
+      },
+      "s3": {
+        "index": "03 · The three dimensions",
+        "title": "What lies behind physics, semantics and bias.",
+        "physics": {
+          "h3": "Physical coherence",
+          "body": "Does the image obey the laws of nature? Light, shadow, anatomy, proportions, materials. Such breaks are often small – but they reliably give an image away once you see them."
+        },
+        "semantics": {
+          "h3": "Semantic consistency",
+          "body": "Does the scene make sense – and does it fit your context? A technically clean image can still be off in substance: a situation that would not happen that way, or that does not fit your piece."
+        },
+        "bias": {
+          "h3": "Bias and stereotyping",
+          "body": "Which roles, poses, clichés does the image show? A beautiful image of a cliché remains a cliché. Important: gender or skin tone are in themselves no finding – only a stereotyped casting of the role, power dynamic or a context break sets it off."
+        }
+      },
+      "s4": {
+        "index": "04 · The masking check",
+        "title": "When the surface is stronger than the content.",
+        "body": "SemantIC assesses separately how good an image looks (its aesthetics) and how well it holds up in substance (its integrity). If appeal clearly exceeds substance, that is the breeding ground for masking – the perfect surface can cover flaws before you notice them. There is deliberately no single masking metric; the quadrant shows the principle, not the result of a check."
+      },
+      "s5": {
+        "index": "05 · Your input",
+        "title": "Why you should frame the image.",
+        "body": "Before SemantIC checks, we ask two things: your {stance} on the image and its {form}. Both only frame the recommendation – they shift neither the score nor the findings.",
+        "stance": "stance",
+        "form": "intended use",
+        "optsAria": "Selection in the tool",
+        "haltungKicker": "Stance",
+        "haltungH3": "What function does the image have?",
+        "haltungChips": ["Standard", "Affirmative", "Critical", "Illustrative"],
+        "haltungHint": "The same weakness weighs differently depending on whether an image shows a cliché deliberately or reproduces it unreflectively.",
+        "verwendungKicker": "Intended use",
+        "verwendungH3": "What is it meant for?",
+        "verwendungChips": ["Header image", "Mood image", "Symbolic image", "Illustration", "Social post", "Advertising/marketing image", "Editorial image"],
+        "verwendungHint": "From this, SemantIC derives how strict the standard should be.",
+        "note": "Selection in the tool – shown here for overview only, not clickable."
+      },
+      "s6": {
+        "index": "06 · A cue, not proof",
+        "title": "Why SemantIC proves you nothing.",
+        "body": "SemantIC gives no hard verdicts but reasoned cues: each finding shows where you should look more closely – not that an image is “wrong”. Whether it fits your context is not something any tool decides for you; the final judgment stays with you.",
+        "isTitle": "What SemantIC is",
+        "isItems": [
+          "A quality and integrity assessor for AI images",
+          "A tool that shows you where to look more closely",
+          "An appraisal before publication – the decision stays with you"
+        ],
+        "isNotTitle": "What SemantIC is not",
+        "isNotItems": [
+          "Not a fake or deepfake detector",
+          "No “real or fake” verdict about provenance",
+          "No substitute for your own editorial judgment"
+        ]
+      },
+      "s7": {
+        "index": "07 · Validated limits",
+        "title": "We know the limits – and disclose them.",
+        "body1": "Every limit here has been empirically tested – in documented test series against the human coding, and for anatomy additionally blinded with a second vision model. You should know when you can rely on a finding and when your own eye is needed.",
+        "cards": {
+          "0": { "kicker": "Robust in testing", "h3": "The red light", "body": "In the documented anatomy test run (16 images, 42 runs), no clean image triggered a red finding. If SemantIC shows red, take it seriously – yellow cues, by contrast, can sometimes be off." },
+          "1": { "kicker": "Read it right", "h3": "Green means: nothing found", "body": "Green means “nothing found” – not “flawless”. It focuses your visual check; it doesn't replace it." },
+          "2": { "kicker": "Known gap", "h3": "Anatomy: a flag is a check request", "body": "The tool finds local hand and finger artefacts more readily than structural body flaws (head, limbs, leg placement) – but it depends on the image: in the tests there were both missed and falsely reported findings, checked across two vision models. An anatomy flag is therefore a check request to you, not a diagnosis." },
+          "3": { "kicker": "Framing", "h3": "Severity is an estimate", "body": "Severe, moderate, minor are an estimate by the vision model, not a measurement. Whether a marked point is publication-critical is decided by your own look at the image." }
+        },
+        "body2": "The same tests also surfaced findings that a human eye had missed. The cues complement your visual check – every finding is built to be verifiable with a marking on the image."
+      },
+      "s8": {
+        "index": "08 · Where the criteria come from",
+        "title": "Research, not generic model knowledge.",
+        "figureNum": "144",
+        "figureCap": "coded images",
+        "body1": "The check logic rests on an empirical basis of its own: a qualitative content analysis of 144 AI-generated images. From it came the recurring error profiles, the reading modes and the visual drivers the tool works with – the practical part of the bachelor's thesis “Visual Bias in the AI-generated Image” (Multimedia Production, FH Graubünden).",
+        "body2": "The pipeline was developed over documented iterations and tested against the human coding – the validated limits above come from exactly these tests. It is deliberately model-agnostic: criteria, evidence requirements and check rules hang on the research basis, not on an AI model. The models used are interchangeable – the check grid stays."
+      },
+      "s9": {
+        "index": "09 · Privacy",
+        "title": "What happens to your image.",
+        "body": "Your image is transmitted to external services for analysis and is not stored at SemantIC itself – exactly what goes to whom and how long anything is kept is set out in the privacy policy.",
+        "cta": "To the privacy policy →"
+      },
+      "closing": {
+        "title": "Enough theory. Have an image checked",
+        "cta": "Have an image checked"
+      }
+    },
+    "index": {
+      "hero": {
+        "kicker": "Physics · Semantics · Bias",
+        "headline": "Convincing isn't {tail}",
+        "headlineTail": "enough",
+        "sub": "SemantIC grew out of the analysis of 144 AI-generated images: a research prototype that checks your images for physical coherence, semantic consistency and bias – and marks the spots that deserve a second look.",
+        "cta": "Have an image checked",
+        "how": "How it works",
+        "micro": "Research preview · created as part of a bachelor's thesis at Fachhochschule Graubünden",
+        "mediaAlt": "AI-generated mood image: photo prints with red check marks hang on a line in bright daylight, with a label reading SemantIC among them.",
+        "chipVideo": "AI-generated mood video"
+      },
+      "dims": {
+        "phys": {
+          "chip": "Stethoscope",
+          "strong": "Light, shadow, material.",
+          "body": "Visible here: the stethoscope is impossibly tangled – tubing, headset and band run together in a way that could not really be worn. A structural flaw that disappears in the overall impression."
+        },
+        "sem": {
+          "chip": "Someone else's photo",
+          "strong": "Content, context, logic.",
+          "body": "Does the scene add up? Not here: the name badge shows a photo of a different person, name and lettering are gibberish – a context break in the middle of the image."
+        },
+        "bias": {
+          "chip": "Role cliché",
+          "strong": "Depiction, role, power dynamic.",
+          "body": "Gender and skin tone are only described, never judged. What is judged is the pattern: the nurse is cast, as if it went without saying, as a young, flawless woman – a role and body cliché that image generators reproduce again and again."
+        }
+      },
+      "blindspot": {
+        "eyebrow": "The blind spot",
+        "title": "An image can look perfect and still not be right.",
+        "lead": "AI image generators are good at making images beautiful – and considerably worse at making them {correct}: physically plausible, fitting in substance, free of clichés. Visual perfection can cover these weaknesses: where an image convinces, the scrutinizing look is more easily left out. We call this effect {masking} – and SemantIC works against it.",
+        "correct": "right",
+        "masking": "masking",
+        "switchHint": "The same image, three angles: physics, semantics and bias. Switch the dimension – the finding switches with it.",
+        "dimsAria": "Choose check dimension",
+        "specAlt": "AI-generated example image: young nurse with a stethoscope and name badge in a hospital corridor.",
+        "grip": "CHECK ◂▸ APPEAL",
+        "sliderAria": "Reveal the findings view",
+        "sliderValueText": "{reveal} percent of the findings view visible",
+        "pull": "Drag the slider across the image",
+        "caption": "Image from the study corpus of this thesis · AI-generated · findings marked manually"
+      },
+      "masking": {
+        "eyebrow": "The masking",
+        "title": "The gap between beautiful and coherent.",
+        "lead": "SemantIC assesses two things strictly separately: how an image {appears} (aesthetics) and what it {holds} in substance (integrity). This makes it visible when an image looks better than it is – the breeding ground for masking. How the masking check works in detail is set out under {link}.",
+        "appears": "comes across",
+        "holds": "holds",
+        "linkText": "How it works",
+        "pairAlt1": "AI-generated example image, full view: a woman speaks into several microphones at a press conference.",
+        "pairCap1": "Overall impression – convincing",
+        "pairAlt2": "Detail crop of the same image: the broadcaster logos on the microphones are illegible gibberish.",
+        "pairCap2": "Detail – the microphone logos are gibberish",
+        "formulaAria": "Appeal versus substance",
+        "lookTag": "Appeal",
+        "lookName": "How an image comes across",
+        "lookTxt": "The aesthetic surface – mood, sharpness, composition. What convinces at first glance.",
+        "substanceTag": "Substance",
+        "substanceName": "What it holds in substance",
+        "substanceTxt": "Physics, semantics, bias. What holds up on closer inspection – or does not.",
+        "cap": "Both are deliberately assessed separately – never merged into a single number."
+      },
+      "context": {
+        "eyebrow": "For context",
+        "title": "Not an authenticity detector.",
+        "lead": "SemantIC does not tell you whether an image is “real” or “AI”, and does not sort into “fake” and “not fake”. It assesses the {quality} of an image already known to be AI-generated – bad AI versus good AI. And every finding is a cue, not a verdict.",
+        "quality": "quality"
+      },
+      "band": {
+        "aria": "Studio glimpse",
+        "alt": "AI-generated mood image: a review table with photo prints laid out, a hand placing a red marking."
+      },
+      "research": {
+        "eyebrow": "The research behind it",
+        "title": "The check logic comes from research of our own.",
+        "lead": "The criteria SemantIC checks by come from a qualitative content analysis of our own of 144 AI-generated images – how that became the check and where its limits lie is openly documented.",
+        "facts": {
+          "images": { "label": "coded images", "sub": "qualitative content analysis" },
+          "readings": { "label": "reading modes", "sub": "WA · DA · CI · AA · MI" },
+          "drivers": { "label": "visual drivers", "sub": "from Cinematic Lighting to Bokeh" }
+        },
+        "link": "How the check works"
+      },
+      "closer": {
+        "title": "Have your image checked before someone else does",
+        "body": "Drop an image, wait a moment, read a finding. No sign-up.",
+        "cta": "Check it now"
+      }
+    },
+    "analyze": {
+      "h1": "Check an image",
+      "stageAria": "Image check – input and process",
+      "steps": {
+        "upload": "upload",
+        "input": "input",
+        "analysis": "analysis",
+        "finding": "finding"
+      },
+      "upload": {
+        "heading": "Check an image",
+        "help": "Drop an AI-generated image or choose a file – we'll ask for the rest afterwards.",
+        "dropzoneAria": "Drag an image here or choose a file. JPEG, PNG or WebP, up to 3.5 megabytes.",
+        "dropPrimary": "Drag an image here",
+        "or": "or",
+        "pick": "Choose file",
+        "formats": "JPEG · PNG · WebP · up to 3.5 MB",
+        "dragMsg": "Release to load the image"
+      },
+      "validating": {
+        "heading": "Processing image …",
+        "help": "Large images are downscaled for the analysis – this happens locally in your browser."
+      },
+      "preview": {
+        "alt": "Preview of the uploaded image",
+        "placeholderAria": "Image preview",
+        "placeholderLabel": "Image · 4:5",
+        "label": "Your image",
+        "remove": "Remove image"
+      },
+      "collect": {
+        "kicker": "Step 2",
+        "heading": "Details about the use",
+        "lead": "Two brief details so the recommendation fits your use. Both are required before you can start."
+      },
+      "intent": {
+        "label": "Stance",
+        "help": "What function does the image have in your piece?",
+        "error": "The stance is still missing.",
+        "options": {
+          "unspecified": { "label": "Standard", "hint": "no particular stance" },
+          "affirmative": { "label": "Affirmative", "hint": "reinforces the topic" },
+          "critical": { "label": "Critical", "hint": "contextualizes / negative example" },
+          "illustrative": { "label": "Illustrative", "hint": "neutral example image" }
+        }
+      },
+      "usage": {
+        "label": "Intended use",
+        "help": "What is the image meant for? That determines how strict the recommendation's standard is.",
+        "error": "The intended use is still missing.",
+        "options": {
+          "header": { "label": "Header image", "hint": "lead image for a piece" },
+          "mood": { "label": "Mood image", "hint": "atmospheric, rather incidental" },
+          "symbol": { "label": "Symbolic image", "hint": "stands in for a topic" },
+          "illustration": { "label": "Illustration", "hint": "illustrates a matter" },
+          "social": { "label": "Social post", "hint": "post for social networks" },
+          "advertising": { "label": "Advertising/marketing image", "hint": "promotes a product or offer" },
+          "editorial": { "label": "Editorial image", "hint": "editorial use with intent" }
+        }
+      },
+      "contextField": {
+        "summary": "Add usage context",
+        "optional": "optional",
+        "label": "Usage context",
+        "help": "Please describe briefly in 1 to 2 sentences.",
+        "placeholder": "e.g. lead image for an article about nursing professions in a daily newspaper",
+        "emptyHint": "Without usage context, the appraisal stays more general."
+      },
+      "promptField": {
+        "summary": "Add original prompt",
+        "label": "Original prompt",
+        "help": "The text the image was generated with.",
+        "placeholder": "e.g. a professional nurse in a hospital, photorealistic, soft light"
+      },
+      "submit": {
+        "start": "Start analysis",
+        "hintReady": "Ready – you can start the analysis.",
+        "hintBoth": "Choose stance and intended use, then you can start."
+      },
+      "analyzing": {
+        "cancel": "Cancel analysis"
+      },
+      "caveats": {
+        "kicker": "Good to know",
+        "items": {
+          "0": { "title": "Cues, not verdicts", "body": "SemantIC marks anomalies – the appraisal and the decision stay with you." },
+          "1": { "title": "Cross-check yourself", "body": "Look at the marked spots in the original before you use the image." },
+          "2": { "title": "Models can be wrong", "body": "The check is based on AI models – individual findings can be missing or misplaced." },
+          "3": { "title": "Runs can differ", "body": "If the same image is checked several times, the cues can come out slightly differently." }
+        }
+      },
+      "result": {
+        "newImage": "Check a new image",
+        "exportPdf": "Export as PDF",
+        "printTip": "For a clean PDF, disable “headers and footers” in the print dialog."
+      },
+      "quota": {
+        "remaining": "{n} of {total} left today",
+        "remainingNoTotal": "{n} left today"
+      },
+      "actions": {
+        "chooseOther": "Choose another image",
+        "retry": "Try again",
+        "newImage": "Check a new image",
+        "enterCode": "Enter access code",
+        "understood": "Got it"
+      },
+      "errors": {
+        "unsupported_type": {
+          "title": "Format not supported",
+          "message": "SemantIC checks JPEG, PNG and WebP images. It cannot read this format. Save the image as JPEG, PNG or WebP and drop it again."
+        },
+        "too_large": {
+          "title": "Image too large",
+          "message": "This file exceeds the limit of 3.5 MB. We normally downscale larger images automatically – here that wasn't enough. Export the image a little smaller (or as JPEG) and try again."
+        },
+        "downscale_failed": {
+          "title": "Image could not be downscaled",
+          "message": "Something went wrong while downscaling the image locally – the file may be corrupted or unusually encoded. Try a freshly exported version of the image."
+        },
+        "rate_limited": {
+          "title": "Daily limit reached",
+          "message": "Per browser connection, 5 analyses in 24 hours are possible – this protects the costs of this teaching project. You have used up the limit for today. Tomorrow, 5 analyses are free again. For a demo or as a reviewer, you can lift the limit immediately: enter the access code in the “Access code” field at the bottom of the footer."
+        },
+        "timeout": {
+          "title": "Analysis took too long",
+          "message": "The check usually takes ten to thirty seconds. This time no response came back within the wait – usually a temporary problem with the analysis service. Try again in a moment. Your input is kept."
+        },
+        "provider_error": {
+          "title": "Analysis not possible right now",
+          "message": "The service that checks your image reported an error or is currently unreachable. This is not down to your image. Wait a moment and try again. Your input is kept."
+        },
+        "unknown": {
+          "title": "Something went wrong",
+          "message": "The analysis was interrupted unexpectedly. We couldn't clearly identify what happened. Try again. If it recurs, re-upload the image and start fresh."
+        }
+      }
+    }
+  }
+}
