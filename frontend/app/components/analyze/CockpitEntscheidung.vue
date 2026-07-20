@@ -4,11 +4,15 @@
 // vom Root) und 03 · Verortung (MaskingQuadrant compact, neutrale Wert-Labels, Achsen
 // „Integrität/Ästhetik hoch", rein räumlich – kein Differenzwert).
 import MaskingQuadrant from '~/components/dataviz/MaskingQuadrant.vue'
+import { useReportT } from '~/composables/useReportT'
 
 interface PriorityItem {
   label: string
   description: string
 }
+
+// Statik in der eingefrorenen Report-Sprache (nicht UI-Locale).
+const { rt } = useReportT()
 
 withDefaults(
   defineProps<{
@@ -25,9 +29,9 @@ withDefaults(
 </script>
 
 <template>
-  <aside class="decision is-reveal" aria-label="Redaktionelle Entscheidungshilfe">
+  <aside class="decision is-reveal" :aria-label="rt('report.entscheidung.asideAria')">
     <section class="decision__section">
-      <p class="eyebrow">02 · Nächster Schritt</p>
+      <p class="eyebrow">{{ rt('report.entscheidung.nextStep') }}</p>
       <h2 class="decision__headline">{{ headline }}</h2>
       <p class="decision__copy">{{ copy }}</p>
       <ol v-if="items.length" class="priority">
@@ -39,24 +43,23 @@ withDefaults(
           </span>
         </li>
       </ol>
-      <p v-else class="decision__copy decision__empty">{{ emptyNote ?? 'Keine offenen Prüf-Hinweise.' }}</p>
+      <p v-else class="decision__copy decision__empty">{{ emptyNote ?? rt('report.entscheidung.noOpenHints') }}</p>
     </section>
 
     <section class="decision__section">
-      <p class="eyebrow">03 · Verortung · Oberfläche × Integrität</p>
+      <p class="eyebrow">{{ rt('report.entscheidung.locationEyebrow') }}</p>
       <MaskingQuadrant
         variant="compact"
         neutral-values
         :integrity="integrity"
         :aesthetic="aesthetic"
-        point-label="Diese Probe"
-        x-axis-label="Integrität hoch →"
-        y-axis-label="Ästhetik hoch →"
+        :point-label="rt('report.entscheidung.pointLabel')"
+        :x-axis-label="rt('report.entscheidung.xAxisLabel')"
+        :y-axis-label="rt('report.entscheidung.yAxisLabel')"
       />
       <p class="quad__note">
-        Der Punkt zeigt die Lage von Integrität und Ästhetik zueinander – aus seiner Position folgt kein
-        Maskierungs-Urteil.
-        <small>Illustratives Schema · keine Maskierungs-Stufe, kein Differenzwert.</small>
+        {{ rt('report.entscheidung.quadNote') }}
+        <small>{{ rt('report.entscheidung.quadNoteSmall') }}</small>
       </p>
     </section>
   </aside>

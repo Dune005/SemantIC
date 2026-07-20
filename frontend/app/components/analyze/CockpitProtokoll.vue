@@ -3,6 +3,7 @@
 // Pfeiltasten gratis). Bildbefunde (userHints, jede Zeile „unverifiziert"), Bias-Achsen
 // (Beobachtung↔Interpretation getrennt), Kontext & Wirkung. Daten render-fertig vom Root.
 import { TabsRoot, TabsList, TabsTrigger, TabsContent } from 'reka-ui'
+import { useReportT } from '~/composables/useReportT'
 
 interface FindingRow {
   id: string
@@ -40,6 +41,9 @@ defineProps<{
   readingModeMaskingLogic: string | null
   counts: { findings: number; bias: number }
 }>()
+
+// Statik in der eingefrorenen Report-Sprache (nicht UI-Locale).
+const { rt } = useReportT()
 </script>
 
 <template>
@@ -48,18 +52,17 @@ defineProps<{
       <div class="evidence-section__head">
         <div class="evidence-section__title">
           <div>
-            <p class="eyebrow">04 · Prüfprotokoll</p>
-            <h2 id="evidence-title">Warum dieses Urteil?</h2>
+            <p class="eyebrow">{{ rt('report.protokoll.eyebrow') }}</p>
+            <h2 id="evidence-title">{{ rt('report.protokoll.title') }}</h2>
           </div>
           <p class="evidence-section__note">
-            Beobachtung, Interpretation und redaktioneller Kontext bleiben getrennt. Öffne nur die Ebene, die du
-            für deine Entscheidung brauchst.
+            {{ rt('report.protokoll.note') }}
           </p>
         </div>
-        <TabsList class="tabs" aria-label="Prüfprotokoll-Bereiche">
-          <TabsTrigger value="findings" class="tab">Bildbefunde · {{ counts.findings }}</TabsTrigger>
-          <TabsTrigger value="bias" class="tab">Bias-Achsen · {{ counts.bias }}</TabsTrigger>
-          <TabsTrigger value="context" class="tab">Kontext &amp; Wirkung</TabsTrigger>
+        <TabsList class="tabs" :aria-label="rt('report.protokoll.tabsAria')">
+          <TabsTrigger value="findings" class="tab">{{ rt('report.protokoll.tabFindings', { n: counts.findings }) }}</TabsTrigger>
+          <TabsTrigger value="bias" class="tab">{{ rt('report.protokoll.tabBias', { n: counts.bias }) }}</TabsTrigger>
+          <TabsTrigger value="context" class="tab">{{ rt('report.protokoll.tabContext') }}</TabsTrigger>
         </TabsList>
       </div>
 
@@ -76,14 +79,14 @@ defineProps<{
                 </span>
                 <span class="finding-row__flags">
                   <span class="severity" :class="`severity--${f.severityTone}`">{{ f.severityWord }}</span>
-                  <span class="claim-tag">unverifiziert</span>
+                  <span class="claim-tag">{{ rt('report.common.unverified') }}</span>
                 </span>
               </article>
-              <p v-if="!findings.length" class="panel-empty">Keine Bildbefunde erfasst.</p>
+              <p v-if="!findings.length" class="panel-empty">{{ rt('report.protokoll.noFindings') }}</p>
             </div>
             <aside v-if="maskingNote" class="masking-note">
-              <p class="eyebrow">Maskierungs-Hinweis · Interpretation</p>
-              <h3>Die Bildsprache kann den Blick von den Fehlern weglenken.</h3>
+              <p class="eyebrow">{{ rt('report.protokoll.maskingEyebrow') }}</p>
+              <h3>{{ rt('report.protokoll.maskingTitle') }}</h3>
               <p>{{ maskingNote.text }}</p>
               <div v-if="maskingNote.links.length" class="driver-links">
                 <div v-for="(l, i) in maskingNote.links" :key="`${l.code}-${i}`" class="driver-link">
@@ -97,7 +100,7 @@ defineProps<{
         <!-- Tab 2: Bias-Achsen -->
         <TabsContent value="bias" class="tabpanel">
           <p v-if="readingModeMaskingLogic" class="leseart-note">
-            <span class="leseart-note__label">Leseart · Maskierungslogik</span>
+            <span class="leseart-note__label">{{ rt('report.protokoll.readingModeLogicLabel') }}</span>
             {{ readingModeMaskingLogic }}
           </p>
           <div v-if="biasAxes.length" class="bias-grid">
@@ -109,28 +112,28 @@ defineProps<{
               <div class="axis-card__body">
                 <template v-for="(p, j) in ax.pairs" :key="j">
                   <div class="evidence-pair">
-                    <span class="evidence-pair__label">Beobachtung</span>
+                    <span class="evidence-pair__label">{{ rt('report.common.observation') }}</span>
                     <p>{{ p.observation }}</p>
                   </div>
                   <div class="evidence-pair">
-                    <span class="evidence-pair__label">Interpretation</span>
+                    <span class="evidence-pair__label">{{ rt('report.common.interpretation') }}</span>
                     <p>{{ p.interpretation }}</p>
                   </div>
                   <div class="support">
-                    {{ p.supports ? '→ stützt den Bias-Befund' : '→ deskriptiv, stützt keinen eigenständigen Bias-Befund' }}
+                    {{ p.supports ? rt('report.protokoll.supportsBias') : rt('report.protokoll.supportsNoBias') }}
                   </div>
                 </template>
               </div>
             </article>
           </div>
-          <p v-else class="panel-empty">Keine Bias-Achsen abgeleitet (Nullfall – kein krampfhaftes Bias-Finden).</p>
+          <p v-else class="panel-empty">{{ rt('report.protokoll.noBiasAxes') }}</p>
         </TabsContent>
 
         <!-- Tab 3: Kontext & Wirkung -->
         <TabsContent value="context" class="tabpanel">
           <div class="context-grid">
             <div>
-              <p class="eyebrow">Redaktioneller Kontext</p>
+              <p class="eyebrow">{{ rt('report.protokoll.editorialContext') }}</p>
               <ul class="context-list">
                 <li v-for="(it, i) in context.items" :key="i">
                   <span>{{ it.k }}</span>
@@ -139,13 +142,13 @@ defineProps<{
               </ul>
             </div>
             <div>
-              <p class="eyebrow">Visuelle Treiber</p>
+              <p class="eyebrow">{{ rt('report.protokoll.visualDrivers') }}</p>
               <div v-if="context.drivers.length" class="chips">
                 <span v-for="d in context.drivers" :key="d.code" class="chip"><b>{{ d.code }}</b>{{ d.label }}</span>
               </div>
-              <p v-else class="panel-empty">Keine visuellen Treiber benannt.</p>
+              <p v-else class="panel-empty">{{ rt('report.protokoll.noDrivers') }}</p>
               <div v-if="context.normative" class="normative">
-                <strong>Normative Bildwirkung · {{ context.normative.verdictWord }}</strong>
+                <strong>{{ rt('report.protokoll.normativeTitle', { verdict: context.normative.verdictWord }) }}</strong>
                 <div v-if="context.normative.aspects.length" class="chips normative__aspects">
                   <span v-for="a in context.normative.aspects" :key="a" class="chip">{{ a }}</span>
                 </div>

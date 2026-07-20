@@ -1,4 +1,5 @@
 import type { AnalysisOutput, MaskingEvidence } from './schemas/analysis.js'
+import type { OutputLang } from './vocab.js'
 
 // Deterministischer Maskierungs-Hinweis (ersetzt den widerlegten masking_score,
 // Beschluss spike-test/MASKIERUNG-GESAMTBEFUND.md 2026-06-07): Maskierung wird
@@ -24,21 +25,37 @@ export interface MaskingReviewNote {
 }
 
 // Satz-Subjekte je Leseart — modal formulierte Entsprechung der kanonischen
-// Maskierungslogik aus dem Analyse-Prompt (Phase 3).
-const READING_MODE_SUBJECT: Record<ReadingMode, string> = {
-  WA: 'Die professionelle Werbe-Ästhetik des Bildes',
-  DA: 'Die dokumentarisch-authentische Anmutung des Bildes',
-  CI: 'Die cinematische Bildstimmung',
-  AA: 'Die beiläufig-private Amateur-Anmutung',
-  MI: 'Die professionelle Magazin-Inszenierung',
+// Maskierungslogik aus dem Analyse-Prompt (Phase 3). EN genauso vorsichtig
+// («can make … harder», kein Wirkungs-Indikativ).
+const READING_MODE_SUBJECT: Record<OutputLang, Record<ReadingMode, string>> = {
+  de: {
+    WA: 'Die professionelle Werbe-Ästhetik des Bildes',
+    DA: 'Die dokumentarisch-authentische Anmutung des Bildes',
+    CI: 'Die cinematische Bildstimmung',
+    AA: 'Die beiläufig-private Amateur-Anmutung',
+    MI: 'Die professionelle Magazin-Inszenierung',
+  },
+  en: {
+    WA: 'The professional advertising aesthetic of the image',
+    DA: 'The documentary-authentic look of the image',
+    CI: 'The cinematic mood of the image',
+    AA: 'The casual, private amateur look of the image',
+    MI: 'The professional magazine staging of the image',
+  },
 }
 
-const FALLBACK_SUBJECT = 'Die visuelle Gestaltung des Bildes'
+const FALLBACK_SUBJECT: Record<OutputLang, string> = {
+  de: 'Die visuelle Gestaltung des Bildes',
+  en: 'The visual styling of the image',
+}
 
-export const LINK_AREA_LABEL: Record<MaskingEvidence['codebook_link'], string> = {
-  physics: 'Physik',
-  anatomy: 'Anatomie',
-  context: 'Kontext',
+const LINK_AREA_LABELS: Record<OutputLang, Record<MaskingEvidence['codebook_link'], string>> = {
+  de: { physics: 'Physik', anatomy: 'Anatomie', context: 'Kontext' },
+  en: { physics: 'Physics', anatomy: 'Anatomy', context: 'Context' },
+}
+
+export function linkAreaLabel(link: MaskingEvidence['codebook_link'], lang: OutputLang): string {
+  return LINK_AREA_LABELS[lang][link]
 }
 
 // Befundkarten-Dimension je codebook_link (Anatomie läuft unter Physik,
@@ -81,27 +98,40 @@ export function dedupeMaskingLinks(validEvidence: MaskingEvidence[]): MaskingEvi
 export function composeMaskingReviewNote(
   readingMode: ReadingMode,
   validEvidence: MaskingEvidence[],
+  lang: OutputLang = 'de',
 ): MaskingReviewNote | null {
   const links = dedupeMaskingLinks(validEvidence)
   if (links.length === 0) return null
 
-  const subject = READING_MODE_SUBJECT[readingMode] ?? FALLBACK_SUBJECT
-  const areas = uniqueInOrder(links.map(e => LINK_AREA_LABEL[e.codebook_link]))
+  const subject = READING_MODE_SUBJECT[lang][readingMode] ?? FALLBACK_SUBJECT[lang]
+  const areas = uniqueInOrder(links.map(e => LINK_AREA_LABELS[lang][e.codebook_link]))
   const linkCount = links.length
 
-  const findingsPhrase = areas.length === 1
+  const findingsPhrase = lang === 'de'
+    ? (areas.length === 1
+        ? (linkCount === 1
+            ? `des markierten ${areas[0]}-Befunds`
+            : `der markierten ${areas[0]}-Befunde`)
+        : `der markierten Befunde (${areas.join(', ')})`)
+    : (areas.length === 1
+        ? (linkCount === 1
+            ? `the marked ${areas[0]} finding`
+            : `the marked ${areas[0]} findings`)
+        : `the marked findings (${areas.join(', ')})`)
+
+  const markerPhrase = lang === 'de'
     ? (linkCount === 1
-        ? `des markierten ${areas[0]}-Befunds`
-        : `der markierten ${areas[0]}-Befunde`)
-    : `der markierten Befunde (${areas.join(', ')})`
+        ? 'eine Stelle markiert, an der ein ästhetischer Treiber den Befund überdecken könnte'
+        : `${linkCount} Stellen markiert, an denen ästhetische Treiber Befunde überdecken könnten`)
+    : (linkCount === 1
+        ? 'one spot where an aesthetic driver could cover up the finding'
+        : `${linkCount} spots where aesthetic drivers could cover up findings`)
 
-  const markerPhrase = linkCount === 1
-    ? 'eine Stelle markiert, an der ein ästhetischer Treiber den Befund überdecken könnte'
-    : `${linkCount} Stellen markiert, an denen ästhetische Treiber Befunde überdecken könnten`
-
-  const text =
-    `${subject} kann die kritische Prüfung ${findingsPhrase} erschweren. ` +
-    `Das Modell hat ${markerPhrase} – ein prüfbarer Hinweis, kein Nachweis.`
+  const text = lang === 'de'
+    ? `${subject} kann die kritische Prüfung ${findingsPhrase} erschweren. ` +
+      `Das Modell hat ${markerPhrase} – ein prüfbarer Hinweis, kein Nachweis.`
+    : `${subject} can make critical review of ${findingsPhrase} harder. ` +
+      `The model marked ${markerPhrase} – a checkable cue, not proof.`
 
   return {
     text,

@@ -4,6 +4,7 @@
 // KEIN v-html – hint.text/findings sind einfache Interpolation.
 import { computed } from 'vue'
 import { HINT_SEVERITY_LABEL, DIMENSION_LABELS } from '~/lib/severity'
+import { useReportT } from '~/composables/useReportT'
 import type { ConsolidatedHint } from '~/types/analysis'
 
 // F5 (Frontend 1.5): Der frühere `concise`-Modus unterdrückte die concreteFindings
@@ -19,7 +20,12 @@ const SEV = {
   low: 'border border-line-strong bg-surface-2 text-ink-soft',
 } as const
 
-const dimLabel = computed(() => (props.hint.dimension ? DIMENSION_LABELS[props.hint.dimension] : null))
+// Labels in der eingefrorenen Report-Sprache (Maps sind DE/EN, rt fuer Statik).
+const { rt, reportLang } = useReportT()
+
+const dimLabel = computed(() =>
+  props.hint.dimension ? DIMENSION_LABELS[props.hint.dimension][reportLang.value] : null,
+)
 const findings = computed(() => (props.hint.concreteFindings ?? []).slice(0, 2))
 </script>
 
@@ -30,13 +36,13 @@ const findings = computed(() => (props.hint.concreteFindings ?? []).slice(0, 2))
         class="shrink-0 rounded-tag px-[7px] py-[3px] font-mono text-[10px] font-semibold uppercase leading-tight tracking-[0.12em]"
         :class="SEV[hint.severity]"
       >
-        {{ HINT_SEVERITY_LABEL[hint.severity] }}
+        {{ HINT_SEVERITY_LABEL[hint.severity][reportLang] }}
       </span>
       <div class="flex-1">
         <span class="text-[14px] leading-normal text-ink">{{ hint.text }}</span>
         <span v-if="dimLabel" class="ml-2 font-mono text-[10px] uppercase tracking-[0.08em] text-subtle">{{ dimLabel }}</span>
         <details v-if="findings.length" class="hint-details mt-2">
-          <summary>Details</summary>
+          <summary>{{ rt('report.befundKarte.details') }}</summary>
           <ul class="mt-2 flex flex-col gap-[7px]">
             <li
               v-for="(f, i) in findings"
@@ -46,7 +52,7 @@ const findings = computed(() => (props.hint.concreteFindings ?? []).slice(0, 2))
             >
               {{ f.text }}
               <span class="ml-[6px] font-mono text-[10px] uppercase tracking-[0.08em] text-subtle">
-                {{ f.severity === 'severe' ? 'schwer' : f.severity === 'moderate' ? 'moderat' : 'gering' }}
+                {{ rt(`report.befundKarte.detailSeverity.${f.severity === 'severe' ? 'severe' : f.severity === 'moderate' ? 'moderate' : 'minor'}`) }}
               </span>
             </li>
           </ul>

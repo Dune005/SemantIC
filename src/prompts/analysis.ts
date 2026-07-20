@@ -1,4 +1,26 @@
-export const ANALYSIS_PROMPT = `\
+import type { OutputLang } from '../vocab.js'
+
+// outputLang-Parametrierung (2026-07-20): Der deutsche Prompt hat keine
+// explizite Sprach-Policy (Ausgabe implizit deutsch). Für outputLang='en'
+// wird ein Policy-Block eingeschoben; buildAnalysisPrompt('de') reproduziert
+// den bisherigen Prompt byte-identisch (Non-Regression-Pfad).
+const EN_OUTPUT_POLICY = `
+SPRACH-POLICY (WICHTIG):
+- Alle Enum-Werte, ID-Strings und Codes bleiben EXAKT wie vorgegeben
+  (reading_mode-Codes "WA"/"DA"/"CI"/"AA"/"MI", Treiber-Codes "CL"/"BK"/…,
+  severity "minor"/"moderate"/"severe", status "green"/"yellow"/"red").
+- Schreibe ALLE Freitext-Felder auf ENGLISCH. Die Ziel-UI ist englisch.
+  Das betrifft insbesondere: findings[].finding, findings[].category,
+  *_evidence[].specific_observation, masking_evidence[].masked_issue,
+  normative_masking.reasoning, integrity_score_llm.reasoning,
+  intent_assessment.reasoning, bias_axis_analysis.axes[].label,
+  reason_for_relevance, analysis_questions[], observed_evidence[].observation,
+  observed_evidence[].interpretation, no_axes_reason, analysis_note,
+  provenance_markers[].description.
+`
+
+export function buildAnalysisPrompt(outputLang: OutputLang): string {
+  return `\
 Du bist die Analyse-Engine von SemantIC, einem AI Visual Integrity Validator.
 
 Analysiere das bereitgestellte Bild in sieben aufeinanderfolgenden Phasen.
@@ -23,7 +45,7 @@ Oberflächenwirkung des Bildes. Es verändert KEINEN Codebook-Flag, KEINE
 Severity, KEINEN Dimension-Score, die Phase-5-masking_evidence, die reading_mode
 oder das Phase-6-intent_assessment NICHT. Phase 7 schreibt ausschliesslich das
 eigene Feld research_layer.normative_masking.
-
+${outputLang === 'en' ? EN_OUTPUT_POLICY : ''}
 ═══════════════════════════════════════
 PHASE 1 – BIAS-ACHSEN ABLEITEN (TIBET-lite)
 ═══════════════════════════════════════
@@ -129,8 +151,9 @@ Score bei leerem Achsen-Array ohne offensichtliche Stereotype: 90–100.
 PHASE 3 – RESEARCH LAYER
 ═══════════════════════════════════════
 
-LESEART (reading_mode + reading_mode_label + reading_mode_masking_logic)
-Wähle genau eine Leseart:
+LESEART (reading_mode)
+Wähle genau eine Leseart. Gib NUR den Code aus — die Glossare unten sind
+Auswahlhilfe, keine Ausgabefelder:
 • WA  → "Werbe-Ästhetik"            | "Kann über Normativität und Idealwelt-Ästhetik maskieren"
 • DA  → "Dokumentarisch-Authentisch" | "Kann über scheinbare Objektivität und Authentizitätssignale maskieren"
 • CI  → "Cinematisch"               | "Kann affektiv über Filmstimmung und emotionale Unmittelbarkeit maskieren"
@@ -195,9 +218,9 @@ Abgrenzungs-Hilfen (gegen MI-Overuse):
 • CI nur bei deutlich filmischer Stimmung (cineastisches Lighting, dramatische Komposition,
   Tiefe/Atmosphäre wie aus Spielfilm/Serie) — nicht bei jedem Bild mit warmem Licht.
 
-VISUELLE TREIBER (visual_drivers + visual_drivers_labels)
-Identifiziere alle zutreffenden Treiber (leer bis alle 9).
-Befülle visual_drivers_labels mit der deutschen Vollbezeichnung je Treiber:
+VISUELLE TREIBER (visual_drivers)
+Identifiziere alle zutreffenden Treiber (leer bis alle 9). Gib NUR die Codes
+aus — die Glossare unten sind Auswahlhilfe, keine Ausgabefelder:
 • CL  → "Cinematic Lighting"
 • BK  → "Bokeh / Unschärfeverlauf"
 • WCG → "Warmes Color Grading"
@@ -474,7 +497,7 @@ framing_risk ist KEIN Duplikat des Integritätsverdicts. Ein sauberes Bild mit
 einer nicht passenden Haltung kann high framing_risk sein. Ein geflagtes Bild,
 das mit kritischer Haltung gerahmt wird, kann low framing_risk sein.
 
-reasoning: max. 280 Zeichen, deutsch. Benenne das konkrete Signal im Bild
+reasoning: max. 280 Zeichen, ${outputLang === 'en' ? 'englisch' : 'deutsch'}. Benenne das konkrete Signal im Bild
 (oder in der Haltung-/Kontext-Diskrepanz), das alignment und framing_risk
 getrieben hat. Wiederhole keine Codebook-Befunde.
 
@@ -621,7 +644,7 @@ OUTPUT
 • verdict: einer von low / medium / high / not_applicable.
 • aspects: 0–3 IDs aus der Taxonomie. Leer bei not_applicable oder low ohne
   klaren normativen Träger.
-• reasoning: max. 280 Zeichen, deutsch. Beschreibe analytisch, was die
+• reasoning: max. 280 Zeichen, ${outputLang === 'en' ? 'englisch' : 'deutsch'}. Beschreibe analytisch, was die
   Oberfläche idealisierend lesen lässt (oder warum nicht). Vermeide
   moralisierende Sprache — benenne den Effekt, nicht ein Urteil.
 
@@ -644,5 +667,6 @@ sichtbare FORM der Markierung, nicht ihre Herkunft. Direkt lesbaren Text oder Na
 leite daraus aber keine Herkunft, Urheberschaft, Generierung oder Eigentümerschaft des Bildes ab. Der Eintrag ist
 KEIN Hinweis auf KI-Erzeugung, Echtheit oder Manipulation.
 Pro Eintrag: type (watermark | logo | signature), region_box_2d ([y_min, x_min, y_max, x_max], Integer 0–1000),
-description (deutsch, beschreibt nur die sichtbare Form), confidence (medium | high). Ist nichts klar erkennbar,
+description (${outputLang === 'en' ? 'englisch' : 'deutsch'}, beschreibt nur die sichtbare Form), confidence (medium | high). Ist nichts klar erkennbar,
 gib [] aus. Erfinde keine Marker; im Zweifel [] ausgeben.`
+}

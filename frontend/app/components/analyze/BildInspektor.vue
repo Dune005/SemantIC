@@ -17,6 +17,7 @@ import {
 } from 'reka-ui'
 import type { InspectorSpot } from '~/types/analysis'
 import { isValidBox } from '~/lib/overlay-spots'
+import { useReportT } from '~/composables/useReportT'
 
 // Sichtbare Bildmarkierung fürs Overlay – BEWUSST eigener, neutraler Marker-Typ, getrennt
 // von InspectorSpot/qualifiesAsBox (kein Befund). Box ist bereits zum Tupel konvertiert +
@@ -35,17 +36,16 @@ const props = withDefaults(
     spots?: InspectorSpot[]
     provenanceMarkers?: ProvenanceMarkerView[]
   }>(),
-  { imageUrl: null, imageAlt: 'Analysiertes KI-Bild', spots: () => [], provenanceMarkers: () => [] },
+  { imageUrl: null, imageAlt: undefined, spots: () => [], provenanceMarkers: () => [] },
 )
+
+// Statik in der eingefrorenen Report-Sprache (nicht UI-Locale); Quellen-Labels
+// laufen über report.spotSource.* (rt).
+const { rt } = useReportT()
+const altText = computed(() => props.imageAlt ?? rt('report.inspektor.imageAltDefault'))
 
 // Vor dem Bild-Load steht die echte AR nicht fest → neutraler Fallback, danach exakt.
 const FALLBACK_AR = '3 / 2'
-const SOURCE_LABEL: Record<InspectorSpot['source'], string> = {
-  physics: 'Physik',
-  anatomy: 'Anatomie',
-  context: 'Kontext',
-  masking: 'Maskierung',
-}
 
 const viewportEl = ref<HTMLElement | null>(null)
 const tooltipEl = ref<HTMLElement | null>(null)
@@ -78,8 +78,8 @@ const provBoxes = computed(() => props.provenanceMarkers.filter((m) => isValidBo
 // Lightbox-Caption: Legende nur ergänzen, wenn ein Marker sichtbar ist.
 const lightboxCaption = computed(() =>
   provBoxes.value.length
-    ? 'Boxen sind LLM-verortet und nicht pixelgenau. Gepunktete Box = sichtbare Bildmarkierung (kein Befund).'
-    : 'Boxen sind LLM-verortet und nicht pixelgenau.',
+    ? `${rt('report.common.boxesCaption')} ${rt('report.inspektor.provCaptionSuffix')}`
+    : rt('report.common.boxesCaption'),
 )
 // Liefert den Spot zu einer ID NUR, wenn er noch existiert, geboxt und sein Layer
 // sichtbar ist – sonst null. Verhindert dangling-/stale-Zustände.
@@ -93,8 +93,11 @@ function validSpot(id: string | null): InspectorSpot | null {
 const shownSpot = computed(() => validSpot(hoverId.value) ?? validSpot(activeId.value))
 
 function spotMeta(s: InspectorSpot): string {
-  if (s.layer === 'mask') return s.driverLabel ? `Maskierung · ${s.driverLabel}` : 'Maskierung'
-  return SOURCE_LABEL[s.source]
+  if (s.layer === 'mask') {
+    const masking = rt('report.spotSource.masking')
+    return s.driverLabel ? `${masking} · ${s.driverLabel}` : masking
+  }
+  return rt(`report.spotSource.${s.source}`)
 }
 function pinStyle(box: InspectorSpot['box']) {
   const left = Math.min(Math.max(box[3] / 10, 4), 95)
@@ -111,8 +114,8 @@ function boxLabelStyle(box: InspectorSpot['box']) {
 function posLabel(box: InspectorSpot['box']): string {
   const cx = (box[1] + box[3]) / 2
   const cy = (box[0] + box[2]) / 2
-  const h = cx < 333 ? 'links' : cx > 667 ? 'rechts' : 'mittig'
-  const v = cy < 333 ? 'oben' : cy > 667 ? 'unten' : 'mittig'
+  const h = rt(`report.inspektor.pos.${cx < 333 ? 'left' : cx > 667 ? 'right' : 'hCenter'}`)
+  const v = rt(`report.inspektor.pos.${cy < 333 ? 'top' : cy > 667 ? 'bottom' : 'vCenter'}`)
   return `${v} ${h}`
 }
 
@@ -253,8 +256,8 @@ onBeforeUnmount(() => {
 <template>
   <section class="inspector is-reveal" aria-labelledby="inspector-title" @keydown.esc="onEscape">
     <div class="inspector__head">
-      <p id="inspector-title" class="eyebrow">01 · Bildinspektor</p>
-      <div v-if="overlayActive" class="toggles" role="group" aria-label="Overlay-Ebenen">
+      <p id="inspector-title" class="eyebrow">{{ rt('report.inspektor.eyebrow') }}</p>
+      <div v-if="overlayActive" class="toggles" role="group" :aria-label="rt('report.inspektor.togglesAria')">
         <button
           class="layer-toggle"
           type="button"
@@ -262,17 +265,17 @@ onBeforeUnmount(() => {
           :disabled="findingBoxCount === 0"
           @click="toggleLayer('finding')"
         >
-          <span class="layer-toggle__key">{{ findingBoxCount }}</span>Befunde
+          <span class="layer-toggle__key">{{ findingBoxCount }}</span>{{ rt('report.inspektor.toggleFindings') }}
         </button>
         <button
           class="layer-toggle layer-toggle--mask"
           type="button"
           :aria-pressed="visibleLayers.mask"
           :disabled="maskBoxCount === 0"
-          :title="maskBoxCount === 0 ? 'Keine im Bild verortbare Maskierung' : undefined"
+          :title="maskBoxCount === 0 ? rt('report.inspektor.noLocatableMasking') : undefined"
           @click="toggleLayer('mask')"
         >
-          <span v-if="maskBoxCount > 0" class="layer-toggle__key">{{ maskBoxCount }}</span>Maskierung
+          <span v-if="maskBoxCount > 0" class="layer-toggle__key">{{ maskBoxCount }}</span>{{ rt('report.inspektor.toggleMasking') }}
         </button>
       </div>
     </div>
@@ -281,8 +284,8 @@ onBeforeUnmount(() => {
          Fokus-Trap/Escape/Fokus-Restore + Scroll-Lock (via Overlay). -->
     <DialogRoot>
     <div ref="viewportEl" class="viewport" :style="{ aspectRatio: imageAR ?? FALLBACK_AR }" @mouseleave="clearHover()">
-      <img v-if="imageUrl" ref="imgEl" :src="imageUrl" :alt="imageAlt" @load="onImgLoad" />
-      <div v-else class="viewport__empty" aria-hidden="true">Kein Bild</div>
+      <img v-if="imageUrl" ref="imgEl" :src="imageUrl" :alt="altText" @load="onImgLoad" />
+      <div v-else class="viewport__empty" aria-hidden="true">{{ rt('report.inspektor.noImage') }}</div>
 
       <!-- Sichtbare Bildmarkierung – neutrale, nicht-interaktive Schicht (kein Befund).
            Eigenes Gate (unabhängig von overlayActive); liegt VOR der Befund-Schicht im DOM,
@@ -347,7 +350,7 @@ onBeforeUnmount(() => {
             :style="pinStyle(s.box)"
             type="button"
             :aria-pressed="shownSpot?.id === s.id"
-            :aria-label="`${s.id}, ${spotMeta(s)}, Bildbereich ${posLabel(s.box)} – unverifizierter Modellhinweis: ${s.text}`"
+            :aria-label="rt('report.inspektor.pinAria', { id: s.id, meta: spotMeta(s), pos: posLabel(s.box), text: s.text })"
             @mouseenter="setHover(s.id)"
             @mouseleave="clearHover(s.id)"
             @focus="setHover(s.id)"
@@ -361,8 +364,8 @@ onBeforeUnmount(() => {
         <div ref="tooltipEl" class="tooltip" :class="{ 'is-visible': !!shownSpot }" :style="tooltipPos" aria-hidden="true">
           <template v-if="shownSpot">
             <div class="tooltip__top">
-              <span class="tooltip__id">{{ shownSpot.id }} · {{ shownSpot.layer === 'mask' ? 'Maskierung' : 'Befund' }}</span>
-              <span class="tooltip__claim">unverifiziert</span>
+              <span class="tooltip__id">{{ shownSpot.id }} · {{ shownSpot.layer === 'mask' ? rt('report.spotSource.masking') : rt('report.inspektor.tooltipFinding') }}</span>
+              <span class="tooltip__claim">{{ rt('report.common.unverified') }}</span>
             </div>
             <p class="tooltip__text">{{ shownSpot.text }}</p>
           </template>
@@ -372,7 +375,7 @@ onBeforeUnmount(() => {
       <!-- Dezenter Auslöser unten rechts; nur sobald ein Bild geladen ist. as-child →
            reka stülpt die Trigger-Semantik (aria-haspopup/-expanded) über den Button. -->
       <DialogTrigger v-if="imageLoaded" as-child>
-        <button class="viewport__zoom" type="button" aria-label="Bild in Grossansicht öffnen">
+        <button class="viewport__zoom" type="button" :aria-label="rt('report.inspektor.zoomAria')">
           <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
           </svg>
@@ -387,12 +390,12 @@ onBeforeUnmount(() => {
       <DialogOverlay class="bi-lightbox__backdrop" />
       <DialogContent class="bi-lightbox" aria-modal="true">
         <div class="bi-lightbox__bar">
-          <DialogTitle class="bi-lightbox__title">Bildinspektor · Grossansicht</DialogTitle>
-          <DialogClose class="bi-lightbox__close">Schliessen <span aria-hidden="true">✕</span></DialogClose>
+          <DialogTitle class="bi-lightbox__title">{{ rt('report.inspektor.lightboxTitle') }}</DialogTitle>
+          <DialogClose class="bi-lightbox__close">{{ rt('report.inspektor.close') }} <span aria-hidden="true">✕</span></DialogClose>
         </div>
         <div class="bi-lightbox__body" :class="{ 'bi-lightbox__body--solo': !visibleBoxedSpots.length }">
           <div class="bi-lightbox__frame">
-            <img v-if="imageUrl" :src="imageUrl" :alt="imageAlt" />
+            <img v-if="imageUrl" :src="imageUrl" :alt="altText" />
             <!-- Sichtbare Bildmarkierung zuerst → Befunde malen bei gleichem z-index darüber. -->
             <svg
               v-if="provBoxes.length"
@@ -455,11 +458,11 @@ onBeforeUnmount(() => {
               >{{ s.id }}</span>
             </div>
           </div>
-          <ul v-if="visibleBoxedSpots.length" class="bi-lightbox__aside" aria-label="Verortete Befunde">
+          <ul v-if="visibleBoxedSpots.length" class="bi-lightbox__aside" :aria-label="rt('report.inspektor.locatedFindingsAria')">
             <li v-for="s in visibleBoxedSpots" :key="s.id" class="bi-lightbox__finding">
               <span class="bi-lightbox__fid" :class="`bi-lightbox__fid--${s.layer}`">{{ s.id }}</span>
               <span class="bi-lightbox__fbody">
-                <span class="bi-lightbox__fmeta">{{ spotMeta(s) }} · unverifiziert</span>
+                <span class="bi-lightbox__fmeta">{{ spotMeta(s) }} · {{ rt('report.common.unverified') }}</span>
                 <span class="bi-lightbox__ftext">{{ s.text }}</span>
               </span>
             </li>
@@ -472,9 +475,9 @@ onBeforeUnmount(() => {
 
     <div v-if="spots.length" class="spotlist">
       <p class="spotlist__head">
-        Verortete Modellhinweise<span class="spotlist__claim"> · unverifiziert</span>
+        {{ rt('report.inspektor.spotlistHead') }}<span class="spotlist__claim"> · {{ rt('report.common.unverified') }}</span>
       </p>
-      <p class="spotlist__legend">P Physik · A Anatomie · K Kontext · M Maskierung</p>
+      <p class="spotlist__legend">{{ rt('report.inspektor.legend') }}</p>
       <ul class="spotlist__items">
         <li v-for="s in spots" :key="s.id">
           <button
@@ -488,34 +491,34 @@ onBeforeUnmount(() => {
             <span class="spotrow__id" :class="`spotrow__id--${s.layer}`">{{ s.id }}</span>
             <span class="spotrow__body">
               <span class="spotrow__text">{{ s.text }}</span>
-              <span class="spotrow__meta">{{ spotMeta(s) }} · im Bild markiert</span>
+              <span class="spotrow__meta">{{ spotMeta(s) }} · {{ rt('report.inspektor.inImageMarked') }}</span>
             </span>
           </button>
           <div v-else class="spotrow spotrow--text">
             <span class="spotrow__id spotrow__id--muted">{{ s.id }}</span>
             <span class="spotrow__body">
               <span class="spotrow__text">{{ s.text }}</span>
-              <span class="spotrow__meta">{{ spotMeta(s) }} · ohne Box (nicht hinreichend verortet)</span>
+              <span class="spotrow__meta">{{ spotMeta(s) }} · {{ rt('report.inspektor.withoutBox') }}</span>
             </span>
           </div>
         </li>
       </ul>
     </div>
-    <p v-else class="spotlist-empty">Keine Befundstellen im Bild markiert.</p>
+    <p v-else class="spotlist-empty">{{ rt('report.inspektor.noSpots') }}</p>
 
     <!-- Sichtbare Bildmarkierung – Hinweis direkt zur gepunkteten Box im Bild (kein Befund).
          Erscheint nur, wenn das Modell eine Markierung erkannt hat; zeigt ALLE Marker
          (auch ohne darstellbare Box). -->
     <div v-if="provenanceMarkers.length" class="prov-hint">
-      <p class="prov-hint__label">Sichtbare Bildmarkierung</p>
+      <p class="prov-hint__label">{{ rt('report.inspektor.provLabel') }}</p>
       <p v-for="m in provenanceMarkers" :key="m.id" class="prov-hint__text">
         {{ m.description }}
-        <span class="prov-hint__conf">· Erkennungssicherheit {{ m.confidence === 'high' ? 'hoch' : 'mittel' }}</span>
+        <span class="prov-hint__conf">· {{ rt('report.inspektor.provConfidence', { level: rt(`report.common.confidence.${m.confidence}`) }) }}</span>
       </p>
-      <p class="prov-hint__note">Unverifizierte Modellbeobachtung – kein Echtheits- oder Herkunftsurteil.</p>
+      <p class="prov-hint__note">{{ rt('report.inspektor.provNote') }}</p>
     </div>
 
-    <p class="inspector__caption">Boxen sind LLM-verortet und nicht pixelgenau.</p>
+    <p class="inspector__caption">{{ rt('report.common.boxesCaption') }}</p>
   </section>
 </template>
 

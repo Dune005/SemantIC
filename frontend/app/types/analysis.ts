@@ -227,6 +227,10 @@ export interface DebugView {
 }
 
 export interface AnalysisViewModel {
+  // Erzeugungssprache des Reports (zu Analysebeginn fixiert). Komponenten
+  // binden ihre statischen Texte daran, damit ein UI-Sprachwechsel einen
+  // fertigen Report nicht nachträglich mischt.
+  reportLang: 'de' | 'en'
   overallVerdict: OverallVerdict
   // O-2-Typ-Vorbereitung (contract.md §2c): integrityScore wird in Etappe 5 aus
   // debug.integrityScore ins Top-Level gehoben (= eindeutige Hero-Score-Quelle).

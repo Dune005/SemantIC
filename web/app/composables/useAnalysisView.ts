@@ -2,6 +2,7 @@ import { computed, type Ref, type ComputedRef } from 'vue'
 import type { SemanticAnalysisResult } from '@pipeline/analyze'
 import type { ContextReviewHint } from '@pipeline/context-hints'
 import { composeMaskingReviewNote } from '@pipeline/masking-note'
+import { readingModeLabel, visualDriverLabel } from '@pipeline/vocab'
 
 export type DimensionStatus = 'green' | 'yellow' | 'red'
 export type RiskLevel = 'low' | 'medium' | 'high'
@@ -982,16 +983,17 @@ export function buildAnalysisViewModel(
     bias: { score: dim.bias.score, status: dim.bias.status },
   }
 
+  // Labels deterministisch aus dem Code (src/vocab.ts) – die LLM-Label-Felder
+  // wurden aus dem Schema entfernt (2026-07-20). web/ bleibt deutschsprachig.
   const readingMode: ReadingModeView = {
     code: analysis.research_layer.reading_mode,
-    label: analysis.research_layer.reading_mode_label,
+    label: readingModeLabel(analysis.research_layer.reading_mode, 'de'),
   }
 
   const driverCodes = analysis.research_layer.visual_drivers
-  const driverLabels = analysis.research_layer.visual_drivers_labels
-  const visualDrivers: VisualDriverView[] = driverCodes.map((code, i) => ({
+  const visualDrivers: VisualDriverView[] = driverCodes.map(code => ({
     code,
-    label: driverLabels[i] ?? code,
+    label: visualDriverLabel(code, 'de'),
   }))
 
   const hintsSortedBySeverity = [...result.context_review_hints].sort(

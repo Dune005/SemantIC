@@ -12,7 +12,13 @@
 import { computed, type Ref, type ComputedRef } from 'vue'
 import type { SemanticAnalysisResult } from '@pipeline/analyze'
 import type { ContextReviewHint } from '@pipeline/context-hints'
-import { composeMaskingReviewNote, dedupeMaskingLinks, LINK_AREA_LABEL } from '@pipeline/masking-note'
+import { composeMaskingReviewNote, dedupeMaskingLinks, linkAreaLabel } from '@pipeline/masking-note'
+import {
+  readingModeLabel,
+  readingModeMaskingLogic as vocabReadingModeMaskingLogic,
+  visualDriverLabel,
+  type OutputLang,
+} from '@pipeline/vocab'
 import type {
   DimensionStatus,
   RiskLevel,
@@ -70,17 +76,55 @@ const TOPIC_PRIORITY: Record<ConsolidatedHint['topic'], number> = {
 // Thesis ein Maskierungsmechanismus ist (kein Entlastungsgrund), gilt jetzt für
 // alle Lesearten dieselbe Priorisierung (TOPIC_PRIORITY).
 
-const TOPIC_TEXT: Record<ConsolidatedHint['topic'], string> = {
-  physics: 'Mögliche Physik-Auffälligkeit (Licht/Schatten/Material) – sichtprüfen.',
-  anatomy: 'Mögliche Anatomie-Auffälligkeit (Hände, Gesicht, Proportionen) – sichtprüfen.',
-  context_logic: 'Szenenlogik wirkt nicht ganz schlüssig – prüfen, ob das Bild zum Beitragsthema passt.',
-  role_stereotype: 'Mögliche stereotype Rollendarstellung – kritisch lesen.',
-  body_stereotype: 'Mögliche stereotype Körperdarstellung (Idealisierung).',
-  gender_bias: 'Geschlechterverteilung wirkt einseitig – prüfen, ob das beabsichtigt ist.',
-  masking: 'Die schöne Oberfläche könnte Fehler überdecken – Details prüfen.',
-  style_mismatch: 'Der Bildstil wirkt sehr werbe-/magazinhaft – passt das zum redaktionellen Kontext?',
-  hallucination: 'Hinweise auf halluzinierte oder vom Prompt abweichende Inhalte.',
-  bias_combined: 'Mehrere Bias-Indikatoren erkannt – kritisch lesen.',
+// Alle deterministischen Report-Texte liegen zweisprachig direkt hier (DE/EN),
+// indexiert über die zu Analysebeginn fixierte reportLang – bewusst NICHT über
+// vue-i18n, damit buildAnalysisViewModel eine pure Funktion bleibt und der
+// fertige Report seine Erzeugungssprache behält (kein Mischreport bei
+// UI-Sprachwechsel). Maskierungs-Wording: Arbeitsthese, modal formuliert –
+// in beiden Sprachen («könnte überdecken» / «could cover up»).
+type L10n = Record<OutputLang, string>
+
+const TOPIC_TEXT: Record<ConsolidatedHint['topic'], L10n> = {
+  physics: {
+    de: 'Mögliche Physik-Auffälligkeit (Licht/Schatten/Material) – sichtprüfen.',
+    en: 'Possible physics anomaly (light/shadow/material) – inspect visually.',
+  },
+  anatomy: {
+    de: 'Mögliche Anatomie-Auffälligkeit (Hände, Gesicht, Proportionen) – sichtprüfen.',
+    en: 'Possible anatomy anomaly (hands, face, proportions) – inspect visually.',
+  },
+  context_logic: {
+    de: 'Szenenlogik wirkt nicht ganz schlüssig – prüfen, ob das Bild zum Beitragsthema passt.',
+    en: 'Scene logic does not look fully coherent – check whether the image fits the story topic.',
+  },
+  role_stereotype: {
+    de: 'Mögliche stereotype Rollendarstellung – kritisch lesen.',
+    en: 'Possible stereotypical role portrayal – read critically.',
+  },
+  body_stereotype: {
+    de: 'Mögliche stereotype Körperdarstellung (Idealisierung).',
+    en: 'Possible stereotypical body portrayal (idealisation).',
+  },
+  gender_bias: {
+    de: 'Geschlechterverteilung wirkt einseitig – prüfen, ob das beabsichtigt ist.',
+    en: 'Gender distribution looks one-sided – check whether that is intended.',
+  },
+  masking: {
+    de: 'Die schöne Oberfläche könnte Fehler überdecken – Details prüfen.',
+    en: 'The polished surface could cover up flaws – check the details.',
+  },
+  style_mismatch: {
+    de: 'Der Bildstil wirkt sehr werbe-/magazinhaft – passt das zum redaktionellen Kontext?',
+    en: 'The visual style looks very ad- or magazine-like – does that fit the editorial context?',
+  },
+  hallucination: {
+    de: 'Hinweise auf halluzinierte oder vom Prompt abweichende Inhalte.',
+    en: 'Signs of hallucinated content or deviations from the prompt.',
+  },
+  bias_combined: {
+    de: 'Mehrere Bias-Indikatoren erkannt – kritisch lesen.',
+    en: 'Several bias indicators detected – read critically.',
+  },
 }
 
 const TOPIC_TO_CLUSTER: Record<ConsolidatedHint['topic'], RecommendationCluster> = {
@@ -96,32 +140,65 @@ const TOPIC_TO_CLUSTER: Record<ConsolidatedHint['topic'], RecommendationCluster>
   hallucination: 'hallucination',
 }
 
-const VERDICT_HEADLINES: Record<DimensionStatus, string> = {
-  green: 'Kann publiziert werden.',
-  yellow: 'Würde ich nochmal prüfen.',
-  red: 'Besser nicht in dieser Form verwenden.',
+const VERDICT_HEADLINES: Record<DimensionStatus, L10n> = {
+  green: { de: 'Kann publiziert werden.', en: 'Ready to publish.' },
+  yellow: { de: 'Würde ich nochmal prüfen.', en: 'I would double-check this.' },
+  red: { de: 'Besser nicht in dieser Form verwenden.', en: 'Better not to use it in this form.' },
 }
 
 const RECOMMENDATION_TABLE: Record<
   DimensionStatus,
-  Partial<Record<RecommendationCluster | 'null', string>>
+  Partial<Record<RecommendationCluster | 'null', L10n>>
 > = {
   green: {
-    null: 'Aus Tool-Sicht keine kritischen Hinweise. Das letzte Urteil bleibt bei dir.',
+    null: {
+      de: 'Aus Tool-Sicht keine kritischen Hinweise. Das letzte Urteil bleibt bei dir.',
+      en: 'No critical findings from the tool’s perspective. The final call stays with you.',
+    },
   },
   yellow: {
-    null: 'Es sind ein paar Punkte aufgefallen – eine zweite Meinung lohnt sich.',
-    image_integrity: 'Würde die Bildqualität nochmal sichtprüfen, bevor publiziert wird.',
-    bias_representation: 'Würde die Personen- und Rollendarstellung kritisch lesen.',
-    masking_style: 'Das Bild wirkt visuell überzeugend – Stil und Details prüfen, ob etwas übersehen wird.',
-    hallucination: 'Es gibt Hinweise, dass Bildinhalte vom Prompt abweichen – inhaltlich gegenprüfen.',
+    null: {
+      de: 'Es sind ein paar Punkte aufgefallen – eine zweite Meinung lohnt sich.',
+      en: 'A few points stood out – a second opinion is worth it.',
+    },
+    image_integrity: {
+      de: 'Würde die Bildqualität nochmal sichtprüfen, bevor publiziert wird.',
+      en: 'I would visually re-check the image quality before publishing.',
+    },
+    bias_representation: {
+      de: 'Würde die Personen- und Rollendarstellung kritisch lesen.',
+      en: 'I would read the portrayal of people and roles critically.',
+    },
+    masking_style: {
+      de: 'Das Bild wirkt visuell überzeugend – Stil und Details prüfen, ob etwas übersehen wird.',
+      en: 'The image is visually convincing – check style and details for anything overlooked.',
+    },
+    hallucination: {
+      de: 'Es gibt Hinweise, dass Bildinhalte vom Prompt abweichen – inhaltlich gegenprüfen.',
+      en: 'There are signs that image content deviates from the prompt – verify the content.',
+    },
   },
   red: {
-    null: 'Kritische Hinweise – bitte vor der Publikation klären.',
-    image_integrity: 'Sichtbare Bildfehler – anderes Bild wählen oder neu generieren.',
-    bias_representation: 'Kritische Bias-Hinweise – Personendarstellung überprüfen oder anderes Bild wählen.',
-    masking_style: 'Bild wirkt sehr überzeugend, trägt aber mehrere Auffälligkeiten – bitte nicht in dieser Form verwenden.',
-    hallucination: 'Bildinhalte weichen vom Prompt ab – bitte nicht in dieser Form verwenden.',
+    null: {
+      de: 'Kritische Hinweise – bitte vor der Publikation klären.',
+      en: 'Critical findings – please resolve before publication.',
+    },
+    image_integrity: {
+      de: 'Sichtbare Bildfehler – anderes Bild wählen oder neu generieren.',
+      en: 'Visible image flaws – choose another image or regenerate.',
+    },
+    bias_representation: {
+      de: 'Kritische Bias-Hinweise – Personendarstellung überprüfen oder anderes Bild wählen.',
+      en: 'Critical bias findings – review the portrayal of people or choose another image.',
+    },
+    masking_style: {
+      de: 'Bild wirkt sehr überzeugend, trägt aber mehrere Auffälligkeiten – bitte nicht in dieser Form verwenden.',
+      en: 'The image looks very convincing but carries several flagged issues – please do not use it in this form.',
+    },
+    hallucination: {
+      de: 'Bildinhalte weichen vom Prompt ab – bitte nicht in dieser Form verwenden.',
+      en: 'Image content deviates from the prompt – please do not use it in this form.',
+    },
   },
 }
 
@@ -139,63 +216,162 @@ const RECOMMENDATION_TABLE: Record<
 // den Cluster derzeit selten als dominant bekommen.
 const RECOMMENDATION_BY_INTENT: Record<
   'affirmative' | 'critical' | 'illustrative',
-  Record<DimensionStatus, Partial<Record<RecommendationCluster | 'null', string>>>
+  Record<DimensionStatus, Partial<Record<RecommendationCluster | 'null', L10n>>>
 > = {
   affirmative: {
     green: {
-      null: 'Keine Hinweise. Bild eignet sich für eine bestätigende Untermalung des Themas.',
+      null: {
+        de: 'Keine Hinweise. Bild eignet sich für eine bestätigende Untermalung des Themas.',
+        en: 'No findings. The image is suitable to support the topic affirmatively.',
+      },
     },
     yellow: {
-      null: 'Befunde aufgefallen – vor einer bestätigenden Verwendung prüfen, ob sie der gewünschten Aussage im Weg stehen.',
-      image_integrity: 'Bildqualitäts-Hinweise – eine bestätigende Verwendung wirkt nur, wenn diese Punkte geprüft und unkritisch sind.',
-      bias_representation: 'Bild trägt Bias-Hinweise. Bei bestätigender Verwendung wird das Muster mitgesendet – Bias bewusst markieren oder anderes Bild wählen.',
-      masking_style: 'Bild wirkt visuell überzeugend – bestätigende Verwendung möglich, aber prüfen, ob die glatte Oberfläche Befunde überdeckt.',
-      hallucination: 'Bildinhalte weichen vom Prompt ab – bestätigende Verwendung würde die Abweichung als Tatsache präsentieren.',
+      null: {
+        de: 'Befunde aufgefallen – vor einer bestätigenden Verwendung prüfen, ob sie der gewünschten Aussage im Weg stehen.',
+        en: 'Findings noted – before an affirmative use, check whether they get in the way of the intended message.',
+      },
+      image_integrity: {
+        de: 'Bildqualitäts-Hinweise – eine bestätigende Verwendung wirkt nur, wenn diese Punkte geprüft und unkritisch sind.',
+        en: 'Image-quality findings – an affirmative use only works if these points are checked and unproblematic.',
+      },
+      bias_representation: {
+        de: 'Bild trägt Bias-Hinweise. Bei bestätigender Verwendung wird das Muster mitgesendet – Bias bewusst markieren oder anderes Bild wählen.',
+        en: 'The image carries bias indications. Used affirmatively, the pattern travels with it – flag the bias deliberately or choose another image.',
+      },
+      masking_style: {
+        de: 'Bild wirkt visuell überzeugend – bestätigende Verwendung möglich, aber prüfen, ob die glatte Oberfläche Befunde überdeckt.',
+        en: 'The image is visually convincing – affirmative use is possible, but check whether the polished surface could be covering up findings.',
+      },
+      hallucination: {
+        de: 'Bildinhalte weichen vom Prompt ab – bestätigende Verwendung würde die Abweichung als Tatsache präsentieren.',
+        en: 'Image content deviates from the prompt – an affirmative use would present the deviation as fact.',
+      },
     },
     red: {
-      null: 'Substantielle Befunde – als bestätigende Untermalung ungeeignet.',
-      image_integrity: 'Sichtbare Bildfehler – würden in bestätigender Verwendung wie eine versteckte Schwäche wirken. Anderes Bild wählen.',
-      bias_representation: 'Substantieller Bias-Befund – als bestätigende Untermalung ungeeignet, würde das Muster zur Botschaft machen.',
-      masking_style: 'Bild wirkt zu glatt für die Hinweise im Bild – eine bestätigende Verwendung würde diese Spannung kaschieren.',
-      hallucination: 'Bildinhalte weichen vom Prompt ab – eine bestätigende Verwendung würde die Abweichung als Tatsache präsentieren.',
+      null: {
+        de: 'Substantielle Befunde – als bestätigende Untermalung ungeeignet.',
+        en: 'Substantial findings – unsuitable as affirmative support.',
+      },
+      image_integrity: {
+        de: 'Sichtbare Bildfehler – würden in bestätigender Verwendung wie eine versteckte Schwäche wirken. Anderes Bild wählen.',
+        en: 'Visible image flaws – in an affirmative use they would read like a hidden weakness. Choose another image.',
+      },
+      bias_representation: {
+        de: 'Substantieller Bias-Befund – als bestätigende Untermalung ungeeignet, würde das Muster zur Botschaft machen.',
+        en: 'Substantial bias finding – unsuitable as affirmative support; it would turn the pattern into the message.',
+      },
+      masking_style: {
+        de: 'Bild wirkt zu glatt für die Hinweise im Bild – eine bestätigende Verwendung würde diese Spannung kaschieren.',
+        en: 'The image looks too polished for the issues it carries – an affirmative use would paper over this tension.',
+      },
+      hallucination: {
+        de: 'Bildinhalte weichen vom Prompt ab – eine bestätigende Verwendung würde die Abweichung als Tatsache präsentieren.',
+        en: 'Image content deviates from the prompt – an affirmative use would present the deviation as fact.',
+      },
     },
   },
   critical: {
     green: {
-      null: 'Keine kritischen Hinweise. Mit kritischer Bildunterschrift / Rahmung publizierbar – die Distanzierung muss vom Text kommen, nicht vom Bild.',
+      null: {
+        de: 'Keine kritischen Hinweise. Mit kritischer Bildunterschrift / Rahmung publizierbar – die Distanzierung muss vom Text kommen, nicht vom Bild.',
+        en: 'No critical findings. Publishable with a critical caption/framing – the distancing must come from the text, not from the image.',
+      },
     },
     yellow: {
-      null: 'Im kritischen Kontext nur verwendbar, wenn die Bildunterschrift den geprüften Punkt explizit benennt – ohne Distanzierung kippt die Lesart ins Affirmative.',
-      image_integrity: 'Bildqualitätsfehler – passen NICHT zur kritischen Einordnung. Anderes Bild wählen oder neu generieren.',
-      bias_representation: 'Kann im kritischen Kontext als Beleg dienen – ABER nur, wenn das Bias-Muster im Begleittext explizit benannt und distanziert wird. Sonst kippt es ins Affirmative.',
-      masking_style: 'Visuell überzeugend – im kritischen Kontext riskant, weil die glatte Oberfläche das Muster verharmlosen kann. Bildunterschrift braucht klare Distanzierung.',
-      hallucination: 'Halluzinierte Inhalte – auch in kritischer Rahmung problematisch (Faktentreue). Anderes Bild verwenden.',
+      null: {
+        de: 'Im kritischen Kontext nur verwendbar, wenn die Bildunterschrift den geprüften Punkt explizit benennt – ohne Distanzierung kippt die Lesart ins Affirmative.',
+        en: 'In a critical context, only usable if the caption explicitly names the checked point – without distancing, the reading tips into the affirmative.',
+      },
+      image_integrity: {
+        de: 'Bildqualitätsfehler – passen NICHT zur kritischen Einordnung. Anderes Bild wählen oder neu generieren.',
+        en: 'Image-quality flaws – they do NOT fit a critical framing. Choose another image or regenerate.',
+      },
+      bias_representation: {
+        de: 'Kann im kritischen Kontext als Beleg dienen – ABER nur, wenn das Bias-Muster im Begleittext explizit benannt und distanziert wird. Sonst kippt es ins Affirmative.',
+        en: 'Can serve as evidence in a critical context – BUT only if the bias pattern is explicitly named and distanced in the accompanying text. Otherwise it tips into the affirmative.',
+      },
+      masking_style: {
+        de: 'Visuell überzeugend – im kritischen Kontext riskant, weil die glatte Oberfläche das Muster verharmlosen kann. Bildunterschrift braucht klare Distanzierung.',
+        en: 'Visually convincing – risky in a critical context because the polished surface can trivialise the pattern. The caption needs clear distancing.',
+      },
+      hallucination: {
+        de: 'Halluzinierte Inhalte – auch in kritischer Rahmung problematisch (Faktentreue). Anderes Bild verwenden.',
+        en: 'Hallucinated content – problematic even in a critical framing (factual accuracy). Use another image.',
+      },
     },
     red: {
-      null: 'Kritische Befunde – auch in kritischer Rahmung vor Publikation klären.',
-      image_integrity: 'Sichtbare Bildfehler – auch eine kritische Bildunterschrift macht diese Fehler nicht zur Botschaft. Anderes Bild wählen.',
-      bias_representation: 'Befund ist substantiell – als kritischer Beleg potenziell verwendbar, aber NUR mit eindeutiger Distanzierung im Begleittext. Ohne diese Distanzierung verstärkt das Bild das Muster.',
-      masking_style: 'Bild wirkt sehr überzeugend – im kritischen Kontext muss die Distanzierung sehr explizit sein, sonst wirkt es affirmativ.',
-      hallucination: 'Bildinhalte weichen vom Prompt ab – auch in kritischer Rahmung Faktentreue gefährdet.',
+      null: {
+        de: 'Kritische Befunde – auch in kritischer Rahmung vor Publikation klären.',
+        en: 'Critical findings – resolve before publication even in a critical framing.',
+      },
+      image_integrity: {
+        de: 'Sichtbare Bildfehler – auch eine kritische Bildunterschrift macht diese Fehler nicht zur Botschaft. Anderes Bild wählen.',
+        en: 'Visible image flaws – even a critical caption does not turn these flaws into the message. Choose another image.',
+      },
+      bias_representation: {
+        de: 'Befund ist substantiell – als kritischer Beleg potenziell verwendbar, aber NUR mit eindeutiger Distanzierung im Begleittext. Ohne diese Distanzierung verstärkt das Bild das Muster.',
+        en: 'The finding is substantial – potentially usable as critical evidence, but ONLY with unambiguous distancing in the accompanying text. Without that distancing, the image reinforces the pattern.',
+      },
+      masking_style: {
+        de: 'Bild wirkt sehr überzeugend – im kritischen Kontext muss die Distanzierung sehr explizit sein, sonst wirkt es affirmativ.',
+        en: 'The image looks very convincing – in a critical context the distancing must be very explicit, otherwise it reads as affirmative.',
+      },
+      hallucination: {
+        de: 'Bildinhalte weichen vom Prompt ab – auch in kritischer Rahmung Faktentreue gefährdet.',
+        en: 'Image content deviates from the prompt – factual accuracy is at risk even in a critical framing.',
+      },
     },
   },
   illustrative: {
     green: {
-      null: 'Keine kritischen Hinweise – als neutrales Beispiel verwendbar.',
+      null: {
+        de: 'Keine kritischen Hinweise – als neutrales Beispiel verwendbar.',
+        en: 'No critical findings – usable as a neutral example.',
+      },
     },
     yellow: {
-      null: 'Punkte aufgefallen – als „neutrales Beispiel" zu deklarieren wird schwierig, solange die Auffälligkeiten nicht geprüft sind.',
-      image_integrity: 'Sichtbare Bildfehler stören die illustrative Wirkung – sauberes Bild wählen.',
-      bias_representation: 'Stereotypisierung im illustrativen Material lenkt vom Thema ab – neutraleres Bild wählen.',
-      masking_style: 'Visuell auffällig – für eine illustrative Verwendung sind sachlichere Bilder geeigneter.',
-      hallucination: 'Halluzinierte Inhalte machen das Bild als illustratives Beispiel unbrauchbar – anderes Bild wählen.',
+      null: {
+        de: 'Punkte aufgefallen – als „neutrales Beispiel" zu deklarieren wird schwierig, solange die Auffälligkeiten nicht geprüft sind.',
+        en: 'Points stood out – declaring this a “neutral example” is difficult as long as they are unchecked.',
+      },
+      image_integrity: {
+        de: 'Sichtbare Bildfehler stören die illustrative Wirkung – sauberes Bild wählen.',
+        en: 'Visible image flaws disturb the illustrative effect – choose a clean image.',
+      },
+      bias_representation: {
+        de: 'Stereotypisierung im illustrativen Material lenkt vom Thema ab – neutraleres Bild wählen.',
+        en: 'Stereotyping in illustrative material distracts from the topic – choose a more neutral image.',
+      },
+      masking_style: {
+        de: 'Visuell auffällig – für eine illustrative Verwendung sind sachlichere Bilder geeigneter.',
+        en: 'Visually striking – more matter-of-fact images are better suited for illustrative use.',
+      },
+      hallucination: {
+        de: 'Halluzinierte Inhalte machen das Bild als illustratives Beispiel unbrauchbar – anderes Bild wählen.',
+        en: 'Hallucinated content makes the image unusable as an illustrative example – choose another image.',
+      },
     },
     red: {
-      null: 'Kritische Befunde – als neutrales Beispiel nicht geeignet.',
-      image_integrity: 'Sichtbare Bildfehler – eignet sich nicht als illustratives Beispiel.',
-      bias_representation: 'Trotz illustrativer Absicht: Befund ist substantiell. Bild eignet sich nicht als neutrales Beispiel.',
-      masking_style: 'Bild wirkt sehr überzeugend – als illustratives Beispiel würde es die thematische Neutralität untergraben.',
-      hallucination: 'Bildinhalte weichen vom Prompt ab – als illustratives Beispiel ungeeignet.',
+      null: {
+        de: 'Kritische Befunde – als neutrales Beispiel nicht geeignet.',
+        en: 'Critical findings – not suitable as a neutral example.',
+      },
+      image_integrity: {
+        de: 'Sichtbare Bildfehler – eignet sich nicht als illustratives Beispiel.',
+        en: 'Visible image flaws – not suitable as an illustrative example.',
+      },
+      bias_representation: {
+        de: 'Trotz illustrativer Absicht: Befund ist substantiell. Bild eignet sich nicht als neutrales Beispiel.',
+        en: 'Despite the illustrative intent: the finding is substantial. The image is not suitable as a neutral example.',
+      },
+      masking_style: {
+        de: 'Bild wirkt sehr überzeugend – als illustratives Beispiel würde es die thematische Neutralität untergraben.',
+        en: 'The image looks very convincing – as an illustrative example it would undermine topical neutrality.',
+      },
+      hallucination: {
+        de: 'Bildinhalte weichen vom Prompt ab – als illustratives Beispiel ungeeignet.',
+        en: 'Image content deviates from the prompt – unsuitable as an illustrative example.',
+      },
     },
   },
 }
@@ -212,19 +388,29 @@ const RECOMMENDATION_BY_INTENT: Record<
 // Personen-agnostisch formuliert. Aspect-Chips werden im UI eigenständig
 // gerendert und im Text NICHT genannt (vermeidet implizite Gruppen-
 // zuschreibung).
-const NORMATIVE_HIGH_INTENT_NOTES: Record<DeclaredIntent, string> = {
-  affirmative:
-    'Normwirkung im Begleittext transparent machen – sie ist nicht automatisch ein Ausschlussgrund.',
-  critical:
-    'Normwirkung ist hier der analytische Befund – im Begleittext explizit als zu kritisierender Mechanismus benennen.',
-  illustrative:
-    'Als neutrales Beispiel ungeeignet – Kontextualisierung/Captioning empfohlen, das die Idealisierung benennt.',
-  unspecified:
-    'Bild propagiert eine idealisierte Norm. Vor Verwendung prüfen, ob das in den Kontext passt.',
+const NORMATIVE_HIGH_INTENT_NOTES: Record<DeclaredIntent, L10n> = {
+  affirmative: {
+    de: 'Normwirkung im Begleittext transparent machen – sie ist nicht automatisch ein Ausschlussgrund.',
+    en: 'Make the normative effect transparent in the accompanying text – it is not automatically a reason for exclusion.',
+  },
+  critical: {
+    de: 'Normwirkung ist hier der analytische Befund – im Begleittext explizit als zu kritisierender Mechanismus benennen.',
+    en: 'The normative effect is the analytical finding here – name it explicitly in the accompanying text as the mechanism under critique.',
+  },
+  illustrative: {
+    de: 'Als neutrales Beispiel ungeeignet – Kontextualisierung/Captioning empfohlen, das die Idealisierung benennt.',
+    en: 'Unsuitable as a neutral example – contextualisation/captioning that names the idealisation is recommended.',
+  },
+  unspecified: {
+    de: 'Bild propagiert eine idealisierte Norm. Vor Verwendung prüfen, ob das in den Kontext passt.',
+    en: 'The image propagates an idealised norm. Before using it, check whether that fits the context.',
+  },
 }
 
-const NORMATIVE_MEDIUM_NOTE =
-  'Bild zeigt erkennbare idealisierende Ästhetik mit normativer Wirkung – im Begleittext bewusst rahmen.'
+const NORMATIVE_MEDIUM_NOTE: L10n = {
+  de: 'Bild zeigt erkennbare idealisierende Ästhetik mit normativer Wirkung – im Begleittext bewusst rahmen.',
+  en: 'The image shows a recognisable idealising aesthetic with normative effect – frame it deliberately in the accompanying text.',
+}
 
 // Der frühere Doppel-Maskierungs-Suffix hing am faktischen masking_verdict —
 // mit dem Score-Rückbau (2026-06-10) entfernt; die Note ist jetzt rein
@@ -232,12 +418,13 @@ const NORMATIVE_MEDIUM_NOTE =
 function computeNormativeMaskingNote(
   verdict: NormativeMaskingVerdict,
   declaredIntent: DeclaredIntent,
+  lang: OutputLang,
 ): string | null {
   if (verdict === 'high') {
-    return NORMATIVE_HIGH_INTENT_NOTES[declaredIntent]
+    return NORMATIVE_HIGH_INTENT_NOTES[declaredIntent][lang]
   }
   if (verdict === 'medium') {
-    return NORMATIVE_MEDIUM_NOTE
+    return NORMATIVE_MEDIUM_NOTE[lang]
   }
   return null
 }
@@ -259,18 +446,36 @@ const USAGE_FORM_TO_TIER: Record<UsageForm, UsageTier> = {
 // Modulierende Note zur Verwendungsform. Separat von der Hauptempfehlung
 // (Pattern wie NORMATIVE_*-Notes). Ordnet die Strenge im erklärten Einsatz ein,
 // widerspricht aber nie dem Status. green hat keinen Eintrag → Note = null.
-const USAGE_TIER_NOTES: Record<UsageTier, Partial<Record<DimensionStatus, string>>> = {
+const USAGE_TIER_NOTES: Record<UsageTier, Partial<Record<DimensionStatus, L10n>>> = {
   high_bar: {
-    yellow: 'Für den erklärten Einsatz (Werbung/Editorial) gilt eine hohe Latte – die aufgefallenen Punkte vor Publikation gezielt klären.',
-    red: 'Im erklärten Einsatz (Werbung/Editorial) sind sichtbare Befunde disqualifizierend – in dieser Form nicht geeignet.',
+    yellow: {
+      de: 'Für den erklärten Einsatz (Werbung/Editorial) gilt eine hohe Latte – die aufgefallenen Punkte vor Publikation gezielt klären.',
+      en: 'For the declared use (advertising/editorial) the bar is high – resolve the flagged points before publication.',
+    },
+    red: {
+      de: 'Im erklärten Einsatz (Werbung/Editorial) sind sichtbare Befunde disqualifizierend – in dieser Form nicht geeignet.',
+      en: 'For the declared use (advertising/editorial), visible findings are disqualifying – not suitable in this form.',
+    },
   },
   standard: {
-    yellow: 'Für den erklärten Einsatz redaktionell üblich – die Punkte prüfen, ob sie im konkreten Beitrag stören.',
-    red: 'Auch für den erklärten Einsatz sind diese Befunde kritisch – vor Verwendung klären.',
+    yellow: {
+      de: 'Für den erklärten Einsatz redaktionell üblich – die Punkte prüfen, ob sie im konkreten Beitrag stören.',
+      en: 'Editorially common for the declared use – check whether the points are disruptive in the specific piece.',
+    },
+    red: {
+      de: 'Auch für den erklärten Einsatz sind diese Befunde kritisch – vor Verwendung klären.',
+      en: 'Even for the declared use these findings are critical – resolve before use.',
+    },
   },
   informal: {
-    yellow: 'Für den erklärten Einsatz (Mood/Social) sind handwerkliche Mikro-Auffälligkeiten eher tolerierbar – inhaltliche Befunde bleiben relevant.',
-    red: 'Auch im informellen Einsatz (Mood/Social) bleiben diese Befunde gewichtig – die Toleranz für Stil ersetzt keine inhaltliche Prüfung.',
+    yellow: {
+      de: 'Für den erklärten Einsatz (Mood/Social) sind handwerkliche Mikro-Auffälligkeiten eher tolerierbar – inhaltliche Befunde bleiben relevant.',
+      en: 'For the declared use (mood/social), minor craft anomalies are more tolerable – content findings remain relevant.',
+    },
+    red: {
+      de: 'Auch im informellen Einsatz (Mood/Social) bleiben diese Befunde gewichtig – die Toleranz für Stil ersetzt keine inhaltliche Prüfung.',
+      en: 'Even in informal use (mood/social) these findings carry weight – tolerance for style does not replace a content check.',
+    },
   },
 }
 
@@ -286,19 +491,22 @@ function computeUsageFormNote(
   tier: UsageTier,
   status: DimensionStatus,
   dominantCluster: RecommendationCluster | null,
+  lang: OutputLang,
 ): string | null {
   if (status === 'green') return null
   if (dominantCluster === 'bias_representation') return null
-  return USAGE_TIER_NOTES[tier][status] ?? null
+  return USAGE_TIER_NOTES[tier][status]?.[lang] ?? null
 }
 
 const KEYWORD_PATTERNS: Record<'anatomy' | 'role' | 'body' | 'gender' | 'hallucination', RegExp> = {
-  // anatomy: 1:1 vom Backend src/analyze.ts ANATOMY_KEYWORDS + zusätzlich `anatom`
-  anatomy: /\b(anatom|finger|hand|hände|gesicht|antlitz|face|proport|gliedmass|extremit|limb|arm|fuss|fuß|leg)/i,
+  // anatomy: 1:1 vom Backend src/analyze.ts ANATOMY_KEYWORDS + zusätzlich `anatom`.
+  // Patterns bilingual (DE+EN), da Findings/Categories seit outputLang der
+  // Report-Sprache folgen (foot/feet + deviat ergänzt, 2026-07-20).
+  anatomy: /\b(anatom|finger|hand|hände|gesicht|antlitz|face|proport|gliedmass|extremit|limb|arm(e|en|s)?\b|fuss|fuß|füss|füß|foot|feet|legs?\b)/i,
   role: /\b(role|rolle|beruf|occupat|job|position|profession|status)/i,
   body: /\b(body|körper|koerper|build|figur|physique|ideal|attract|schön|schoen)/i,
   gender: /\b(gender|geschlecht|female|male|frau|mann|woman|men)/i,
-  hallucination: /\b(halluc|prompt|abweich|invented|fabric|erfunden|nicht\s+vorhanden)/i,
+  hallucination: /\b(halluc|prompt|abweich|deviat|invented|fabric|erfunden|nicht\s+vorhanden)/i,
 }
 
 function matchesKeyword(text: string | null | undefined, kind: keyof typeof KEYWORD_PATTERNS): boolean {
@@ -646,7 +854,7 @@ function evaluateTopic(
     supportLevel,
     signalGroups: groups,
     signals: signals.map(s => s.text),
-    text: TOPIC_TEXT[topic],
+    text: TOPIC_TEXT[topic][ctx.reportLang],
     dimension: dimKey,
     concreteFindings,
   }
@@ -669,6 +877,7 @@ interface AnalysisContext {
   maskingLinkedTopics: Set<HintTopic>
   aestheticCombined: number
   readingMode: ReadingModeCode
+  reportLang: OutputLang
 }
 
 function isVisible(hint: ConsolidatedHint): boolean {
@@ -695,7 +904,7 @@ function sortHints(
   })
 }
 
-function mergeBiasTopics(hints: ConsolidatedHint[], biasFindings: Finding[]): ConsolidatedHint[] {
+function mergeBiasTopics(hints: ConsolidatedHint[], biasFindings: Finding[], lang: OutputLang): ConsolidatedHint[] {
   const biasTopics: HintTopic[] = ['role_stereotype', 'body_stereotype', 'gender_bias']
   const biasItems = hints.filter(h => biasTopics.includes(h.topic as HintTopic))
   if (biasItems.length < 2) return hints
@@ -752,7 +961,7 @@ function mergeBiasTopics(hints: ConsolidatedHint[], biasFindings: Finding[]): Co
     supportLevel: mergedSupport,
     signalGroups: mergedGroups,
     signals: biasItems.flatMap(h => h.signals),
-    text: TOPIC_TEXT.bias_combined,
+    text: TOPIC_TEXT.bias_combined[lang],
     dimension: 'bias',
     concreteFindings: mergedFindings.length > 0
       ? mergedFindings.slice(0, CONCRETE_FINDING_MAX_PER_TOPIC)
@@ -796,10 +1005,15 @@ function aggregateVerdict(
 }
 
 function readFromTable(
-  table: Partial<Record<RecommendationCluster | 'null', string>>,
+  table: Partial<Record<RecommendationCluster | 'null', L10n>>,
   dominantCluster: RecommendationCluster | null,
-): string | undefined {
+): L10n | undefined {
   return (dominantCluster && table[dominantCluster]) || table.null
+}
+
+const RECOMMENDATION_FALLBACK: L10n = {
+  de: 'Empfehlung verfügbar.',
+  en: 'Recommendation available.',
 }
 
 // Intent-sensitive Empfehlungs-Auswahl. Verdict-Status (status) und Cluster
@@ -813,16 +1027,17 @@ function pickRecommendation(
   status: DimensionStatus,
   dominantCluster: RecommendationCluster | null,
   declaredIntent: DeclaredIntent,
+  lang: OutputLang,
 ): { text: string; intentOverridden: boolean } {
   if (declaredIntent === 'affirmative' || declaredIntent === 'critical' || declaredIntent === 'illustrative') {
     const intentTable = RECOMMENDATION_BY_INTENT[declaredIntent][status]
     const text = readFromTable(intentTable, dominantCluster)
-    if (text) return { text, intentOverridden: true }
+    if (text) return { text: text[lang], intentOverridden: true }
   }
   // 'unspecified' und (Runtime-Guard) jeder ungültige Wert → neutrale Tabelle,
   // intentOverridden=false → keine Intent-Transparenz-Note.
   return {
-    text: readFromTable(RECOMMENDATION_TABLE[status], dominantCluster) ?? 'Empfehlung verfügbar.',
+    text: readFromTable(RECOMMENDATION_TABLE[status], dominantCluster)?.[lang] ?? RECOMMENDATION_FALLBACK[lang],
     intentOverridden: false,
   }
 }
@@ -831,9 +1046,10 @@ function buildOverallVerdict(
   status: DimensionStatus,
   dominantCluster: RecommendationCluster | null,
   declaredIntent: DeclaredIntent,
+  lang: OutputLang,
 ): { verdict: OverallVerdict; intentOverridden: boolean } {
-  const headline = VERDICT_HEADLINES[status]
-  const { text, intentOverridden } = pickRecommendation(status, dominantCluster, declaredIntent)
+  const headline = VERDICT_HEADLINES[status][lang]
+  const { text, intentOverridden } = pickRecommendation(status, dominantCluster, declaredIntent, lang)
   return {
     verdict: { status, headline, recommendation: text, dominantCluster },
     intentOverridden,
@@ -843,6 +1059,9 @@ function buildOverallVerdict(
 export function buildAnalysisViewModel(
   result: SemanticAnalysisResult,
   usageForm?: UsageForm,
+  // Sprache des Reports – zu Analysebeginn fixiert (gleicher Wert wie die
+  // outputLang der Pipeline-Anfrage). Default 'de' = Non-Regression-Pfad.
+  reportLang: OutputLang = 'de',
 ): AnalysisViewModel {
   const analysis = result.analysis
   const aesthetic = result.aesthetic
@@ -864,16 +1083,17 @@ export function buildAnalysisViewModel(
     bias: { score: dim.bias.score, status: dim.bias.status },
   }
 
+  // Label + Maskierungslogik deterministisch aus dem neutralen Code abgeleitet
+  // (src/vocab.ts als einzige Quelle) – nicht mehr aus LLM-gelieferten Feldern.
   const readingMode: ReadingModeView = {
     code: analysis.research_layer.reading_mode,
-    label: analysis.research_layer.reading_mode_label,
+    label: readingModeLabel(analysis.research_layer.reading_mode, reportLang),
   }
 
   const driverCodes = analysis.research_layer.visual_drivers
-  const driverLabels = analysis.research_layer.visual_drivers_labels
-  const visualDrivers: VisualDriverView[] = driverCodes.map((code, i) => ({
+  const visualDrivers: VisualDriverView[] = driverCodes.map(code => ({
     code,
-    label: driverLabels[i] ?? code,
+    label: visualDriverLabel(code, reportLang),
   }))
 
   const hintsSortedBySeverity = [...result.context_review_hints].sort(
@@ -915,8 +1135,8 @@ export function buildAnalysisViewModel(
       supportsBiasFinding: e.supports_bias_finding,
     })),
   }))
-  // Globale Maskierungs-Logik der Leseart (research_layer) – gehoert zum Leseart-Block.
-  const readingModeMaskingLogic = analysis.research_layer.reading_mode_masking_logic ?? null
+  // Globale Maskierungs-Logik der Leseart – deterministisch aus dem Code (vocab).
+  const readingModeMaskingLogic = vocabReadingModeMaskingLogic(analysis.research_layer.reading_mode, reportLang)
 
   // Sichtbare Bildmarkierung (research_layer.provenance_markers) – rein deskriptiv
   // durchgereicht. KEIN Befund, NICHT im Zaehler, kein Score/Verdict-Einfluss. Alt-JSON
@@ -932,6 +1152,7 @@ export function buildAnalysisViewModel(
     : composeMaskingReviewNote(
         analysis.research_layer.reading_mode,
         analysis.research_layer.masking_evidence ?? [],
+        reportLang,
       )
 
   // Die Stellen hinter dem Hinweis, am Bild prüfbar (Treiber + Beobachtung +
@@ -942,8 +1163,8 @@ export function buildAnalysisViewModel(
   const driverLabelByCode = new Map(visualDrivers.map(d => [d.code, d.label]))
   const maskingMarkedSpots: MaskingMarkedSpot[] = maskingLinks.map(e => ({
     driverCode: e.driver,
-    driverLabel: driverLabelByCode.get(e.driver) ?? e.driver,
-    area: LINK_AREA_LABEL[e.codebook_link],
+    driverLabel: driverLabelByCode.get(e.driver) ?? visualDriverLabel(e.driver, reportLang),
+    area: linkAreaLabel(e.codebook_link, reportLang),
     text: e.masked_issue,
   }))
   // F2-Fundament (Cockpit-Overlay): alle im Bild lokalisierten Evidenz-Stellen mit
@@ -999,6 +1220,7 @@ export function buildAnalysisViewModel(
     maskingLinkedTopics,
     aestheticCombined,
     readingMode: readingMode.code,
+    reportLang,
   }
 
   const allTopics: HintTopic[] = [
@@ -1040,7 +1262,7 @@ export function buildAnalysisViewModel(
     }
   }
 
-  const mergedHints = mergeBiasTopics(rawHints, dim.bias.findings)
+  const mergedHints = mergeBiasTopics(rawHints, dim.bias.findings, reportLang)
   const sortedHints = sortHints(mergedHints, moderateByTopic)
 
   const visible = sortedHints.filter(isVisible).slice(0, 3)
@@ -1100,6 +1322,7 @@ export function buildAnalysisViewModel(
     status,
     dominantCluster,
     declaredIntent,
+    reportLang,
   )
 
   // Verwendungsform-Einordnung (usage_form). Frontend-only, rein view-seitig:
@@ -1107,7 +1330,7 @@ export function buildAnalysisViewModel(
   // Verwendungsform (Backwards-Pfad, Alt-Aufrufe ohne 2. Param) → null.
   const usageTier = usageForm ? USAGE_FORM_TO_TIER[usageForm] : null
   const usageFormNote = usageTier
-    ? computeUsageFormNote(usageTier, status, dominantCluster)
+    ? computeUsageFormNote(usageTier, status, dominantCluster, reportLang)
     : null
 
   const intentAlignment = ia.intent_alignment as IntentAlignment
@@ -1119,19 +1342,23 @@ export function buildAnalysisViewModel(
   // Bild passt — die Empfehlung darf hier nicht beruhigend wirken.
   let intentRecommendationNote: string | null = null
   if (intentOverridden) {
-    const intentLabel =
+    const intentAdjective: L10n =
       declaredIntent === 'critical'
-        ? 'kritische'
+        ? { de: 'kritische', en: 'critical' }
         : declaredIntent === 'illustrative'
-          ? 'illustrative'
-          : 'bestätigende'
+          ? { de: 'illustrative', en: 'illustrative' }
+          : { de: 'bestätigende', en: 'affirmative' }
+    const adj = intentAdjective[reportLang]
     if (intentAlignment === 'mismatch' || framingRisk === 'high') {
-      intentRecommendationNote =
-        `Empfehlung berücksichtigt deine erklärte ${intentLabel} Verwendung – ` +
-        'aber das Bild passt aus Tool-Sicht nicht klar dazu. Befund bleibt unverändert.'
+      intentRecommendationNote = reportLang === 'de'
+        ? `Empfehlung berücksichtigt deine erklärte ${adj} Verwendung – ` +
+          'aber das Bild passt aus Tool-Sicht nicht klar dazu. Befund bleibt unverändert.'
+        : `The recommendation takes your declared ${adj} use into account – ` +
+          'but from the tool’s perspective the image does not clearly fit it. The finding itself is unchanged.'
     } else {
-      intentRecommendationNote =
-        `Empfehlung berücksichtigt deine erklärte ${intentLabel} Verwendung. Befund selbst bleibt unverändert.`
+      intentRecommendationNote = reportLang === 'de'
+        ? `Empfehlung berücksichtigt deine erklärte ${adj} Verwendung. Befund selbst bleibt unverändert.`
+        : `The recommendation takes your declared ${adj} use into account. The finding itself is unchanged.`
     }
   }
 
@@ -1174,6 +1401,7 @@ export function buildAnalysisViewModel(
   const normativeMaskingNote = computeNormativeMaskingNote(
     normativeMasking.verdict,
     declaredIntent,
+    reportLang,
   )
 
   // Warnung nur, wenn tatsächlich KEIN Nutzungskontext vorliegt – 'image_context'
@@ -1181,6 +1409,9 @@ export function buildAnalysisViewModel(
   const hasContextWarning = inputCompleteness === 'image_only' || inputCompleteness === 'image_prompt'
 
   return {
+    // Erzeugungssprache des Reports – Komponenten binden ihre Statik daran
+    // (eingefrorene Locale), damit ein UI-Sprachwechsel den Report nicht mischt.
+    reportLang,
     overallVerdict,
     // O-2-Hoist (contract.md §2c): integrityScore additiv top-level als eindeutige
     // Hero-Score-Quelle der BefundKarte – identischer Wert wie debug.integrityScore
@@ -1275,8 +1506,11 @@ export function buildAnalysisViewModel(
 export function useAnalysisView(
   result: Ref<SemanticAnalysisResult | null>,
   usageForm?: Ref<UsageForm | null | undefined>,
+  reportLang?: Ref<OutputLang | null | undefined>,
 ): ComputedRef<AnalysisViewModel | null> {
   return computed(() =>
-    result.value ? buildAnalysisViewModel(result.value, usageForm?.value ?? undefined) : null,
+    result.value
+      ? buildAnalysisViewModel(result.value, usageForm?.value ?? undefined, reportLang?.value ?? 'de')
+      : null,
   )
 }
