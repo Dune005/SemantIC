@@ -11,9 +11,22 @@
 import Button from '~/components/ui/Button.vue'
 import Card from '~/components/ui/Card.vue'
 
-useHead({
-  title: 'So funktioniert SemantIC – SemantIC',
-})
+// i18n (Seitentext-Migration): Prosa/strukturierte Daten aus pages.howItWorks.*,
+// die Datengrafiken (PipelineDiagram/GuardrailList/MaskingQuadrant) haben eigene
+// components.*-Keys. Titel als Getter -> folgt dem Sprachwechsel ohne Reload.
+const { t, tm, rt } = useI18n()
+useHead({ title: () => t('seo.howItWorks.title') })
+
+// String-Array-Messages (Chips §5, Kontrastlisten §6). Key bewusst als `string`
+// (nicht Literal) an tm() -> umgeht die tiefe Typ-Instanziierung von vue-i18n (TS2589).
+// tm() liefert in diesem Setup KOMPILIERTE Message-Nodes (keine reinen Strings), daher
+// jedes Element ueber rt() aufloesen -> sonst rendert Vue die Objekte roh. computed ->
+// folgt dem Sprachwechsel.
+const list = (key: string): string[] => (tm(key) as unknown[]).map((m) => rt(m as string))
+const haltungChips = computed(() => list('pages.howItWorks.s5.haltungChips'))
+const verwendungChips = computed(() => list('pages.howItWorks.s5.verwendungChips'))
+const isItems = computed(() => list('pages.howItWorks.s6.isItems'))
+const isNotItems = computed(() => list('pages.howItWorks.s6.isNotItems'))
 </script>
 
 <template>
@@ -31,19 +44,13 @@ useHead({
       />
       <div class="hero__scrim" aria-hidden="true" />
     </div>
-    <p class="hero__credit">KI-generiertes Moodbild</p>
+    <p class="hero__credit">{{ $t('pages.howItWorks.hero.credit') }}</p>
     <div class="hero__inner">
       <div class="page">
         <header class="hero__head">
-          <p class="hero__kicker">So funktioniert SemantIC</p>
-          <h1>Was passiert, wenn SemantIC dein Bild prüft.</h1>
-          <p class="hero__lead">
-            SemantIC nimmt ein KI-generiertes Bild und sieht es sich entlang von drei
-            Dimensionen an: ob es physikalisch plausibel ist, ob es inhaltlich Sinn
-            ergibt und welche Klischees es trägt. Auf dieser Seite zeigen wir dir, was
-            das Tool tut, woher seine Kriterien kommen und – genauso wichtig – was es
-            bewusst nicht tut.
-          </p>
+          <p class="hero__kicker">{{ $t('pages.howItWorks.hero.kicker') }}</p>
+          <h1>{{ $t('pages.howItWorks.hero.title') }}</h1>
+          <p class="hero__lead">{{ $t('pages.howItWorks.hero.lead') }}</p>
         </header>
       </div>
     </div>
@@ -52,37 +59,20 @@ useHead({
   <!-- ================= 1 · MASKIERUNGSEFFEKT ================= -->
   <section class="section" aria-labelledby="s1-title">
     <div class="page page--text">
-      <p class="section__index">01 · Die Idee dahinter</p>
-      <h2 id="s1-title">Warum gute Bilder ihre eigenen Fehler verstecken.</h2>
+      <p class="section__index">{{ $t('pages.howItWorks.s1.index') }}</p>
+      <h2 id="s1-title">{{ $t('pages.howItWorks.s1.title') }}</h2>
       <div class="s1-grid">
         <div class="section__body">
-          <p class="s1-lead">
-            KI-Bildgeneratoren optimieren auf das, was sofort als „gut" gelesen wird:
-            Schärfe, Farbe, Licht, Komposition. Auf die inhaltliche Stimmigkeit –
-            Logik der Szene, Proportionen, Klischees – optimieren sie weit weniger.
-            Bilder werden so zuverlässig schön, aber nicht zuverlässig richtig.
-          </p>
-          <p>
-            Die Folge ist das eigentliche Problem: Ein überzeugendes Bild lädt nicht
-            dazu ein, genauer hinzusehen. Die Oberfläche beruhigt das Auge, und
-            Schwächen rutschen durch. Diesen Zusammenhang nennen wir
-            <strong>Maskierung</strong> – die Arbeitsthese hinter SemantIC: Eine
-            überzeugende Oberfläche kann die kritische Prüfung erschweren. Die Studie
-            dahinter stützt diese Annahme, beweisen kann sie sie nicht.
-          </p>
+          <p class="s1-lead">{{ $t('pages.howItWorks.s1.lead') }}</p>
+          <i18n-t keypath="pages.howItWorks.s1.body" tag="p" scope="global">
+            <template #masking><strong>{{ $t('pages.howItWorks.s1.masking') }}</strong></template>
+          </i18n-t>
         </div>
 
         <!-- Theoriebezug: ruhige Randnotiz (Card-Variante) -->
         <Card tone="sunken" border="hair" padding="none" class="card theory">
-          <p class="card__kicker">Theoriebezug</p>
-          <p>
-            Dieser Effekt ist nicht nur eine Beobachtung, sondern lässt sich
-            wissenschaftlich einordnen. Neuere Forschung zeigt an KI-Erkennungssystemen,
-            dass künstliche neuronale Netze visuelle Eigenschaften priorisieren, während
-            Menschen Bilder stärker über ihre Bedeutung erfassen. Dass dasselbe für
-            Bildgeneratoren gilt, ist die Annahme dieser Arbeit. SemantIC setzt genau in
-            diese Lücke: Es schaut dorthin, wo das Auge zu schnell zufrieden ist.
-          </p>
+          <p class="card__kicker">{{ $t('pages.howItWorks.s1.theoryKicker') }}</p>
+          <p>{{ $t('pages.howItWorks.s1.theoryBody') }}</p>
         </Card>
       </div>
     </div>
@@ -91,27 +81,13 @@ useHead({
   <!-- ================= 2 · ABLAUF IN DREI SCHRITTEN ================= -->
   <section class="section" aria-labelledby="s2-title">
     <div class="page">
-      <p class="section__index">02 · Der Ablauf</p>
-      <h2 id="s2-title">Vom Bild zum Befund.</h2>
+      <p class="section__index">{{ $t('pages.howItWorks.s2.index') }}</p>
+      <h2 id="s2-title">{{ $t('pages.howItWorks.s2.title') }}</h2>
 
       <div class="figure-card">
-        <p class="figure-card__lead">
-          SemantIC trennt Inhalt und Ästhetik in zwei getrennte Bewertungsstränge –
-          damit die Wirkung das inhaltliche Urteil nicht beschönigt. Die Ästhetik
-          wird doppelt geschätzt: von einem Vision-Modell und einem unabhängigen
-          Referenzmodell; weichen beide stark voneinander ab, weist der Befund das
-          aus. Erst danach werden beide Ergebnisse zusammengeführt.
-        </p>
+        <p class="figure-card__lead">{{ $t('pages.howItWorks.s2.lead') }}</p>
         <PipelineDiagram />
-        <p class="figure-note">
-          Modellagnostisch – Gemini &amp; Claude sind die aktuellen Standard-Modelle,
-          austauschbar. Der Ästhetik-Score ist der Mittelwert aus Claude und einem
-          unabhängigen Referenzmodell (LAION Aesthetic Predictor); weichen beide um
-          20 Punkte oder mehr ab, weist der Befund das aus, fällt die Referenz aus,
-          zählt Claude allein. Gibst du Prompt oder Kontext an, läuft zusätzlich ein
-          Bild-Text-Abgleich (CLIP) mit – ein reines Diagnosesignal ohne Einfluss auf
-          Scores und Ampeln. Die Symbole sind stilisierte Platzhalter.
-        </p>
+        <p class="figure-note">{{ $t('pages.howItWorks.s2.note') }}</p>
       </div>
     </div>
   </section>
@@ -119,38 +95,27 @@ useHead({
   <!-- ============ 2·b · LEITPLANKEN DER BEWERTUNG (dunkle Sektion) ============ -->
   <section class="section section--ink" aria-labelledby="s2b-title">
     <div class="page">
-      <p class="section__index">02 · b · Die Leitplanken</p>
-      <h2 id="s2b-title">Die Leitplanken der Bewertung.</h2>
+      <p class="section__index">{{ $t('pages.howItWorks.s2b.index') }}</p>
+      <h2 id="s2b-title">{{ $t('pages.howItWorks.s2b.title') }}</h2>
       <div class="section__body">
-        <p>
-          Ein Bildmodell allein neigt dazu, sich von visueller Perfektion leiten zu
-          lassen. SemantIC legt der Bewertung deshalb Leitplanken an, die auf belegte,
-          nachvollziehbare Urteile hinwirken.
-        </p>
+        <p>{{ $t('pages.howItWorks.s2b.body1') }}</p>
       </div>
 
       <div class="section__figure">
         <GuardrailList />
       </div>
       <div class="section__body">
-        <p>
-          Das macht die Bewertung disziplinierter und nachvollziehbarer. Wo das Tool
-          an Grenzen stösst, legt SemantIC das offen (Abschnitt „Wir kennen die Grenzen").
-        </p>
+        <p>{{ $t('pages.howItWorks.s2b.body2') }}</p>
       </div>
-      <p class="figure-note">
-        „Maskiert → klar": Tendenz gedämpft, Leitplanke scharf. Grösstenteils hart
-        erzwungen (festes Schema &amp; Prüfregeln); die Kriterien stammen aus 144
-        codierten Bildern.
-      </p>
+      <p class="figure-note">{{ $t('pages.howItWorks.s2b.note') }}</p>
     </div>
   </section>
 
   <!-- ================= 3 · DIE DREI DIMENSIONEN ================= -->
   <section class="section" aria-labelledby="s3-title">
     <div class="page">
-      <p class="section__index">03 · Die drei Dimensionen</p>
-      <h2 id="s3-title">Was hinter Physik, Semantik und Bias steckt.</h2>
+      <p class="section__index">{{ $t('pages.howItWorks.s3.index') }}</p>
+      <h2 id="s3-title">{{ $t('pages.howItWorks.s3.title') }}</h2>
 
       <div class="dims">
         <!-- Gleichrangige Dimensionen: neutrale Mono-Indexziffer statt Ampel-Akzent. -->
@@ -158,43 +123,30 @@ useHead({
           <div class="dim-card__inner">
             <div class="dim-card__head">
               <span class="dim-card__idx" aria-hidden="true">01</span>
-              <p class="dim-card__name">Physik</p>
+              <p class="dim-card__name">{{ $t('common.dimensions.physics') }}</p>
             </div>
-            <h3>Physikalische Kohärenz</h3>
-            <p>
-              Gehorcht das Bild den Naturgesetzen? Licht, Schatten, Anatomie,
-              Proportionen, Materialien. Solche Brüche sind oft klein – aber sie
-              verraten ein Bild zuverlässig, wenn man sie einmal sieht.
-            </p>
+            <h3>{{ $t('pages.howItWorks.s3.physics.h3') }}</h3>
+            <p>{{ $t('pages.howItWorks.s3.physics.body') }}</p>
           </div>
         </article>
         <article class="dim-card">
           <div class="dim-card__inner">
             <div class="dim-card__head">
               <span class="dim-card__idx" aria-hidden="true">02</span>
-              <p class="dim-card__name">Semantik</p>
+              <p class="dim-card__name">{{ $t('common.dimensions.semantics') }}</p>
             </div>
-            <h3>Semantische Konsistenz</h3>
-            <p>
-              Ergibt die Szene Sinn – und passt sie zu deinem Kontext? Ein technisch
-              sauberes Bild kann inhaltlich trotzdem danebenliegen: eine Situation,
-              die so nicht stattfinden würde, oder die nicht zu deinem Beitrag passt.
-            </p>
+            <h3>{{ $t('pages.howItWorks.s3.semantics.h3') }}</h3>
+            <p>{{ $t('pages.howItWorks.s3.semantics.body') }}</p>
           </div>
         </article>
         <article class="dim-card">
           <div class="dim-card__inner">
             <div class="dim-card__head">
               <span class="dim-card__idx" aria-hidden="true">03</span>
-              <p class="dim-card__name">Bias</p>
+              <p class="dim-card__name">{{ $t('common.dimensions.bias') }}</p>
             </div>
-            <h3>Bias und Stereotypisierung</h3>
-            <p>
-              Welche Rollen, Posen, Klischees zeigt das Bild? Ein schönes Bild eines
-              Klischees bleibt ein Klischee. Wichtig: Geschlecht oder Hautfarbe sind
-              für sich kein Befund – erst eine stereotype Rollenbesetzung, Machtdynamik
-              oder ein Kontextbruch schlägt an.
-            </p>
+            <h3>{{ $t('pages.howItWorks.s3.bias.h3') }}</h3>
+            <p>{{ $t('pages.howItWorks.s3.bias.body') }}</p>
           </div>
         </article>
       </div>
@@ -220,17 +172,10 @@ useHead({
     <div class="page s4__content">
       <div class="s4__top">
         <div class="s4__panel">
-          <p class="section__index">04 · Der Maskierungs-Check</p>
-          <h2 id="s4-title">Wenn die Oberfläche stärker ist als der Inhalt.</h2>
+          <p class="section__index">{{ $t('pages.howItWorks.s4.index') }}</p>
+          <h2 id="s4-title">{{ $t('pages.howItWorks.s4.title') }}</h2>
           <div class="section__body">
-            <p>
-              SemantIC bewertet getrennt, wie gut ein Bild aussieht (die Ästhetik) und wie
-              gut es inhaltlich hält (die Integrität). Liegt die Wirkung deutlich über der
-              Substanz, ist das der Nährboden für Maskierung – die perfekte Oberfläche
-              kann Fehler überdecken, bevor du sie bemerkst. Eine einzelne Maskierungs-Kennzahl
-              gibt es bewusst nicht; der Quadrant zeigt das Prinzip, nicht das Resultat
-              einer Prüfung.
-            </p>
+            <p>{{ $t('pages.howItWorks.s4.body') }}</p>
           </div>
         </div>
       </div>
@@ -244,83 +189,58 @@ useHead({
   <!-- ================= 5 · DEINE ANGABEN ================= -->
   <section class="section" aria-labelledby="s5-title">
     <div class="page">
-      <p class="section__index">05 · Deine Angaben</p>
-      <h2 id="s5-title">Warum du das Bild einordnen sollst.</h2>
+      <p class="section__index">{{ $t('pages.howItWorks.s5.index') }}</p>
+      <h2 id="s5-title">{{ $t('pages.howItWorks.s5.title') }}</h2>
       <div class="section__body">
-        <p>
-          Bevor SemantIC prüft, fragen wir zwei Dinge: deine
-          <strong>Haltung</strong> zum Bild und seine
-          <strong>Verwendungsform</strong>. Beide rahmen nur die Empfehlung – sie
-          verschieben weder den Score noch die Befunde.
-        </p>
+        <i18n-t keypath="pages.howItWorks.s5.body" tag="p" scope="global">
+          <template #stance><strong>{{ $t('pages.howItWorks.s5.stance') }}</strong></template>
+          <template #form><strong>{{ $t('pages.howItWorks.s5.form') }}</strong></template>
+        </i18n-t>
       </div>
 
       <div class="angaben">
         <div class="angaben__card">
-          <p class="angaben__kicker">Haltung</p>
-          <h3>Welche Funktion hat das Bild?</h3>
-          <ul class="angaben__opts" aria-label="Auswahl im Tool">
-            <li class="chip">Standard</li>
-            <li class="chip">Bestätigend</li>
-            <li class="chip">Kritisch</li>
-            <li class="chip">Illustrativ</li>
+          <p class="angaben__kicker">{{ $t('pages.howItWorks.s5.haltungKicker') }}</p>
+          <h3>{{ $t('pages.howItWorks.s5.haltungH3') }}</h3>
+          <ul class="angaben__opts" :aria-label="$t('pages.howItWorks.s5.optsAria')">
+            <li v-for="(chip, i) in haltungChips" :key="`h-${i}`" class="chip">{{ chip }}</li>
           </ul>
-          <p class="angaben__hint">
-            Dieselbe Schwäche wiegt anders, je nachdem ob ein Bild ein Klischee
-            bewusst zeigt oder es unreflektiert reproduziert.
-          </p>
+          <p class="angaben__hint">{{ $t('pages.howItWorks.s5.haltungHint') }}</p>
         </div>
         <div class="angaben__card">
-          <p class="angaben__kicker">Verwendungsform</p>
-          <h3>Wofür ist es gedacht?</h3>
-          <ul class="angaben__opts" aria-label="Auswahl im Tool">
-            <li class="chip">Headerbild</li>
-            <li class="chip">Moodbild</li>
-            <li class="chip">Symbolbild</li>
-            <li class="chip">Illustration</li>
-            <li class="chip">Social-Post</li>
-            <li class="chip">Werbe-/Marketingbild</li>
-            <li class="chip">Editorial-Bild</li>
+          <p class="angaben__kicker">{{ $t('pages.howItWorks.s5.verwendungKicker') }}</p>
+          <h3>{{ $t('pages.howItWorks.s5.verwendungH3') }}</h3>
+          <ul class="angaben__opts" :aria-label="$t('pages.howItWorks.s5.optsAria')">
+            <li v-for="(chip, i) in verwendungChips" :key="`v-${i}`" class="chip">{{ chip }}</li>
           </ul>
-          <p class="angaben__hint">
-            Daraus leitet SemantIC ab, wie streng der Massstab sein sollte.
-          </p>
+          <p class="angaben__hint">{{ $t('pages.howItWorks.s5.verwendungHint') }}</p>
         </div>
       </div>
-      <p class="figure-note">Auswahl im Tool – hier nur zur Übersicht, nicht anklickbar.</p>
+      <p class="figure-note">{{ $t('pages.howItWorks.s5.note') }}</p>
     </div>
   </section>
 
   <!-- ================= 6 · HINWEIS STATT NACHWEIS ================= -->
   <section class="section" aria-labelledby="s6-title">
     <div class="page page--text">
-      <p class="section__index">06 · Hinweis statt Nachweis</p>
-      <h2 id="s6-title">Warum SemantIC dir nichts beweist.</h2>
+      <p class="section__index">{{ $t('pages.howItWorks.s6.index') }}</p>
+      <h2 id="s6-title">{{ $t('pages.howItWorks.s6.title') }}</h2>
       <div class="section__body">
-        <p>
-          SemantIC gibt keine harten Urteile, sondern begründete Hinweise: Jeder
-          Befund zeigt, wo du genauer hinsehen solltest – nicht, dass ein Bild
-          „falsch" ist. Ob es in deinen Kontext passt, entscheidet kein Werkzeug für
-          dich; die letzte Beurteilung bleibt bei dir.
-        </p>
+        <p>{{ $t('pages.howItWorks.s6.body') }}</p>
       </div>
 
       <!-- Kontrast: Was SemantIC ist / nicht ist (kein Severity-Farbton) -->
       <div class="contrast">
         <div class="contrast__col contrast__col--is">
-          <h3>Was SemantIC ist</h3>
+          <h3>{{ $t('pages.howItWorks.s6.isTitle') }}</h3>
           <ul>
-            <li><span class="mark" aria-hidden="true">+</span><span>Ein Qualitäts- und Integritäts-Bewerter für KI-Bilder</span></li>
-            <li><span class="mark" aria-hidden="true">+</span><span>Ein Werkzeug, das dir zeigt, wo du genauer hinsehen solltest</span></li>
-            <li><span class="mark" aria-hidden="true">+</span><span>Eine Einordnung vor der Veröffentlichung – die Entscheidung bleibt bei dir</span></li>
+            <li v-for="(item, i) in isItems" :key="`is-${i}`"><span class="mark" aria-hidden="true">+</span><span>{{ item }}</span></li>
           </ul>
         </div>
         <div class="contrast__col">
-          <h3>Was SemantIC nicht ist</h3>
+          <h3>{{ $t('pages.howItWorks.s6.isNotTitle') }}</h3>
           <ul>
-            <li><span class="mark" aria-hidden="true">–</span><span>Kein Fake- oder Deepfake-Detektor</span></li>
-            <li><span class="mark" aria-hidden="true">–</span><span>Kein „echt oder gefälscht"-Verdikt über die Herkunft</span></li>
-            <li><span class="mark" aria-hidden="true">–</span><span>Kein Ersatz für dein eigenes redaktionelles Urteil</span></li>
+            <li v-for="(item, i) in isNotItems" :key="`isnot-${i}`"><span class="mark" aria-hidden="true">–</span><span>{{ item }}</span></li>
           </ul>
         </div>
       </div>
@@ -333,63 +253,37 @@ useHead({
        Testreihen gegen die menschliche Phase-1-Codierung). -->
   <section class="section" aria-labelledby="s7-title">
     <div class="page page--text">
-      <p class="section__index">07 · Validierte Grenzen</p>
-      <h2 id="s7-title">Wir kennen die Grenzen – und legen sie offen.</h2>
+      <p class="section__index">{{ $t('pages.howItWorks.s7.index') }}</p>
+      <h2 id="s7-title">{{ $t('pages.howItWorks.s7.title') }}</h2>
       <div class="section__body">
-        <p>
-          Jede Grenze hier ist empirisch geprüft – in dokumentierten Testreihen gegen
-          die menschliche Codierung, bei der Anatomie zusätzlich verblindet mit einem
-          zweiten Vision-Modell. Du sollst wissen, wann du dich auf einen Befund
-          verlassen kannst und wann dein eigener Blick gefragt ist.
-        </p>
+        <p>{{ $t('pages.howItWorks.s7.body1') }}</p>
       </div>
 
       <div class="limits-grid">
         <Card tone="paper" border="hair" padding="none" class="card card--paper">
-          <p class="card__kicker">Im Test belastbar</p>
-          <h3>Die rote Ampel</h3>
-          <p>
-            Im dokumentierten Anatomie-Testlauf (16 Bilder, 42 Läufe) löste kein
-            sauberes Bild einen roten Befund aus. Zeigt SemantIC rot, nimm es ernst –
-            gelbe Hinweise können dagegen auch mal danebenliegen.
-          </p>
+          <p class="card__kicker">{{ $t('pages.howItWorks.s7.cards.0.kicker') }}</p>
+          <h3>{{ $t('pages.howItWorks.s7.cards.0.h3') }}</h3>
+          <p>{{ $t('pages.howItWorks.s7.cards.0.body') }}</p>
         </Card>
         <Card tone="paper" border="hair" padding="none" class="card card--paper">
-          <p class="card__kicker">Richtig lesen</p>
-          <h3>Grün heisst: nichts gefunden</h3>
-          <p>
-            Grün heisst „nichts gefunden" – nicht „fehlerfrei". Es fokussiert deine
-            Sichtprüfung, ersetzt sie nicht.
-          </p>
+          <p class="card__kicker">{{ $t('pages.howItWorks.s7.cards.1.kicker') }}</p>
+          <h3>{{ $t('pages.howItWorks.s7.cards.1.h3') }}</h3>
+          <p>{{ $t('pages.howItWorks.s7.cards.1.body') }}</p>
         </Card>
         <Card tone="paper" border="hair" padding="none" class="card card--paper">
-          <p class="card__kicker">Bekannte Lücke</p>
-          <h3>Anatomie: Flag = Prüfauftrag</h3>
-          <p>
-            Lokale Hand- und Finger-Artefakte findet das Tool eher als strukturelle
-            Körperfehler (Kopf, Gliedmassen, Beinstellung) – aber bildabhängig: In
-            den Tests gab es übersehene wie fälschlich gemeldete Befunde, über zwei
-            Vision-Modelle hinweg geprüft. Ein Anatomie-Flag ist deshalb ein
-            Prüfauftrag an dich, keine Diagnose.
-          </p>
+          <p class="card__kicker">{{ $t('pages.howItWorks.s7.cards.2.kicker') }}</p>
+          <h3>{{ $t('pages.howItWorks.s7.cards.2.h3') }}</h3>
+          <p>{{ $t('pages.howItWorks.s7.cards.2.body') }}</p>
         </Card>
         <Card tone="paper" border="hair" padding="none" class="card card--paper">
-          <p class="card__kicker">Einordnung</p>
-          <h3>Schwere ist eine Einschätzung</h3>
-          <p>
-            Schwer, moderat, gering sind eine Einschätzung des Vision-Modells, keine
-            Messung. Ob ein markierter Punkt publikationskritisch ist, entscheidet
-            dein Blick aufs Bild.
-          </p>
+          <p class="card__kicker">{{ $t('pages.howItWorks.s7.cards.3.kicker') }}</p>
+          <h3>{{ $t('pages.howItWorks.s7.cards.3.h3') }}</h3>
+          <p>{{ $t('pages.howItWorks.s7.cards.3.body') }}</p>
         </Card>
       </div>
 
       <div class="section__body">
-        <p>
-          Dieselben Tests zeigten auch Befunde, die ein menschlicher Blick übersehen
-          hatte. Die Hinweise ergänzen deine Sichtprüfung – jeder Befund ist mit
-          Markierung am Bild nachprüfbar gebaut.
-        </p>
+        <p>{{ $t('pages.howItWorks.s7.body2') }}</p>
       </div>
     </div>
   </section>
@@ -401,29 +295,16 @@ useHead({
   <!-- ================= 8 · WOHER DIE KRITERIEN STAMMEN ================= -->
   <section class="section" aria-labelledby="s8-title">
     <div class="page page--text">
-      <p class="section__index">08 · Woher die Kriterien stammen</p>
-      <h2 id="s8-title">Forschung, kein generisches Modellwissen.</h2>
+      <p class="section__index">{{ $t('pages.howItWorks.s8.index') }}</p>
+      <h2 id="s8-title">{{ $t('pages.howItWorks.s8.title') }}</h2>
       <div class="s8-grid">
         <aside class="s8-figure" aria-hidden="true">
-          <span class="s8-figure__num">144</span>
-          <span class="s8-figure__cap">codierte Bilder</span>
+          <span class="s8-figure__num">{{ $t('pages.howItWorks.s8.figureNum') }}</span>
+          <span class="s8-figure__cap">{{ $t('pages.howItWorks.s8.figureCap') }}</span>
         </aside>
         <div class="section__body">
-          <p>
-            Die Prüflogik stützt sich auf eine eigene empirische Grundlage: eine
-            qualitative Inhaltsanalyse von 144 KI-generierten Bildern. Daraus entstanden
-            die wiederkehrenden Fehlerprofile, die Lesearten und die visuellen Treiber,
-            mit denen das Tool arbeitet – der praktische Teil der Bachelorarbeit „Visual
-            Bias im KI-generierten Bild" (Multimedia-Production, FH Graubünden).
-          </p>
-          <p>
-            Die Pipeline wurde über dokumentierte Iterationen entwickelt und gegen die
-            menschliche Codierung geprüft – die validierten Grenzen oben stammen aus
-            genau diesen Tests. Sie ist bewusst modellagnostisch: Kriterien,
-            Evidenz-Pflicht und Prüfregeln hängen an der Forschungsbasis, nicht an einem
-            KI-Modell. Die eingesetzten Modelle sind austauschbar – das Prüfraster
-            bleibt.
-          </p>
+          <p>{{ $t('pages.howItWorks.s8.body1') }}</p>
+          <p>{{ $t('pages.howItWorks.s8.body2') }}</p>
         </div>
       </div>
     </div>
@@ -432,26 +313,22 @@ useHead({
   <!-- ================= 9 · DATENSCHUTZ IN EINEM SATZ ================= -->
   <section class="section" aria-labelledby="s9-title">
     <div class="page page--text">
-      <p class="section__index">09 · Datenschutz</p>
-      <h2 id="s9-title">Was mit deinem Bild passiert.</h2>
+      <p class="section__index">{{ $t('pages.howItWorks.s9.index') }}</p>
+      <h2 id="s9-title">{{ $t('pages.howItWorks.s9.title') }}</h2>
       <div class="section__body">
-        <p>
-          Dein Bild wird zur Analyse an externe Dienste übermittelt und bei SemantIC
-          selbst nicht gespeichert – was genau an wen geht und wie lange etwas
-          aufbewahrt wird, steht in der Datenschutzerklärung.
-        </p>
+        <p>{{ $t('pages.howItWorks.s9.body') }}</p>
       </div>
-      <NuxtLink to="/privacy" class="inline-cta">Zur Datenschutzerklärung →</NuxtLink>
+      <NuxtLink to="/privacy" class="inline-cta">{{ $t('pages.howItWorks.s9.cta') }}</NuxtLink>
     </div>
   </section>
 
   <!-- ================= SCHLUSS-CTA ================= -->
   <div class="page page--text">
     <div class="closing">
-      <h2>Genug Theorie. Lass ein Bild prüfen<span class="closing__dot">.</span></h2>
+      <h2>{{ $t('pages.howItWorks.closing.title') }}<span class="closing__dot">.</span></h2>
       <div class="closing__cta">
         <Button as="a" href="/analyze" variant="primary" size="md">
-          Bild prüfen lassen <span class="arrow" aria-hidden="true">→</span>
+          {{ $t('pages.howItWorks.closing.cta') }} <span class="arrow" aria-hidden="true">→</span>
         </Button>
       </div>
     </div>

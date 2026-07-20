@@ -44,7 +44,7 @@ function pinStyle(box: readonly number[]) {
     <div class="sfig__frame" :style="{ aspectRatio: `${specimen.width} / ${specimen.height}` }">
       <img
         :src="specimen.image"
-        :alt="specimen.alt"
+        :alt="$t(`pages.errorGuide.specimens.${specimen.id}.alt`)"
         :width="specimen.width"
         :height="specimen.height"
         :loading="eager ? 'eager' : 'lazy'"
@@ -85,7 +85,7 @@ function pinStyle(box: readonly number[]) {
           :class="{ 'is-active': highlightIndex === i }"
           :style="pinStyle(spot.box)"
           :aria-pressed="pressable ? pressed === i : undefined"
-          :aria-label="`Markierung ${i + 1}: ${spot.title}`"
+          :aria-label="$t('pages.errorGuide.specimen.markerAria', { n: i + 1, title: $t(`pages.errorGuide.specimens.${specimen.id}.spots.${i}.title`) })"
           @mouseenter="emit('hover', i)"
           @mouseleave="emit('hover', null)"
           @focus="emit('hover', i)"

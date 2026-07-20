@@ -85,16 +85,16 @@ onMounted(() => {
 
     <!-- 429: Verweis aufs Bypass-Feld im Footer (kein Code-Feld in der Karte) -->
     <div v-if="kind === 'rate_limited'" class="mt-4 rounded border border-line bg-surface-2 px-4 py-[14px]">
-      <h3 class="mb-[6px] font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-soft">Zugangscode</h3>
+      <h3 class="mb-[6px] font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-soft">{{ $t('components.errorCard.accessCodeHeading') }}</h3>
       <p class="text-[13px] leading-relaxed text-ink-soft">
-        Gutachter:innen / Demo: Zugangscode im Footer-Feld eingeben – hebt das Tageslimit für 30 Tage auf.
-        <template v-if="rateLimit"><br />Zurückgesetzt: {{ rateLimit.resetsAt }}</template>
+        {{ $t('components.errorCard.accessCodeBody') }}
+        <template v-if="rateLimit"><br />{{ $t('components.errorCard.resetAt', { resetsAt: rateLimit.resetsAt }) }}</template>
       </p>
     </div>
 
     <!-- Kuratierte technische Angaben (kein roher Stacktrace/LLM-Text) -->
     <details v-if="details" class="err-detail mt-3">
-      <summary>Technische Angaben</summary>
+      <summary>{{ $t('components.errorCard.techDetails') }}</summary>
       <p class="mt-2 font-mono text-[11px] leading-relaxed text-muted">{{ details }}</p>
     </details>
 

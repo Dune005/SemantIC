@@ -11,9 +11,10 @@
 import Button from '~/components/ui/Button.vue'
 import { biasExamples, specimensByCategory } from '~/data/error-guide'
 
-useHead({
-  title: 'Typische Bildfehler – SemantIC',
-})
+// i18n (Seitentext-Migration): Prosa aus pages.errorGuide.*, Specimen-/Bias-Texte
+// per id abgeleitet (siehe data/error-guide.ts). Titel als Getter -> folgt dem Sprachwechsel.
+const { t } = useI18n()
+useHead({ title: () => t('seo.errorGuide.title') })
 
 const anatomy = specimensByCategory('anatomy')
 const context = specimensByCategory('context')
@@ -27,7 +28,7 @@ const physics = specimensByCategory('physics')
       <div class="eg-hero__media">
         <img
           src="/error-guide/physik-coffeeshop-spiegelung.webp"
-          alt="KI-generierte Café-Szene mit verchromter Espressomaschine – wirkt wie ein echtes Foto."
+          :alt="$t('pages.errorGuide.hero.imageAlt')"
           width="1600"
           height="1200"
           fetchpriority="high"
@@ -35,15 +36,12 @@ const physics = specimensByCategory('physics')
         />
         <div class="eg-hero__scrim" aria-hidden="true" />
       </div>
-      <p class="eg-hero__credit">KI-generiert · Studienkorpus</p>
+      <p class="eg-hero__credit">{{ $t('pages.errorGuide.hero.credit') }}</p>
       <div class="eg-hero__inner">
         <div class="page">
-          <p class="eg-hero__kicker">Typische Bildfehler · Bachelorarbeit</p>
-          <h1 class="eg-hero__title">Das makellose Bild und seine blinden Flecken.</h1>
-          <p class="eg-hero__lead">
-            KI-Bilder sehen zuverlässig gut aus – und genau das kann ihre Fehler
-            verdecken. Auch die Szene hier ist komplett KI-generiert.
-          </p>
+          <p class="eg-hero__kicker">{{ $t('pages.errorGuide.hero.kicker') }}</p>
+          <h1 class="eg-hero__title">{{ $t('pages.errorGuide.hero.title') }}</h1>
+          <p class="eg-hero__lead">{{ $t('pages.errorGuide.hero.lead') }}</p>
         </div>
       </div>
     </header>
@@ -51,38 +49,25 @@ const physics = specimensByCategory('physics')
     <!-- ================= EINLEITUNG (Prosa, keine Kacheln) ================= -->
     <section class="eg-block" aria-labelledby="eg-intro">
       <div class="page page--text">
-        <h2 id="eg-intro" class="sr-only">Einleitung</h2>
-        <p class="eg-prose eg-prose--lead">
-          Diese Seite geht vier Fehlerbereiche durch: Körper und Anatomie, die Logik
-          einer Szene, Licht und Raum – und Rollenbilder, die sich an keiner einzelnen
-          Bildstelle festmachen lassen. Dass solche Brüche unter einer überzeugenden
-          Oberfläche untergehen können, nennt SemantIC den
-          <strong>Maskierungseffekt</strong> –
-          <NuxtLink to="/how-it-works">hergeleitet wird er unter Funktionsweise</NuxtLink>.
-        </p>
-        <p class="eg-prose">
-          Die Beispiele auf dieser Seite stammen aus dem empirischen Teil der
-          Bachelorarbeit – 144 KI-generierte Bilder, systematisch codiert. Zwei von drei
-          fotorealistischen Bildern darunter (71 von 106) trugen mindestens einen Fehler –
-          in diesem Korpus die Regel, kein Ausreisser. Alle Markierungen weiter unten
-          kommen aus dieser manuellen Codierung, nicht aus einem frischen Modelllauf. Es
-          ist ein eigener Korpus, kein repräsentativer Querschnitt aller KI-Bilder.
-        </p>
+        <h2 id="eg-intro" class="sr-only">{{ $t('pages.errorGuide.intro.srHeading') }}</h2>
+        <i18n-t keypath="pages.errorGuide.intro.lead" tag="p" scope="global" class="eg-prose eg-prose--lead">
+          <template #effect>
+            <strong>{{ $t('pages.errorGuide.intro.effect') }}</strong>
+          </template>
+          <template #link>
+            <NuxtLink to="/how-it-works">{{ $t('pages.errorGuide.intro.linkText') }}</NuxtLink>
+          </template>
+        </i18n-t>
+        <p class="eg-prose">{{ $t('pages.errorGuide.intro.body') }}</p>
       </div>
     </section>
 
     <!-- ================= ANATOMIE ================= -->
     <section class="eg-chapter" aria-labelledby="eg-anatomie">
       <div class="page page--text">
-        <p class="eg-chapter__eyebrow">Anatomie</p>
-        <h2 id="eg-anatomie" class="eg-chapter__title">Wenn Körper nicht zusammenpassen.</h2>
-        <p class="eg-prose">
-          Der Klassiker unter den KI-Fehlern – im Korpus die seltenste der drei
-          Fehlerarten, in dichten Szenen mit mehreren Personen aber weiterhin da. Wo sich
-          Menschen überlappen, verliert die KI die Grenze zwischen zwei Körpern – Arme
-          und Beine gehen ineinander über. Hände bleiben ihr eigenes Problem: mal ein
-          Finger zu viel, mal eine Hand zu viel für die Haltung.
-        </p>
+        <p class="eg-chapter__eyebrow">{{ $t('pages.errorGuide.chapters.anatomy.eyebrow') }}</p>
+        <h2 id="eg-anatomie" class="eg-chapter__title">{{ $t('pages.errorGuide.chapters.anatomy.title') }}</h2>
+        <p class="eg-prose">{{ $t('pages.errorGuide.chapters.anatomy.prose') }}</p>
       </div>
       <div class="page">
         <div class="eg-figures">
@@ -94,15 +79,9 @@ const physics = specimensByCategory('physics')
     <!-- ================= KONTEXT ================= -->
     <section class="eg-chapter" aria-labelledby="eg-kontext">
       <div class="page page--text">
-        <p class="eg-chapter__eyebrow">Kontext</p>
-        <h2 id="eg-kontext" class="eg-chapter__title">Wenn die Szene keinen Sinn ergibt.</h2>
-        <p class="eg-prose">
-          Diese Brüche findet keine Lupe und kein Detektor – nur der Abgleich mit dem
-          Weltwissen. Ein Laptop ohne Bildschirm, eine Zimmerpflanze in der Kaffeetasse,
-          ein gefülltes Weinglas am Kinderplatz: technisch tadellos gerendert, inhaltlich
-          absurd. Weil das Bild sauber aussieht, fällt das Falsche erst beim zweiten Blick
-          auf.
-        </p>
+        <p class="eg-chapter__eyebrow">{{ $t('pages.errorGuide.chapters.context.eyebrow') }}</p>
+        <h2 id="eg-kontext" class="eg-chapter__title">{{ $t('pages.errorGuide.chapters.context.title') }}</h2>
+        <p class="eg-prose">{{ $t('pages.errorGuide.chapters.context.prose') }}</p>
       </div>
       <div class="page">
         <div class="eg-figures">
@@ -114,14 +93,9 @@ const physics = specimensByCategory('physics')
     <!-- ================= PHYSIK ================= -->
     <section class="eg-chapter" aria-labelledby="eg-physik">
       <div class="page page--text">
-        <p class="eg-chapter__eyebrow">Physik</p>
-        <h2 id="eg-physik" class="eg-chapter__title">Wenn Licht und Raum nicht stimmen.</h2>
-        <p class="eg-prose">
-          Die häufigste Fehlerart im Korpus – und meist die subtilste. Spiegelungen, die
-          nicht zur Szene davor passen, Bildschirme, die zur falschen Seite zeigen: Details,
-          die kaum auffallen, weil das Bild sonst überzeugend wirkt. Genau hier setzt
-          der Maskierungseffekt an.
-        </p>
+        <p class="eg-chapter__eyebrow">{{ $t('pages.errorGuide.chapters.physics.eyebrow') }}</p>
+        <h2 id="eg-physik" class="eg-chapter__title">{{ $t('pages.errorGuide.chapters.physics.title') }}</h2>
+        <p class="eg-prose">{{ $t('pages.errorGuide.chapters.physics.prose') }}</p>
       </div>
       <div class="page">
         <div class="eg-figures">
@@ -133,24 +107,23 @@ const physics = specimensByCategory('physics')
     <!-- ================= STEREOTYPE (Bias-Figuren, ohne Marker) ================= -->
     <section class="eg-chapter" aria-labelledby="eg-stereotype">
       <div class="page page--text">
-        <p class="eg-chapter__eyebrow">Stereotype</p>
-        <h2 id="eg-stereotype" class="eg-chapter__title">Der Fehler ohne Bildstelle.</h2>
-        <p class="eg-prose">
-          Manche Fehler sind keine markierbare Stelle, sondern ein Muster. Auf «a nurse»
-          liefert die KI typischerweise eine junge, attraktive Frau, auf «a CEO» einen Mann
-          in Führungspose. Wahrgenommenes Geschlecht oder Hautfarbe sind für sich
-          <strong>kein</strong> Befund – erst die stereotype Rollenbesetzung schlägt an.
-        </p>
+        <p class="eg-chapter__eyebrow">{{ $t('pages.errorGuide.chapters.stereotype.eyebrow') }}</p>
+        <h2 id="eg-stereotype" class="eg-chapter__title">{{ $t('pages.errorGuide.chapters.stereotype.title') }}</h2>
+        <i18n-t keypath="pages.errorGuide.chapters.stereotype.prose" tag="p" scope="global" class="eg-prose">
+          <template #no>
+            <strong>{{ $t('pages.errorGuide.chapters.stereotype.no') }}</strong>
+          </template>
+        </i18n-t>
       </div>
       <div class="page">
         <div class="eg-bias">
           <figure v-for="ex in biasExamples" :key="ex.id" class="eg-bias__card">
             <div class="eg-bias__frame">
-              <img :src="ex.image" :alt="ex.alt" loading="lazy" decoding="async" />
+              <img :src="ex.image" :alt="$t(`pages.errorGuide.bias.${ex.id}.alt`)" loading="lazy" decoding="async" />
             </div>
             <figcaption class="eg-bias__cap">
-              <span class="eg-bias__prompt">Prompt: „{{ ex.prompt }}“</span>
-              <span class="eg-bias__text">{{ ex.caption }}</span>
+              <span class="eg-bias__prompt">{{ $t('pages.errorGuide.bias.promptLabel', { prompt: ex.prompt }) }}</span>
+              <span class="eg-bias__text">{{ $t(`pages.errorGuide.bias.${ex.id}.caption`) }}</span>
             </figcaption>
           </figure>
         </div>
@@ -160,25 +133,23 @@ const physics = specimensByCategory('physics')
     <!-- ================= SCHLUSS + CTA ================= -->
     <section class="eg-chapter eg-chapter--closing" aria-labelledby="eg-schluss">
       <div class="page page--text">
-        <p class="eg-chapter__eyebrow">Ausblick</p>
-        <h2 id="eg-schluss" class="eg-chapter__title">Der auffällige Fehler ist die Ausnahme – der subtile die Regel.</h2>
-        <p class="eg-prose">
-          Die Suche nach dem sechsten Finger allein trägt nicht weit: Schon in diesem
-          Korpus dominieren nicht die Anatomie-Artefakte, sondern Physik- und
-          Kontextbrüche – und je stärker ein Bild kuratiert ist, desto schwerer fällt
-          der Fehler auf. Reine Artefakt-Suche ist damit unzuverlässig. Deshalb prüft
-          SemantIC nicht «echt oder gefälscht», sondern die <strong>Kohärenz</strong>
-          eines Bildes.
-        </p>
+        <p class="eg-chapter__eyebrow">{{ $t('pages.errorGuide.chapters.closing.eyebrow') }}</p>
+        <h2 id="eg-schluss" class="eg-chapter__title">{{ $t('pages.errorGuide.chapters.closing.title') }}</h2>
+        <i18n-t keypath="pages.errorGuide.chapters.closing.prose" tag="p" scope="global" class="eg-prose">
+          <template #coherence>
+            <strong>{{ $t('pages.errorGuide.chapters.closing.coherence') }}</strong>
+          </template>
+        </i18n-t>
         <p class="eg-cta">
           <Button as="a" href="/analyze" variant="primary" size="md">
-            Bild prüfen <span aria-hidden="true">→</span>
+            {{ $t('pages.errorGuide.chapters.closing.cta') }} <span aria-hidden="true">→</span>
           </Button>
         </p>
-        <p class="eg-crossref">
-          Wie SemantIC daraus ein Urteil bildet, steht unter
-          <NuxtLink to="/how-it-works">So funktioniert SemantIC</NuxtLink>.
-        </p>
+        <i18n-t keypath="pages.errorGuide.chapters.closing.crossref" tag="p" scope="global" class="eg-crossref">
+          <template #link>
+            <NuxtLink to="/how-it-works">{{ $t('pages.errorGuide.chapters.closing.crossrefLink') }}</NuxtLink>
+          </template>
+        </i18n-t>
       </div>
     </section>
   </article>

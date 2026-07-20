@@ -29,13 +29,18 @@ const props = withDefaults(
   {
     aesthetic: 86,
     integrity: 64,
-    pointLabel: 'Beispiel',
     variant: 'full',
-    xAxisLabel: 'Inhaltlich stimmig →',
-    yAxisLabel: 'Sieht gut aus →',
     neutralValues: false,
   },
 )
+
+// i18n (Seitentext-Migration): Text-Defaults (Achsentitel, pointLabel) aus
+// components.maskingQuadrant.* -> folgen dem Sprachwechsel. Uebergibt der Aufrufer
+// (z. B. das Report-Cockpit) eigene Achsentitel/pointLabel, gewinnen diese weiterhin.
+const { t } = useI18n()
+const xLabel = computed(() => props.xAxisLabel ?? t('components.maskingQuadrant.xAxisDefault'))
+const yLabel = computed(() => props.yAxisLabel ?? t('components.maskingQuadrant.yAxisDefault'))
+const pointLabelResolved = computed(() => props.pointLabel ?? t('components.maskingQuadrant.pointDefault'))
 
 // Eindeutige SVG-IDs pro Instanz (Codex: harte IDs kollidieren bei Mehrfach-Einsatz).
 const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '')
@@ -69,16 +74,15 @@ const valboxStyle = computed(() => {
   }
 })
 
-const ariaLabel = computed(() => {
-  const x = props.xAxisLabel.replace(/\s*→\s*$/, '')
-  const y = props.yAxisLabel.replace(/\s*→\s*$/, '')
-  return (
-    `Verortungs-Schema. Waagrechte Achse: ${x}. Senkrechte Achse: ${y}. ` +
-    `Das schraffierte Dreieck oben links ist die Maskierungs-Zone, in der die Ästhetik die ` +
-    `Integrität übersteigt. Punkt für ${props.pointLabel}: Ästhetik ${props.aesthetic}, ` +
-    `Integrität ${props.integrity}.`
-  )
-})
+const ariaLabel = computed(() =>
+  t('components.maskingQuadrant.aria', {
+    x: xLabel.value.replace(/\s*→\s*$/, ''),
+    y: yLabel.value.replace(/\s*→\s*$/, ''),
+    pointLabel: pointLabelResolved.value,
+    aesthetic: props.aesthetic,
+    integrity: props.integrity,
+  }),
+)
 </script>
 
 <template>
@@ -137,41 +141,37 @@ const ariaLabel = computed(() => {
           <!-- Achsentitel im SVG (vorlagentreu); sitzen im 16er-Padding-Gutter. Das Y-Label
                ist um -90° rotiert -> ein "→" im Markup erscheint visuell als "↑" (nach oben).
                Ein "↑" wuerde durch die Rotation faelschlich nach links zeigen. -->
-          <text class="quad__axt" x="160" y="317" text-anchor="middle">{{ xAxisLabel }}</text>
-          <text class="quad__axt" x="11" y="160" text-anchor="middle" transform="rotate(-90 11 160)">{{ yAxisLabel }}</text>
+          <text class="quad__axt" x="160" y="317" text-anchor="middle">{{ xLabel }}</text>
+          <text class="quad__axt" x="11" y="160" text-anchor="middle" transform="rotate(-90 11 160)">{{ yLabel }}</text>
         </svg>
 
         <!-- HTML-Overlay-Labels (deckungsgleich mit dem SVG) -->
-        <span class="quad__zonelbl">Maskierungs-Zone</span>
+        <span class="quad__zonelbl">{{ $t('components.maskingQuadrant.zoneLabel') }}</span>
         <span class="quad__valbox" :style="valboxStyle" aria-hidden="true">
-          <span class="quad__valkicker">{{ pointLabel }}</span>
-          <span class="quad__val quad__val--aesth">Ästhetik {{ aesthetic }}</span>
-          <span class="quad__val quad__val--integ">Integrität {{ integrity }}</span>
+          <span class="quad__valkicker">{{ pointLabelResolved }}</span>
+          <span class="quad__val quad__val--aesth">{{ $t('components.maskingQuadrant.valueAesthetic', { value: aesthetic }) }}</span>
+          <span class="quad__val quad__val--integ">{{ $t('components.maskingQuadrant.valueIntegrity', { value: integrity }) }}</span>
         </span>
       </div>
 
     <div class="quad__legend">
-      <h3>Oben links liegt die Gefahr</h3>
-      <p>
-        Sitzt ein Bild weit oben links – viel Wirkung, wenig Substanz –, ist das der
-        Nährboden für Maskierung. Je weiter ein Punkt die Diagonale nach oben links
-        überschreitet, desto stärker übersteigt die Ästhetik die Integrität.
-      </p>
+      <h3>{{ $t('components.maskingQuadrant.legendH3') }}</h3>
+      <p>{{ $t('components.maskingQuadrant.legendP') }}</p>
       <ul>
         <li>
           <i class="quad__sw quad__sw--zone" aria-hidden="true" />
-          <span><b>Schraffierte Zone</b> – Ästhetik übersteigt Integrität.</span>
+          <span><b>{{ $t('components.maskingQuadrant.legendZoneTerm') }}</b> {{ $t('components.maskingQuadrant.legendZoneDesc') }}</span>
         </li>
         <li>
           <i class="quad__sw quad__sw--diag" aria-hidden="true" />
-          <span><b>Diagonale</b> – Wirkung gleich Substanz (Gleichstand).</span>
+          <span><b>{{ $t('components.maskingQuadrant.legendDiagTerm') }}</b> {{ $t('components.maskingQuadrant.legendDiagDesc') }}</span>
         </li>
         <li>
           <i class="quad__sw quad__sw--pt" aria-hidden="true" />
           <span>
-            <b>Beispielpunkt</b> –
-            <span class="quad__val--aesth">Ästhetik {{ aesthetic }}</span> /
-            <span class="quad__val--integ">Integrität {{ integrity }}</span>.
+            <b>{{ $t('components.maskingQuadrant.legendPointTerm') }}</b> –
+            <span class="quad__val--aesth">{{ $t('components.maskingQuadrant.valueAesthetic', { value: aesthetic }) }}</span> /
+            <span class="quad__val--integ">{{ $t('components.maskingQuadrant.valueIntegrity', { value: integrity }) }}</span>.
           </span>
         </li>
       </ul>

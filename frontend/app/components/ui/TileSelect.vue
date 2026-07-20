@@ -61,7 +61,7 @@ function select(value: string) {
   <fieldset class="border-0 disabled:opacity-50" :disabled="disabled">
     <legend :id="legendId" class="flex items-baseline gap-2 text-[15px] font-semibold text-ink">
       {{ label }}
-      <span v-if="required" class="font-mono text-[11px] uppercase tracking-[0.08em] text-muted">Pflicht</span>
+      <span v-if="required" class="font-mono text-[11px] uppercase tracking-[0.08em] text-muted">{{ $t('components.tileSelect.required') }}</span>
     </legend>
     <p v-if="fieldHelp" :id="helpId" class="mb-3 mt-1 text-[13px] leading-relaxed text-muted">{{ fieldHelp }}</p>
 

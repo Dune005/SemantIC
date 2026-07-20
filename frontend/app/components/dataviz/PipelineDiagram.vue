@@ -15,17 +15,19 @@
   <ol class="flow" role="list">
     <li class="flow__step">
       <div class="flow__node">
-        <p class="flow__k">Eingabe</p>
-        <p class="flow__t">Dein Bild</p>
-        <p class="flow__s">+ optional Nutzungskontext &amp; Original-Prompt</p>
+        <p class="flow__k">{{ $t('components.pipelineDiagram.step1Kicker') }}</p>
+        <p class="flow__t">{{ $t('components.pipelineDiagram.step1Title') }}</p>
+        <p class="flow__s">{{ $t('components.pipelineDiagram.step1Sub') }}</p>
       </div>
     </li>
 
     <li class="flow__step">
-      <p class="flow__splitlabel">Zwei getrennte Prüfungen · <span>parallel</span></p>
-      <div class="flow__split" role="group" aria-label="Zwei parallele, getrennte Modell-Prüfungen">
+      <i18n-t keypath="components.pipelineDiagram.splitLabel" tag="p" scope="global" class="flow__splitlabel">
+        <template #parallel><span>{{ $t('components.pipelineDiagram.splitParallel') }}</span></template>
+      </i18n-t>
+      <div class="flow__split" role="group" :aria-label="$t('components.pipelineDiagram.splitAria')">
         <div class="lane lane--warm">
-          <p class="lane__tag"><span class="lane__dot" aria-hidden="true" />Prüfung 1 · Inhalt</p>
+          <p class="lane__tag"><span class="lane__dot" aria-hidden="true" />{{ $t('components.pipelineDiagram.lane1Tag') }}</p>
           <div class="lane__model">
             <svg class="lane__logo" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 1c0 6.075 4.925 11 11 11-6.075 0-11 4.925-11 11 0-6.075-4.925-11-11-11 6.075 0 11-4.925 11-11Z" fill="currentColor" />
@@ -33,13 +35,12 @@
             <span class="lane__name">Gemini</span>
           </div>
           <p class="lane__body">
-            <b>Integritäts-Analyse:</b> 3 Dimensionen (Physik · Semantik · Bias) plus Research
-            Layer → Integritäts-Score.
+            <b>{{ $t('components.pipelineDiagram.lane1BodyLabel') }}</b> {{ $t('components.pipelineDiagram.lane1BodyRest') }}
           </p>
         </div>
 
         <div class="lane lane--cool">
-          <p class="lane__tag"><span class="lane__dot" aria-hidden="true" />Prüfung 2 · Oberfläche</p>
+          <p class="lane__tag"><span class="lane__dot" aria-hidden="true" />{{ $t('components.pipelineDiagram.lane2Tag') }}</p>
           <div class="lane__model">
             <svg class="lane__logo" viewBox="0 0 24 24" aria-hidden="true">
               <g fill="currentColor">
@@ -60,30 +61,29 @@
             <span class="lane__name">Claude</span>
           </div>
           <p class="lane__body">
-            <b>Ästhetik-Bewertung:</b> nur die visuelle Wirkung, abgeglichen mit einem
-            unabhängigen Referenzmodell → Ästhetik-Score.
+            <b>{{ $t('components.pipelineDiagram.lane2BodyLabel') }}</b> {{ $t('components.pipelineDiagram.lane2BodyRest') }}
           </p>
         </div>
       </div>
-      <p class="flow__merge">
-        <span class="flow__w">Wirkung</span> und <span class="flow__sub">Substanz</span> werden
-        erst hier zusammengeführt – nie vorher.
-      </p>
+      <i18n-t keypath="components.pipelineDiagram.merge" tag="p" scope="global" class="flow__merge">
+        <template #impact><span class="flow__w">{{ $t('components.pipelineDiagram.mergeImpact') }}</span></template>
+        <template #substance><span class="flow__sub">{{ $t('components.pipelineDiagram.mergeSubstance') }}</span></template>
+      </i18n-t>
     </li>
 
     <li class="flow__step">
       <div class="flow__node">
-        <p class="flow__k">Zusammenführung</p>
-        <p class="flow__t">Wirkung vs. Substanz</p>
-        <p class="flow__s">Abgleich Ästhetik ↔ Integrität → Maskierungs-Hinweise (keine einzelne Kennzahl).</p>
+        <p class="flow__k">{{ $t('components.pipelineDiagram.step3Kicker') }}</p>
+        <p class="flow__t">{{ $t('components.pipelineDiagram.step3Title') }}</p>
+        <p class="flow__s">{{ $t('components.pipelineDiagram.step3Sub') }}</p>
       </div>
     </li>
 
     <li class="flow__step">
       <div class="flow__node">
-        <p class="flow__k">Befund</p>
-        <p class="flow__t">Dein Ergebnis</p>
-        <p class="flow__s">Ampel · 3 Dimensionen · Leseart · Hinweise.</p>
+        <p class="flow__k">{{ $t('components.pipelineDiagram.step4Kicker') }}</p>
+        <p class="flow__t">{{ $t('components.pipelineDiagram.step4Title') }}</p>
+        <p class="flow__s">{{ $t('components.pipelineDiagram.step4Sub') }}</p>
       </div>
     </li>
   </ol>

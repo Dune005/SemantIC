@@ -23,21 +23,14 @@ import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import Button from '~/components/ui/Button.vue'
 import { useReveal } from '~/composables/useReveal'
 
+// i18n (Seitentext-Migration): Prosa/DIMS aus pages.index.*, Titel/Description als
+// Getter -> folgen dem Sprachwechsel ohne Reload. Hero-Kicker (drei Prüfdimensionen,
+// NICHT der Brand-Claim) liegt in pages.index.hero.kicker.
+const { t } = useI18n()
 useHead({
-  title: 'SemantIC – Überzeugend ist nicht genug.',
-  meta: [
-    {
-      name: 'description',
-      content:
-        'SemantIC entstand aus der Analyse von 144 KI-generierten Bildern – ein Forschungsprototyp, der Bilder auf physikalische Kohärenz, semantische Konsistenz und Bias prüft.',
-    },
-  ],
+  title: () => t('seo.index.title'),
+  meta: [{ name: 'description', content: () => t('seo.index.description') }],
 })
-
-// Hero-Kicker: bewusst NICHT der Brand-Claim «AI Visual Integrity Check» (der
-// steht schon im Header direkt darüber) – stattdessen die drei Prüfdimensionen,
-// die der Lead danach ausformuliert.
-const KICKER = 'Physik · Semantik · Bias'
 
 // ---- Hero-Video-Gate: nur fine-pointer ohne reduced-motion bekommt das Video --
 const showMotion = ref(false)
@@ -71,34 +64,37 @@ interface Dim {
   strong: string
   body: string
 }
-const DIMS: Record<DimKey, Dim> = {
+// DIMS als computed: Text-Werte (label/chip/strong/body) aus i18n (label = common.dimensions,
+// Rest = pages.index.dims.*), Geometrie (zone) und chipBelow bleiben literal. So folgt der
+// Umschalter dem Sprachwechsel ohne Reload.
+const DIMS = computed<Record<DimKey, Dim>>(() => ({
   phys: {
-    label: 'Physik',
-    chip: 'Stethoskop',
+    label: t('common.dimensions.physics'),
+    chip: t('pages.index.dims.phys.chip'),
     // Eng auf den Ohrbügel: dort laufen die Metallrohre unmöglich zusammen.
     zone: { left: '48%', top: '56%', width: '17%', height: '22%' },
-    strong: 'Licht, Schatten, Material.',
-    body: 'Hier sichtbar: Das Stethoskop ist unmöglich verschlungen – Schlauch, Bügel und Band laufen so zusammen, dass es sich real nicht tragen liesse. Ein Strukturfehler, der im Gesamteindruck untergeht.',
+    strong: t('pages.index.dims.phys.strong'),
+    body: t('pages.index.dims.phys.body'),
   },
   sem: {
-    label: 'Semantik',
-    chip: 'Fremdes Foto',
+    label: t('common.dimensions.semantics'),
+    chip: t('pages.index.dims.sem.chip'),
     // Auf die Ausweiskarte selbst, nicht auf Clip und Band darueber.
     zone: { left: '41%', top: '86%', width: '14%', height: '12%' },
-    strong: 'Inhalt, Kontext, Logik.',
-    body: 'Passt die Szene zusammen? Hier nicht: Das Namensschild zeigt das Foto einer anderen Person, Name und Beschriftung sind Zeichensalat – ein Kontextbruch mitten im Bild.',
+    strong: t('pages.index.dims.sem.strong'),
+    body: t('pages.index.dims.sem.body'),
   },
   bias: {
-    label: 'Bias',
-    chip: 'Rollenklischee',
+    label: t('common.dimensions.bias'),
+    chip: t('pages.index.dims.bias.chip'),
     chipBelow: true,
     zone: { left: '39%', top: '5%', width: '23%', height: '28%' },
-    strong: 'Darstellung, Rolle, Machtdynamik.',
-    body: 'Geschlecht und Hautfarbe werden nur beschrieben, nie bewertet. Bewertet wird das Muster: Die Pflegefachperson ist wie selbstverständlich als junge, makellose Frau besetzt – ein Rollen- und Körperklischee, das Bildgeneratoren immer wieder reproduzieren.',
+    strong: t('pages.index.dims.bias.strong'),
+    body: t('pages.index.dims.bias.body'),
   },
-}
+}))
 const dim = ref<DimKey>('phys')
-const current = computed(() => DIMS[dim.value])
+const current = computed(() => DIMS.value[dim.value])
 const zoneStyle = computed(() => ({
   left: current.value.zone.left,
   top: current.value.zone.top,
@@ -221,26 +217,18 @@ useReveal(page, '.reveal')
       <section class="hero" aria-labelledby="hero-headline">
         <div class="hero__inner">
           <div class="hero__copy">
-            <p class="kicker"><span class="kicker__dot" aria-hidden="true" />{{ KICKER }}</p>
-            <h1 id="hero-headline" class="hero__head">
-              Überzeugend ist <span class="nowrap">nicht genug<span class="end">.</span></span>
-            </h1>
-            <p class="hero__sub">
-              SemantIC entstand aus der Analyse von 144 KI-generierten Bildern: ein
-              Forschungsprototyp, der deine Bilder auf physikalische Kohärenz, semantische
-              Konsistenz und Bias prüft – und dir die Stellen markiert, die einen
-              zweiten Blick verdienen.
-            </p>
+            <p class="kicker"><span class="kicker__dot" aria-hidden="true" />{{ $t('pages.index.hero.kicker') }}</p>
+            <i18n-t keypath="pages.index.hero.headline" tag="h1" id="hero-headline" class="hero__head" scope="global">
+              <template #tail><span class="nowrap">{{ $t('pages.index.hero.headlineTail') }}<span class="end">.</span></span></template>
+            </i18n-t>
+            <p class="hero__sub">{{ $t('pages.index.hero.sub') }}</p>
             <div class="hero__cta">
               <Button as="a" href="/analyze" variant="primary" size="md">
-                Bild prüfen lassen <span aria-hidden="true">→</span>
+                {{ $t('pages.index.hero.cta') }} <span aria-hidden="true">→</span>
               </Button>
-              <NuxtLink to="/how-it-works" class="hero__how">Wie das funktioniert</NuxtLink>
+              <NuxtLink to="/how-it-works" class="hero__how">{{ $t('pages.index.hero.how') }}</NuxtLink>
             </div>
-            <p class="hero__micro">
-              Research Preview · entstanden im Rahmen einer Bachelorarbeit an der
-              Fachhochschule Graubünden
-            </p>
+            <p class="hero__micro">{{ $t('pages.index.hero.micro') }}</p>
           </div>
         </div>
 
@@ -266,10 +254,10 @@ useReveal(page, '.reveal')
             src="/landing/hero-loop-leine-poster.jpg"
             width="2752"
             height="1536"
-            alt="KI-generiertes Moodbild: Fotodrucke mit roten Prüfpunkten hängen an einer Leine im hellen Tageslicht, dazwischen ein Etikett mit dem Schriftzug SemantIC."
+            :alt="$t('pages.index.hero.mediaAlt')"
           />
           <span class="hero__fade" aria-hidden="true" />
-          <span class="hero__chip">{{ showMotion ? 'KI-generiertes Moodvideo' : 'KI-generiertes Moodbild' }}</span>
+          <span class="hero__chip">{{ showMotion ? $t('pages.index.hero.chipVideo') : $t('components.moodBand.chip') }}</span>
         </div>
       </section>
 
@@ -278,25 +266,18 @@ useReveal(page, '.reveal')
         <span class="wall__axis" aria-hidden="true" />
         <div class="center">
           <div class="tablet tablet--canvas">
-            <p class="eyebrow reveal">Der blinde Fleck</p>
-            <h2 id="s1-head" class="h2 reveal r1">Ein Bild kann perfekt aussehen und trotzdem nicht stimmen.</h2>
-            <p class="lead reveal r2">
-              KI-Bildgeneratoren sind gut darin, Bilder schön zu machen – und deutlich
-              schlechter darin, sie <em>richtig</em> zu machen: physikalisch plausibel,
-              inhaltlich passend, frei von Klischees. Die visuelle Perfektion kann
-              diese Schwächen überdecken: Wo ein Bild überzeugt, bleibt der prüfende
-              Blick leichter aus. Diesen Effekt nennen wir <em>Maskierung</em> –
-              ihm arbeitet SemantIC entgegen.
-            </p>
+            <p class="eyebrow reveal">{{ $t('pages.index.blindspot.eyebrow') }}</p>
+            <h2 id="s1-head" class="h2 reveal r1">{{ $t('pages.index.blindspot.title') }}</h2>
+            <i18n-t keypath="pages.index.blindspot.lead" tag="p" scope="global" class="lead reveal r2">
+              <template #correct><em>{{ $t('pages.index.blindspot.correct') }}</em></template>
+              <template #masking><em>{{ $t('pages.index.blindspot.masking') }}</em></template>
+            </i18n-t>
 
-            <p class="switch-hint reveal r2">
-              Dasselbe Bild, drei Blickwinkel: Physik, Semantik und Bias.
-              Wechsle die Dimension – der Befund wechselt mit.
-            </p>
+            <p class="switch-hint reveal r2">{{ $t('pages.index.blindspot.switchHint') }}</p>
 
             <!-- Segmented-Control statt role=tablist (Codex-Review): Buttons mit
                  aria-pressed, monochrome Punkte (KEINE Severity-Farben). -->
-            <div class="dims reveal r2" role="group" aria-label="Prüf-Dimension wählen">
+            <div class="dims reveal r2" role="group" :aria-label="$t('pages.index.blindspot.dimsAria')">
               <button
                 v-for="(d, key) in DIMS"
                 :key="key"
@@ -318,7 +299,7 @@ useReveal(page, '.reveal')
                       width="1616"
                       height="1212"
                       loading="lazy"
-                      alt="KI-generiertes Beispielbild: Junge Pflegefachfrau mit Stethoskop und Namensschild in einem Spitalkorridor."
+                      :alt="$t('pages.index.blindspot.specAlt')"
                     />
                     <!-- Befund-Layer: per clip-path vom Regler freigegeben. -->
                     <div class="spec__anno" :style="{ clipPath: `inset(0 ${100 - reveal}% 0 0)` }">
@@ -328,7 +309,7 @@ useReveal(page, '.reveal')
                       </span>
                     </div>
                     <div class="spec__divider" aria-hidden="true" :style="{ left: gripLeft }">
-                      <span class="spec__grip">PRÜFUNG ◂▸ WIRKUNG</span>
+                      <span class="spec__grip">{{ $t('pages.index.blindspot.grip') }}</span>
                     </div>
                   </div>
                   <input
@@ -338,19 +319,17 @@ useReveal(page, '.reveal')
                     max="100"
                     step="1"
                     class="spec__input"
-                    aria-label="Befund-Ansicht einblenden"
+                    :aria-label="$t('pages.index.blindspot.sliderAria')"
                     aria-describedby="spec-dim-desc"
-                    :aria-valuetext="`${reveal} Prozent der Befund-Ansicht sichtbar`"
+                    :aria-valuetext="$t('pages.index.blindspot.sliderValueText', { reveal })"
                   />
                 </div>
                 <!-- Bedienhinweis eigenstaendig und kontraststark: als Teil der
                      grauen Caption ging er unter (Feedback 2026-07-20). -->
                 <p class="spec__pull">
-                  <span aria-hidden="true">◂▸</span> Regler durch das Bild ziehen
+                  <span aria-hidden="true">◂▸</span> {{ $t('pages.index.blindspot.pull') }}
                 </p>
-                <figcaption class="spec__card">
-                  Bild aus dem Studienkorpus dieser Arbeit · KI-generiert · Befunde manuell markiert
-                </figcaption>
+                <figcaption class="spec__card">{{ $t('pages.index.blindspot.caption') }}</figcaption>
             </figure>
 
             <div class="diminfo reveal r3" role="status" aria-live="polite" aria-atomic="true">
@@ -368,15 +347,13 @@ useReveal(page, '.reveal')
         <span class="wall__axis" aria-hidden="true" />
         <div class="center">
           <div class="tablet tablet--ink">
-            <p class="eyebrow reveal">Die Maskierung</p>
-            <h2 id="s3-head" class="h2 reveal r1">Die Lücke zwischen schön und stimmig.</h2>
-            <p class="lead reveal r2">
-              SemantIC bewertet zwei Dinge strikt getrennt: wie ein Bild <em>wirkt</em>
-              (Ästhetik) und was es inhaltlich <em>hält</em> (Integrität). So wird sichtbar,
-              wenn ein Bild besser aussieht, als es ist – der Nährboden für Maskierung.
-              Wie der Maskierungs-Check im Detail funktioniert, steht unter
-              <NuxtLink to="/how-it-works">Funktionsweise</NuxtLink>.
-            </p>
+            <p class="eyebrow reveal">{{ $t('pages.index.masking.eyebrow') }}</p>
+            <h2 id="s3-head" class="h2 reveal r1">{{ $t('pages.index.masking.title') }}</h2>
+            <i18n-t keypath="pages.index.masking.lead" tag="p" scope="global" class="lead reveal r2">
+              <template #appears><em>{{ $t('pages.index.masking.appears') }}</em></template>
+              <template #holds><em>{{ $t('pages.index.masking.holds') }}</em></template>
+              <template #link><NuxtLink to="/how-it-works">{{ $t('pages.index.masking.linkText') }}</NuxtLink></template>
+            </i18n-t>
 
             <!-- Bild-Paar oben: Gesamteindruck + Detail-Crop. -->
             <div class="pair reveal r2">
@@ -387,10 +364,10 @@ useReveal(page, '.reveal')
                     width="1616"
                     height="1024"
                     loading="lazy"
-                    alt="KI-generiertes Beispielbild in der Gesamtansicht: Frau spricht an einer Pressekonferenz in mehrere Mikrofone."
+                    :alt="$t('pages.index.masking.pairAlt1')"
                   />
                 </div>
-                <figcaption>Gesamtwirkung – überzeugend</figcaption>
+                <figcaption>{{ $t('pages.index.masking.pairCap1') }}</figcaption>
               </figure>
               <figure class="pair__item">
                 <div class="pair__frame pair__frame--zoom">
@@ -399,30 +376,28 @@ useReveal(page, '.reveal')
                     width="1616"
                     height="1024"
                     loading="lazy"
-                    alt="Detailausschnitt desselben Bildes: Die Senderlogos auf den Mikrofonen sind unleserlicher Zeichensalat."
+                    :alt="$t('pages.index.masking.pairAlt2')"
                   />
                 </div>
-                <figcaption>Detail – die Mikrofon-Logos sind Zeichensalat</figcaption>
+                <figcaption>{{ $t('pages.index.masking.pairCap2') }}</figcaption>
               </figure>
             </div>
 
             <!-- WIRKUNG | SUBSTANZ darunter, volle Breite (v18-atelier-Übernahme). -->
-            <div class="formula reveal r3" role="group" aria-label="Wirkung gegenüber Substanz">
+            <div class="formula reveal r3" role="group" :aria-label="$t('pages.index.masking.formulaAria')">
               <div class="formula__side formula__side--look">
-                <span class="formula__tag">Wirkung</span>
-                <h3 class="formula__name">Wie ein Bild wirkt</h3>
-                <p class="formula__txt">Die ästhetische Oberfläche – Stimmung, Schärfe, Komposition. Was auf den ersten Blick überzeugt.</p>
+                <span class="formula__tag">{{ $t('pages.index.masking.lookTag') }}</span>
+                <h3 class="formula__name">{{ $t('pages.index.masking.lookName') }}</h3>
+                <p class="formula__txt">{{ $t('pages.index.masking.lookTxt') }}</p>
               </div>
               <div class="formula__vs" aria-hidden="true">vs.</div>
               <div class="formula__side">
-                <span class="formula__tag">Substanz</span>
-                <h3 class="formula__name">Was es inhaltlich hält</h3>
-                <p class="formula__txt">Physik, Semantik, Bias. Was beim genauen Hinsehen trägt – oder eben nicht.</p>
+                <span class="formula__tag">{{ $t('pages.index.masking.substanceTag') }}</span>
+                <h3 class="formula__name">{{ $t('pages.index.masking.substanceName') }}</h3>
+                <p class="formula__txt">{{ $t('pages.index.masking.substanceTxt') }}</p>
               </div>
             </div>
-            <p class="formula__cap reveal r3">
-              Beide werden bewusst getrennt bewertet – nie zu einer Zahl verschmolzen.
-            </p>
+            <p class="formula__cap reveal r3">{{ $t('pages.index.masking.cap') }}</p>
           </div>
         </div>
       </section>
@@ -432,30 +407,27 @@ useReveal(page, '.reveal')
         <span class="wall__axis" aria-hidden="true" />
         <div class="center">
           <div class="open">
-            <p class="eyebrow reveal">Zur Einordnung</p>
-            <h2 id="s4-head" class="h2 reveal r1">Kein Echtheits-Detektor.</h2>
-            <p class="lead reveal r2">
-              SemantIC sagt dir nicht, ob ein Bild „echt" oder „KI" ist, und sortiert
-              nicht in „Fake" und „nicht Fake". Es bewertet die <em>Qualität</em> eines
-              bereits als KI-generiert bekannten Bildes – schlechte KI gegen gute KI.
-              Und jeder Befund ist ein Hinweis, kein Urteil.
-            </p>
+            <p class="eyebrow reveal">{{ $t('pages.index.context.eyebrow') }}</p>
+            <h2 id="s4-head" class="h2 reveal r1">{{ $t('pages.index.context.title') }}</h2>
+            <i18n-t keypath="pages.index.context.lead" tag="p" scope="global" class="lead reveal r2">
+              <template #quality><em>{{ $t('pages.index.context.quality') }}</em></template>
+            </i18n-t>
           </div>
         </div>
       </section>
 
       <!-- ============ Bild-Band · randabfallend ============================== -->
-      <section class="band" aria-label="Atelier-Einblick">
+      <section class="band" :aria-label="$t('pages.index.band.aria')">
         <img
           class="band__img"
           src="/landing/band-printstudio.webp"
           width="2752"
           height="1536"
           loading="lazy"
-          alt="KI-generiertes Moodbild: Prüftisch mit ausgelegten Fotodrucken, eine Hand setzt eine rote Markierung."
+          :alt="$t('pages.index.band.alt')"
         />
         <span class="band__tone" aria-hidden="true" />
-        <span class="band__chip">KI-generiertes Moodbild</span>
+        <span class="band__chip">{{ $t('components.moodBand.chip') }}</span>
       </section>
 
       <!-- ============ DIE FORSCHUNG DAHINTER ================================= -->
@@ -463,35 +435,31 @@ useReveal(page, '.reveal')
         <span class="wall__axis" aria-hidden="true" />
         <div class="center">
           <div class="tablet tablet--canvas">
-            <p class="eyebrow reveal">Die Forschung dahinter</p>
-            <h2 id="s5-head" class="h2 reveal r1">Die Prüflogik kommt aus eigener Forschung.</h2>
-            <p class="lead reveal r2">
-              Die Kriterien, nach denen SemantIC prüft, stammen aus einer eigenen
-              qualitativen Inhaltsanalyse von 144 KI-generierten Bildern – wie daraus
-              die Prüfung wurde und wo ihre Grenzen liegen, ist offen dokumentiert.
-            </p>
+            <p class="eyebrow reveal">{{ $t('pages.index.research.eyebrow') }}</p>
+            <h2 id="s5-head" class="h2 reveal r1">{{ $t('pages.index.research.title') }}</h2>
+            <p class="lead reveal r2">{{ $t('pages.index.research.lead') }}</p>
 
             <div class="facts reveal r2">
               <div class="facts__item">
                 <span class="facts__num">144</span>
-                <span class="facts__label">codierte Bilder</span>
-                <span class="facts__sub">qualitative Inhaltsanalyse</span>
+                <span class="facts__label">{{ $t('pages.index.research.facts.images.label') }}</span>
+                <span class="facts__sub">{{ $t('pages.index.research.facts.images.sub') }}</span>
               </div>
               <div class="facts__item">
                 <span class="facts__num">5</span>
-                <span class="facts__label">Lesearten</span>
-                <span class="facts__sub">WA · DA · CI · AA · MI</span>
+                <span class="facts__label">{{ $t('pages.index.research.facts.readings.label') }}</span>
+                <span class="facts__sub">{{ $t('pages.index.research.facts.readings.sub') }}</span>
               </div>
               <div class="facts__item">
                 <span class="facts__num">9</span>
-                <span class="facts__label">visuelle Treiber</span>
-                <span class="facts__sub">von Cinematic Lighting bis Bokeh</span>
+                <span class="facts__label">{{ $t('pages.index.research.facts.drivers.label') }}</span>
+                <span class="facts__sub">{{ $t('pages.index.research.facts.drivers.sub') }}</span>
               </div>
             </div>
 
             <p class="reveal r3">
               <NuxtLink to="/how-it-works" class="inline-link">
-                So funktioniert die Prüfung <span class="arrow" aria-hidden="true">→</span>
+                {{ $t('pages.index.research.link') }} <span class="arrow" aria-hidden="true">→</span>
               </NuxtLink>
             </p>
           </div>
@@ -501,11 +469,11 @@ useReveal(page, '.reveal')
       <!-- ================= SCHLUSS-CTA · dunkel ================= -->
       <section class="closer" aria-labelledby="closer-head">
         <div class="closer__inner">
-          <h2 id="closer-head" class="closer__head">Lass dein Bild prüfen, bevor es jemand anderes tut<span class="dot-end">.</span></h2>
-          <p class="closer__body">Ein Bild ablegen, kurz warten, einen Befund lesen. Keine Anmeldung.</p>
+          <h2 id="closer-head" class="closer__head">{{ $t('pages.index.closer.title') }}<span class="dot-end">.</span></h2>
+          <p class="closer__body">{{ $t('pages.index.closer.body') }}</p>
           <div class="closer__cta">
             <Button as="a" href="/analyze" variant="inverse" size="md">
-              Jetzt prüfen lassen <span class="arrow" aria-hidden="true">→</span>
+              {{ $t('pages.index.closer.cta') }} <span class="arrow" aria-hidden="true">→</span>
             </Button>
           </div>
         </div>

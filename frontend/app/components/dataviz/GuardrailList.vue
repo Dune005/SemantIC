@@ -5,49 +5,36 @@
 // den Schleier – rein DEKORATIV: der Tendenz-Text ist immer voll lesbar (Codex-A11y),
 // nie erst durch Hover. Quelle der 5 Paare: texte-beschriftungen.md (hart erzwungen,
 // gehedgtes Wording). Variante C „maskiert → klar".
+// i18n (Seitentext-Migration): Default-Paare aus components.guardrailList.pairs.* (5 Paare),
+// als computed -> folgt dem Sprachwechsel ohne Reload. Ein via Prop uebergebenes pairs-Array
+// gewinnt weiterhin (kein Verhalten geaendert). n wird aus dem Index abgeleitet.
 type Pair = { n: string; tendenz: string; leitplanke: string }
 
-withDefaults(defineProps<{ pairs?: readonly Pair[] }>(), {
-  pairs: () => [
-    {
-      n: '01',
-      tendenz: 'Lässt sich von der schönen Oberfläche einnehmen.',
-      leitplanke: 'Ästhetik wird getrennt bewertet – ohne Einfluss aufs inhaltliche Urteil.',
-    },
-    {
-      n: '02',
-      tendenz: 'Behauptet vage Eindrücke („wirkt komisch").',
-      leitplanke: 'Jeder Befund braucht einen sichtbaren Beleg am Bild – sonst zählt er nicht.',
-    },
-    {
-      n: '03',
-      tendenz: 'Antwortet frei und assoziativ.',
-      leitplanke: 'Urteilt nur im festen Forschungs-Vokabular (Lesearten, Treiber, Fehlertypen).',
-    },
-    {
-      n: '04',
-      tendenz: 'Hakt Bias-Kategorien vorschnell ab.',
-      leitplanke: 'Geschlecht und Hautfarbe werden nur beschrieben; Bias nur bei echtem Muster (Rolle, Machtdynamik).',
-    },
-    {
-      n: '05',
-      tendenz: 'Bleibt bei der ersten Einschätzung.',
-      leitplanke: 'Deterministische Regeln prüfen das Ergebnis nach und korrigieren Widersprüche.',
-    },
-  ],
-})
+const props = defineProps<{ pairs?: readonly Pair[] }>()
+
+const { t } = useI18n()
+const PAIR_COUNT = 5
+const resolvedPairs = computed<readonly Pair[]>(
+  () =>
+    props.pairs ??
+    Array.from({ length: PAIR_COUNT }, (_, i) => ({
+      n: String(i + 1).padStart(2, '0'),
+      tendenz: t(`components.guardrailList.pairs.${i}.tendenz`),
+      leitplanke: t(`components.guardrailList.pairs.${i}.leitplanke`),
+    })),
+)
 </script>
 
 <template>
   <ol class="rails">
-    <li v-for="p in pairs" :key="p.n" class="rail">
+    <li v-for="p in resolvedPairs" :key="p.n" class="rail">
       <!-- Tendenz „maskiert": Schleier ist ein dekoratives ::before; der Text liegt
            im .rail__content darüber und bleibt immer voll lesbar. -->
       <div class="rail__cell rail__cell--was">
         <div class="rail__content">
           <p class="rail__tag">
             <span class="rail__dot rail__dot--was" aria-hidden="true" />
-            <span class="rail__num">{{ p.n }}</span>&nbsp;Tendenz
+            <span class="rail__num">{{ p.n }}</span>&nbsp;{{ $t('components.guardrailList.tendenzTag') }}
           </p>
           <p class="rail__text">{{ p.tendenz }}</p>
         </div>
@@ -65,7 +52,7 @@ withDefaults(defineProps<{ pairs?: readonly Pair[] }>(), {
         <div class="rail__content">
           <p class="rail__tag">
             <span class="rail__dot rail__dot--now" aria-hidden="true" />
-            <span class="rail__num">{{ p.n }}</span>&nbsp;Leitplanke
+            <span class="rail__num">{{ p.n }}</span>&nbsp;{{ $t('components.guardrailList.leitplankeTag') }}
           </p>
           <p class="rail__text">{{ p.leitplanke }}</p>
         </div>

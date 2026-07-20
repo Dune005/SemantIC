@@ -20,7 +20,10 @@ import { buildAnalysisViewModel } from '~/composables/useAnalysisView'
 import type { SemanticAnalysisResult } from '@pipeline/analyze'
 import type { QuotaResponse } from '~~/server/api/quota.get'
 
-useHead({ title: 'Bild prüfen – SemantIC' })
+// i18n (Seitentext-Migration): Tool-Shell aus pages.analyze.*. Der Analyse-Report
+// (DiagnoseCockpit/ReportPrintView) bleibt einem separaten Plan vorbehalten.
+const { t } = useI18n()
+useHead({ title: () => t('seo.analyze.title') })
 
 type StageState =
   | 'empty'
@@ -40,25 +43,29 @@ type ErrorKind =
   | 'provider_error'
   | 'unknown'
 
-// TileSelect-Optionen (verbatim aus microcopy.md §3; Reihenfolge bindend).
-const INTENT_OPTIONS = [
-  { value: 'unspecified', label: 'Standard', hint: 'keine besondere Haltung' },
-  { value: 'affirmative', label: 'Bestätigend', hint: 'untermalt das Thema' },
-  { value: 'critical', label: 'Kritisch', hint: 'ordnet ein / Negativbeispiel' },
-  { value: 'illustrative', label: 'Illustrativ', hint: 'neutrales Beispielbild' },
-]
-const USAGE_OPTIONS = [
-  { value: 'header', label: 'Headerbild', hint: 'Aufmacher zu einem Beitrag' },
-  { value: 'mood', label: 'Moodbild', hint: 'stimmungsgebend, eher beiläufig' },
-  { value: 'symbol', label: 'Symbolbild', hint: 'steht stellvertretend für ein Thema' },
-  { value: 'illustration', label: 'Illustration', hint: 'bebildert einen Sachverhalt' },
-  { value: 'social', label: 'Social-Post', hint: 'Beitrag für soziale Netzwerke' },
-  { value: 'advertising', label: 'Werbe-/Marketingbild', hint: 'bewirbt ein Produkt oder Angebot' },
-  { value: 'editorial', label: 'Editorial-Bild', hint: 'redaktioneller Einsatz mit Anspruch' },
-]
+// TileSelect-Optionen (Reihenfolge bindend). value/Reihenfolge literal, Text aus i18n
+// (pages.analyze.intent/usage.options.*) -> computed, folgt dem Sprachwechsel.
+const INTENT_VALUES = ['unspecified', 'affirmative', 'critical', 'illustrative'] as const
+const USAGE_VALUES = ['header', 'mood', 'symbol', 'illustration', 'social', 'advertising', 'editorial'] as const
+const INTENT_OPTIONS = computed(() =>
+  INTENT_VALUES.map((value) => ({
+    value,
+    label: t(`pages.analyze.intent.options.${value}.label`),
+    hint: t(`pages.analyze.intent.options.${value}.hint`),
+  })),
+)
+const USAGE_OPTIONS = computed(() =>
+  USAGE_VALUES.map((value) => ({
+    value,
+    label: t(`pages.analyze.usage.options.${value}.label`),
+    hint: t(`pages.analyze.usage.options.${value}.hint`),
+  })),
+)
 
-// Fehler-Presets (verbatim aus errors.md). severity: warn (Limit/Timeout/Upload) bzw.
-// crit (Provider/Unknown). Aktionen als Event-Strings (ErrorCard emit `action`).
+// Fehler-Presets. severity: warn (Limit/Timeout/Upload) bzw. crit (Provider/Unknown).
+// Aktionen als Event-Strings (ErrorCard emit `action`). Titel/Message/Action-Labels aus
+// i18n (pages.analyze.errors/actions.*) -> computed. Die 429-rateLimit-Daten liegen in
+// einem eigenen Ref (rateLimitInfo), damit die Mutation in mapFetchError reaktiv bleibt.
 type ErrorPreset = {
   title: string
   message: string
@@ -67,62 +74,34 @@ type ErrorPreset = {
   secondaryAction?: { label: string; event: string }
   rateLimit?: { remaining: number; resetsAt: string }
 }
-const ERROR_PRESETS: Record<ErrorKind, ErrorPreset> = {
-  unsupported_type: {
-    title: 'Format wird nicht unterstützt',
-    message:
-      'SemantIC prüft JPEG-, PNG- und WebP-Bilder. Dieses Format kann es nicht lesen. Speicher das Bild als JPEG, PNG oder WebP und leg es noch einmal ab.',
-    severity: 'warn',
-    primaryAction: { label: 'Anderes Bild wählen', event: 'reset' },
-  },
-  too_large: {
-    title: 'Bild zu gross',
-    message:
-      'Diese Datei überschreitet das Limit von 3.5 MB. Grössere Bilder verkleinern wir normalerweise automatisch – hier hat das nicht gereicht. Exportier das Bild etwas kleiner (oder als JPEG) und versuch es erneut.',
-    severity: 'warn',
-    primaryAction: { label: 'Anderes Bild wählen', event: 'reset' },
-  },
-  downscale_failed: {
-    title: 'Bild liess sich nicht verkleinern',
-    message:
-      'Beim lokalen Verkleinern des Bildes ist etwas schiefgelaufen – die Datei ist möglicherweise beschädigt oder ungewöhnlich kodiert. Versuch es mit einer neu exportierten Version des Bildes.',
-    severity: 'warn',
-    primaryAction: { label: 'Anderes Bild wählen', event: 'reset' },
-  },
-  rate_limited: {
-    title: 'Tageslimit erreicht',
-    message:
-      'Pro Browser-Verbindung sind 5 Analysen in 24 Stunden möglich – das schützt die Kosten dieses Lehrprojekts. Du hast das Limit für heute ausgeschöpft. Morgen sind wieder 5 Analysen frei. Für eine Demo oder als Gutachter:in kannst du das Limit sofort aufheben: Trag den Zugangscode im Feld „Zugangscode" unten im Footer ein.',
-    severity: 'warn',
-    primaryAction: { label: 'Zugangscode eingeben', event: 'focusBypass' },
-    secondaryAction: { label: 'Verstanden', event: 'dismiss' },
-    rateLimit: { remaining: 0, resetsAt: '31.05.2026, 09:14 Uhr' },
-  },
-  timeout: {
-    title: 'Analyse hat zu lange gebraucht',
-    message:
-      'Die Prüfung dauert normalerweise zehn bis dreissig Sekunden. Diesmal kam innerhalb der Wartezeit keine Antwort zurück – meist ein vorübergehendes Problem beim Analyse-Dienst. Versuch es gleich noch einmal. Deine Eingaben bleiben erhalten.',
-    severity: 'warn',
-    primaryAction: { label: 'Erneut versuchen', event: 'retry' },
-    secondaryAction: { label: 'Neues Bild prüfen', event: 'reset' },
-  },
-  provider_error: {
-    title: 'Analyse momentan nicht möglich',
-    message:
-      'Der Dienst, der dein Bild prüft, hat einen Fehler gemeldet oder ist gerade nicht erreichbar. Das liegt nicht an deinem Bild. Warte einen Moment und versuch es erneut. Deine Eingaben bleiben erhalten.',
-    severity: 'crit',
-    primaryAction: { label: 'Erneut versuchen', event: 'retry' },
-    secondaryAction: { label: 'Neues Bild prüfen', event: 'reset' },
-  },
-  unknown: {
-    title: 'Etwas ist schiefgelaufen',
-    message:
-      'Die Analyse wurde unerwartet abgebrochen. Was genau passiert ist, konnten wir nicht eindeutig zuordnen. Versuch es noch einmal. Wenn es erneut auftritt, lad das Bild neu hoch und starte frisch.',
-    severity: 'crit',
-    primaryAction: { label: 'Erneut versuchen', event: 'retry' },
-    secondaryAction: { label: 'Neues Bild prüfen', event: 'reset' },
-  },
-}
+const rateLimitInfo = ref<{ remaining: number; resetsAt: string }>({
+  remaining: 0,
+  resetsAt: '31.05.2026, 09:14 Uhr',
+})
+const ERROR_PRESETS = computed<Record<ErrorKind, ErrorPreset>>(() => {
+  const chooseOther = { label: t('pages.analyze.actions.chooseOther'), event: 'reset' }
+  const retry = { label: t('pages.analyze.actions.retry'), event: 'retry' }
+  const newImage = { label: t('pages.analyze.actions.newImage'), event: 'reset' }
+  const err = (kind: ErrorKind) => ({
+    title: t(`pages.analyze.errors.${kind}.title`),
+    message: t(`pages.analyze.errors.${kind}.message`),
+  })
+  return {
+    unsupported_type: { ...err('unsupported_type'), severity: 'warn', primaryAction: chooseOther },
+    too_large: { ...err('too_large'), severity: 'warn', primaryAction: chooseOther },
+    downscale_failed: { ...err('downscale_failed'), severity: 'warn', primaryAction: chooseOther },
+    rate_limited: {
+      ...err('rate_limited'),
+      severity: 'warn',
+      primaryAction: { label: t('pages.analyze.actions.enterCode'), event: 'focusBypass' },
+      secondaryAction: { label: t('pages.analyze.actions.understood'), event: 'dismiss' },
+      rateLimit: rateLimitInfo.value,
+    },
+    timeout: { ...err('timeout'), severity: 'warn', primaryAction: retry, secondaryAction: newImage },
+    provider_error: { ...err('provider_error'), severity: 'crit', primaryAction: retry, secondaryAction: newImage },
+    unknown: { ...err('unknown'), severity: 'crit', primaryAction: retry, secondaryAction: newImage },
+  }
+})
 
 // --- Zustand ---------------------------------------------------------------
 const state = ref<StageState>('empty')
@@ -174,7 +153,7 @@ onMounted(async () => {
       return
     }
     if (quota.state === 'ok' && quota.remaining != null && quota.limit != null) {
-      rateLimitHint.value = `Noch ${quota.remaining} von ${quota.limit} heute frei`
+      rateLimitHint.value = t('pages.analyze.quota.remaining', { n: quota.remaining, total: quota.limit })
     }
   } catch {
     // Anzeige bleibt leer – exakt der Zustand vor diesem Feature.
@@ -191,14 +170,14 @@ const QUALITY_STEPS = [0.85, 0.7, 0.55, 0.4]
 // --- Abgeleitet ------------------------------------------------------------
 const canSubmit = computed(() => !!declaredIntent.value && !!usageForm.value)
 const submitHint = computed(() => {
-  if (canSubmit.value) return 'Bereit – du kannst die Analyse starten.'
-  if (!declaredIntent.value && !usageForm.value) return 'Wähl Haltung und Verwendungsform, dann kannst du starten.'
-  if (!declaredIntent.value) return 'Es fehlt noch die Haltung.'
-  return 'Es fehlt noch die Verwendungsform.'
+  if (canSubmit.value) return t('pages.analyze.submit.hintReady')
+  if (!declaredIntent.value && !usageForm.value) return t('pages.analyze.submit.hintBoth')
+  if (!declaredIntent.value) return t('pages.analyze.intent.error')
+  return t('pages.analyze.usage.error')
 })
 const intentInvalid = computed(() => triedSubmit.value && !declaredIntent.value)
 const usageInvalid = computed(() => triedSubmit.value && !usageForm.value)
-const errorPreset = computed(() => ERROR_PRESETS[errorKind.value])
+const errorPreset = computed(() => ERROR_PRESETS.value[errorKind.value])
 
 // Schritt-Indikator (Mono-Strip): upload · angaben · analyse · befund
 const activeStep = computed<'upload' | 'angaben' | 'analyse' | 'befund'>(() => {
@@ -376,8 +355,8 @@ async function runAnalysis() {
       const total = Number(res.headers.get('x-ratelimit-limit'))
       rateLimitHint.value = Number.isFinite(n)
         ? Number.isFinite(total)
-          ? `Noch ${n} von ${total} heute frei`
-          : `Noch ${n} heute frei`
+          ? t('pages.analyze.quota.remaining', { n, total })
+          : t('pages.analyze.quota.remainingNoTotal', { n })
         : null
     }
     if (res.headers.get('x-ratelimit-bypass') === '1') bypassActive.value = true
@@ -421,7 +400,7 @@ function mapFetchError(err: unknown, timedOut: boolean): ErrorKind {
     // die Nutzdaten unter body.data → also error.data.data (Codex-Review B).
     const rl = e?.data?.data
     if (rl?.resetsAt) {
-      ERROR_PRESETS.rate_limited.rateLimit = {
+      rateLimitInfo.value = {
         remaining: rl.remaining ?? 0,
         resetsAt: new Date(rl.resetsAt).toLocaleString('de-CH'),
       }
@@ -534,20 +513,20 @@ function exportPdf() {
 <template>
   <!-- Kein sichtbarer Seitenkopf mehr: Kicker/H1/Lead doppelten Stage-Strip und
        Dropzone-Titel (Nutzer-Feedback). Die h1 bleibt für A11y/Struktur unsichtbar. -->
-  <h1 v-if="state !== 'result'" class="sr-only">Bild prüfen</h1>
+  <h1 v-if="state !== 'result'" class="sr-only">{{ $t('pages.analyze.h1') }}</h1>
 
   <!-- TOOL-STAGE (schmale Eingabe-Karte; Result rendert ausserhalb als volles Cockpit) -->
-  <section v-if="state !== 'result'" class="stage" :data-state="state" aria-label="Bildprüfung – Eingabe und Ablauf">
+  <section v-if="state !== 'result'" class="stage" :data-state="state" :aria-label="$t('pages.analyze.stageAria')">
     <div class="stage__strip" aria-hidden="true">
       <span>SEMANTIC · INPUT</span>
       <span>
-        <span class="step" :class="{ 'is-active': activeStep === 'upload' }">upload</span>
+        <span class="step" :class="{ 'is-active': activeStep === 'upload' }">{{ $t('pages.analyze.steps.upload') }}</span>
         ·
-        <span class="step" :class="{ 'is-active': activeStep === 'angaben' }">angaben</span>
+        <span class="step" :class="{ 'is-active': activeStep === 'angaben' }">{{ $t('pages.analyze.steps.input') }}</span>
         ·
-        <span class="step" :class="{ 'is-active': activeStep === 'analyse' }">analyse</span>
+        <span class="step" :class="{ 'is-active': activeStep === 'analyse' }">{{ $t('pages.analyze.steps.analysis') }}</span>
         ·
-        <span class="step" :class="{ 'is-active': activeStep === 'befund' }">befund</span>
+        <span class="step" :class="{ 'is-active': activeStep === 'befund' }">{{ $t('pages.analyze.steps.finding') }}</span>
       </span>
     </div>
 
@@ -555,8 +534,8 @@ function exportPdf() {
       <!-- EMPTY + UPLOAD_ERROR teilen die Dropzone -->
       <div v-if="state === 'empty' || state === 'upload_error'">
         <div class="dz-head">
-          <h2>Bild prüfen</h2>
-          <p class="help">Leg ein KI-generiertes Bild ab oder wähl eine Datei – den Rest fragen wir danach ab.</p>
+          <h2>{{ $t('pages.analyze.upload.heading') }}</h2>
+          <p class="help">{{ $t('pages.analyze.upload.help') }}</p>
         </div>
 
         <div
@@ -564,7 +543,7 @@ function exportPdf() {
           :class="{ 'is-dragover': isDragover }"
           tabindex="0"
           role="button"
-          aria-label="Bild hierher ziehen oder Datei auswählen. JPEG, PNG oder WebP, bis 3.5 Megabyte."
+          :aria-label="$t('pages.analyze.upload.dropzoneAria')"
           @click="triggerPick"
           @keydown.enter.prevent="triggerPick"
           @keydown.space.prevent="triggerPick"
@@ -578,12 +557,12 @@ function exportPdf() {
               <path d="M12 16V4m0 0L7 9m5-5 5 5" />
               <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
             </svg>
-            <span class="dropzone__primary">Bild hierher ziehen</span>
-            <span class="dropzone__or">oder</span>
-            <Button variant="secondary" size="sm" class="self-center" @click.stop="triggerPick">Datei auswählen</Button>
-            <p class="dropzone__formats">JPEG · PNG · WebP · bis 3.5 MB</p>
+            <span class="dropzone__primary">{{ $t('pages.analyze.upload.dropPrimary') }}</span>
+            <span class="dropzone__or">{{ $t('pages.analyze.upload.or') }}</span>
+            <Button variant="secondary" size="sm" class="self-center" @click.stop="triggerPick">{{ $t('pages.analyze.upload.pick') }}</Button>
+            <p class="dropzone__formats">{{ $t('pages.analyze.upload.formats') }}</p>
           </div>
-          <div class="dz-dragmsg" aria-hidden="true">Loslassen, um das Bild zu laden</div>
+          <div class="dz-dragmsg" aria-hidden="true">{{ $t('pages.analyze.upload.dragMsg') }}</div>
         </div>
         <input ref="fileInputRef" type="file" accept="image/jpeg,image/png,image/webp" hidden @change="onFileChange" />
 
@@ -603,58 +582,55 @@ function exportPdf() {
       <!-- VALIDATING -->
       <div v-else-if="state === 'validating'" class="validating" role="status" aria-live="polite">
         <div class="spinner" aria-hidden="true" />
-        <h2>Bild wird verarbeitet …</h2>
-        <p class="help">Grosse Bilder werden für die Analyse verkleinert – das passiert lokal in deinem Browser.</p>
+        <h2>{{ $t('pages.analyze.validating.heading') }}</h2>
+        <p class="help">{{ $t('pages.analyze.validating.help') }}</p>
       </div>
 
       <!-- COLLECTING -->
       <div v-else-if="state === 'collecting'">
         <div class="preview">
           <div class="preview__imgwrap">
-            <img v-if="imageUrl" :src="imageUrl" alt="Vorschau des hochgeladenen Bildes" class="preview__img" />
-            <div v-else class="ph-hatch" aria-label="Bildvorschau"><span>Bild · 4:5</span></div>
+            <img v-if="imageUrl" :src="imageUrl" :alt="$t('pages.analyze.preview.alt')" class="preview__img" />
+            <div v-else class="ph-hatch" :aria-label="$t('pages.analyze.preview.placeholderAria')"><span>{{ $t('pages.analyze.preview.placeholderLabel') }}</span></div>
           </div>
           <div class="preview__meta">
-            <span class="preview__label">Dein Bild</span>
+            <span class="preview__label">{{ $t('pages.analyze.preview.label') }}</span>
             <span class="preview__name">{{ fileName }}</span>
             <span class="preview__dims">{{ fileMeta }}</span>
             <div class="preview__actions">
-              <Button variant="secondary" size="sm" @click="removeImage">Bild entfernen</Button>
+              <Button variant="secondary" size="sm" @click="removeImage">{{ $t('pages.analyze.preview.remove') }}</Button>
             </div>
           </div>
         </div>
 
         <form class="collect-block" novalidate @submit.prevent="onSubmit">
           <div class="collect-block__head">
-            <p class="section-kicker">Schritt 2</p>
-            <h2>Angaben zur Verwendung</h2>
-            <p class="help lead">
-              Zwei kurze Angaben, damit die Empfehlung zu deinem Einsatz passt. Beide sind nötig, bevor du
-              starten kannst.
-            </p>
+            <p class="section-kicker">{{ $t('pages.analyze.collect.kicker') }}</p>
+            <h2>{{ $t('pages.analyze.collect.heading') }}</h2>
+            <p class="help lead">{{ $t('pages.analyze.collect.lead') }}</p>
           </div>
 
           <TileSelect
             v-model="declaredIntent"
             name="intent"
-            label="Haltung"
-            field-help="Welche Funktion hat das Bild in deinem Beitrag?"
+            :label="$t('pages.analyze.intent.label')"
+            :field-help="$t('pages.analyze.intent.help')"
             :options="INTENT_OPTIONS"
             :columns="2"
             :invalid="intentInvalid"
-            error-message="Es fehlt noch die Haltung."
+            :error-message="$t('pages.analyze.intent.error')"
             class="mt-6"
           />
 
           <TileSelect
             v-model="usageForm"
             name="usageForm"
-            label="Verwendungsform"
-            field-help="Wofür ist das Bild gedacht? Das bestimmt, wie streng der Massstab der Empfehlung ist."
+            :label="$t('pages.analyze.usage.label')"
+            :field-help="$t('pages.analyze.usage.help')"
             :options="USAGE_OPTIONS"
             :columns="4"
             :invalid="usageInvalid"
-            error-message="Es fehlt noch die Verwendungsform."
+            :error-message="$t('pages.analyze.usage.error')"
             class="mt-6"
           />
 
@@ -662,39 +638,39 @@ function exportPdf() {
             <details class="opt" open>
               <summary>
                 <svg class="opt__chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M6 4l4 4-4 4" /></svg>
-                Nutzungskontext hinzufügen
-                <span class="mono-note ml-auto">optional</span>
+                {{ $t('pages.analyze.contextField.summary') }}
+                <span class="mono-note ml-auto">{{ $t('pages.analyze.contextField.optional') }}</span>
               </summary>
               <div class="opt__body">
-                <label class="opt__field-lab" for="ctxField">Nutzungskontext</label>
-                <p class="opt__field-help">Bitte beschreibe kurz in 1 bis 2 Sätzen.</p>
+                <label class="opt__field-lab" for="ctxField">{{ $t('pages.analyze.contextField.label') }}</label>
+                <p class="opt__field-help">{{ $t('pages.analyze.contextField.help') }}</p>
                 <textarea
                   id="ctxField"
                   v-model="contextText"
                   class="field"
                   maxlength="2000"
-                  placeholder="z. B. Aufmacher zu einem Artikel über Pflegeberufe in einer Tageszeitung"
+                  :placeholder="$t('pages.analyze.contextField.placeholder')"
                 />
                 <span class="charcount">{{ contextText.length }} / 2000</span>
-                <p v-if="!contextText" class="opt__emptyhint">Ohne Nutzungskontext bleibt die Einschätzung allgemeiner.</p>
+                <p v-if="!contextText" class="opt__emptyhint">{{ $t('pages.analyze.contextField.emptyHint') }}</p>
               </div>
             </details>
 
             <details class="opt">
               <summary>
                 <svg class="opt__chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M6 4l4 4-4 4" /></svg>
-                Original-Prompt hinzufügen
-                <span class="mono-note ml-auto">optional</span>
+                {{ $t('pages.analyze.promptField.summary') }}
+                <span class="mono-note ml-auto">{{ $t('pages.analyze.contextField.optional') }}</span>
               </summary>
               <div class="opt__body">
-                <label class="opt__field-lab" for="promptField">Original-Prompt</label>
-                <p class="opt__field-help">Der Text, mit dem das Bild generiert wurde.</p>
+                <label class="opt__field-lab" for="promptField">{{ $t('pages.analyze.promptField.label') }}</label>
+                <p class="opt__field-help">{{ $t('pages.analyze.promptField.help') }}</p>
                 <textarea
                   id="promptField"
                   v-model="promptText"
                   class="field"
                   maxlength="2000"
-                  placeholder="z. B. a professional nurse in a hospital, photorealistic, soft light"
+                  :placeholder="$t('pages.analyze.promptField.placeholder')"
                 />
                 <span class="charcount">{{ promptText.length }} / 2000</span>
               </div>
@@ -703,7 +679,7 @@ function exportPdf() {
 
           <div class="submit-bar">
             <div class="submit-bar__row">
-              <Button type="submit" variant="primary" :disabled="!canSubmit">Analyse starten</Button>
+              <Button type="submit" variant="primary" :disabled="!canSubmit">{{ $t('pages.analyze.submit.start') }}</Button>
               <p class="submit-hint" :class="{ 'submit-hint--blocked': !canSubmit }">{{ submitHint }}</p>
             </div>
           </div>
@@ -714,7 +690,7 @@ function exportPdf() {
       <div v-else-if="state === 'analyzing'">
         <WaitState />
         <div class="cancel-row">
-          <Button variant="ghost" size="sm" @click="cancelAnalysis">Analyse abbrechen</Button>
+          <Button variant="ghost" size="sm" @click="cancelAnalysis">{{ $t('pages.analyze.analyzing.cancel') }}</Button>
         </div>
       </div>
 
@@ -737,23 +713,23 @@ function exportPdf() {
   <!-- Einordnungs-Hinweise: was die Prüfung leistet – und was nicht. Bewusst vor
        dem Absenden sichtbar (nur Input-Zustände, im Result übernimmt das Cockpit). -->
   <aside v-if="state !== 'result'" class="caveats" aria-labelledby="caveats-title">
-    <p id="caveats-title" class="caveats__kicker">Gut zu wissen</p>
+    <p id="caveats-title" class="caveats__kicker">{{ $t('pages.analyze.caveats.kicker') }}</p>
     <div class="caveats__grid">
       <div class="caveats__item">
-        <h2>Hinweise, keine Urteile</h2>
-        <p>SemantIC markiert Auffälligkeiten – die Einschätzung und die Entscheidung bleiben bei dir.</p>
+        <h2>{{ $t('pages.analyze.caveats.items.0.title') }}</h2>
+        <p>{{ $t('pages.analyze.caveats.items.0.body') }}</p>
       </div>
       <div class="caveats__item">
-        <h2>Selber gegenprüfen</h2>
-        <p>Schau dir die markierten Stellen im Original an, bevor du das Bild verwendest.</p>
+        <h2>{{ $t('pages.analyze.caveats.items.1.title') }}</h2>
+        <p>{{ $t('pages.analyze.caveats.items.1.body') }}</p>
       </div>
       <div class="caveats__item">
-        <h2>Modelle können sich irren</h2>
-        <p>Die Prüfung basiert auf KI-Modellen – einzelne Befunde können fehlen oder falsch sitzen.</p>
+        <h2>{{ $t('pages.analyze.caveats.items.2.title') }}</h2>
+        <p>{{ $t('pages.analyze.caveats.items.2.body') }}</p>
       </div>
       <div class="caveats__item">
-        <h2>Läufe können abweichen</h2>
-        <p>Wird dasselbe Bild mehrfach geprüft, können die Hinweise leicht unterschiedlich ausfallen.</p>
+        <h2>{{ $t('pages.analyze.caveats.items.3.title') }}</h2>
+        <p>{{ $t('pages.analyze.caveats.items.3.body') }}</p>
       </div>
     </div>
   </aside>
@@ -773,13 +749,13 @@ function exportPdf() {
       sample-id="SEMANTIC"
     />
     <div class="result-actions result-actions--cockpit">
-      <Button variant="secondary" @click="fullReset">Neues Bild prüfen</Button>
-      <Button variant="secondary" @click="exportPdf">Als PDF exportieren</Button>
+      <Button variant="secondary" @click="fullReset">{{ $t('pages.analyze.result.newImage') }}</Button>
+      <Button variant="secondary" @click="exportPdf">{{ $t('pages.analyze.result.exportPdf') }}</Button>
     </div>
     <!-- Browser-Kopf-/Fusszeilen (URL, Datum) sind per CSS nicht zuverlässig
          unterdrückbar → statischer Hinweis statt Toast (der wäre vor dem
          blockierenden window.print() unsichtbar, Codex-Review). -->
-    <p class="result-print-tip">Für ein sauberes PDF im Druckdialog «Kopf- und Fusszeilen» deaktivieren.</p>
+    <p class="result-print-tip">{{ $t('pages.analyze.result.printTip') }}</p>
   </div>
 
   <!-- Druckansicht (report-print.md): im Screen verborgen, im @media print sichtbar.

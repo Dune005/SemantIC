@@ -5,8 +5,9 @@
 // oben/unten, dezentes warmes Ton-Overlay, kein Schatten. Das Bild selbst ist dekorativ
 // (alt='' + aria-hidden); der Mono-Chip „KI-generiert" bleibt zugänglicher Text
 // (F4-Kennzeichnung). Bildquelle: committete /landing/-Assets (NICHT public/lab16/, untracked).
+// chip ohne Default: faellt im Template auf den i18n-Text components.moodBand.chip zurueck,
+// damit die Beschriftung der aktiven Sprache folgt (statt hartcodiertem Deutsch).
 withDefaults(defineProps<{ src: string; chip?: string; tall?: boolean; eager?: boolean }>(), {
-  chip: 'KI-generiertes Moodbild',
   tall: false,
   eager: false,
 })
@@ -24,7 +25,7 @@ withDefaults(defineProps<{ src: string; chip?: string; tall?: boolean; eager?: b
       decoding="async"
     />
     <span class="moodband__tone" aria-hidden="true" />
-    <span class="moodband__chip">{{ chip }}</span>
+    <span class="moodband__chip">{{ chip ?? $t('components.moodBand.chip') }}</span>
   </div>
 </template>
 
