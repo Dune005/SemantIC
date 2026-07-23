@@ -53,6 +53,7 @@ export default defineEventHandler(async (event) => {
       context: body.context,
       declaredIntent: body.declaredIntent,
       mediaType: sniff.mediaType,
+      outputLang: body.outputLang,
       signal: controller.signal,
     })
     return result

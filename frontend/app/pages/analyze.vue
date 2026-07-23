@@ -8,7 +8,7 @@
 // → DiagnoseCockpit. usage_form bleibt frontend-only (nie im API-Body). Fehler werden über
 // mapFetchError(HTTP-Status → ErrorKind) abgebildet; rateLimitHint/bypassActive kommen
 // aus den Response-Headern in den geteilten Chrome-State (useState).
-import { ref, computed, onBeforeUnmount, onMounted } from 'vue'
+import { ref, computed, provide, onBeforeUnmount, onMounted } from 'vue'
 import Button from '~/components/ui/Button.vue'
 import TileSelect from '~/components/ui/TileSelect.vue'
 import WaitState from '~/components/analyze/WaitState.vue'
@@ -17,12 +17,14 @@ import DiagnoseCockpit from '~/components/analyze/DiagnoseCockpit.vue'
 import ReportPrintView from '~/components/analyze/ReportPrintView.vue'
 import type { AnalysisViewModel, UsageForm } from '~/types/analysis'
 import { buildAnalysisViewModel } from '~/composables/useAnalysisView'
+import { REPORT_LANG_KEY } from '~/composables/useReportT'
 import type { SemanticAnalysisResult } from '@pipeline/analyze'
 import type { QuotaResponse } from '~~/server/api/quota.get'
 
 // i18n (Seitentext-Migration): Tool-Shell aus pages.analyze.*. Der Analyse-Report
-// (DiagnoseCockpit/ReportPrintView) bleibt einem separaten Plan vorbehalten.
-const { t } = useI18n()
+// (DiagnoseCockpit/ReportPrintView) rendert in der EINGEFRORENEN Report-Sprache
+// (reportLang, s. unten) – nicht reaktiv in der UI-Locale.
+const { t, locale } = useI18n()
 useHead({ title: () => t('seo.analyze.title') })
 
 type StageState =
@@ -125,6 +127,15 @@ const isDragover = computed(() => dragDepth.value > 0)
 // usage_form-Freeze (frontend-only, nie im API-Body) + Ergebnis-ViewModel
 const submittedUsageForm = ref<UsageForm | null>(null)
 const resultVm = ref<AnalysisViewModel | null>(null)
+
+// Report-Sprache: beim Start jeder Analyse auf die aktuelle UI-Locale FIXIERT
+// (vor dem fetch). Ein UI-Sprachwechsel nach der Analyse mischt den fertigen
+// Report nicht. Provide fuer useReportT() in den Report-Komponenten.
+const reportLang = ref<'de' | 'en'>('de')
+provide(
+  REPORT_LANG_KEY,
+  computed(() => resultVm.value?.reportLang ?? (locale.value === 'en' ? 'en' : 'de')),
+)
 
 // Eingefrorener Submit-State fuer die Druckansicht (report-print.md §2/§5):
 // Kontext/Prompt sind frontend-only (nicht im Pipeline-JSON) und werden der
@@ -322,6 +333,9 @@ async function runAnalysis() {
     state.value = 'analysis_error'
     return
   }
+  // Report-Sprache einfrieren (vor dem fetch): der ganze Report entsteht in
+  // dieser Sprache, unabhaengig von spaeteren UI-Sprachwechseln.
+  reportLang.value = locale.value === 'en' ? 'en' : 'de'
   state.value = 'analyzing'
   abortController?.abort()
   abortController = new AbortController()
@@ -342,6 +356,9 @@ async function runAnalysis() {
         prompt: promptText.value || undefined,
         context: contextText.value || undefined,
         declaredIntent: declaredIntent.value ?? undefined,
+        // Eingefrorene Report-Sprache – Pipeline schreibt Freitexte + kompo-
+        // nierte Hinweise in dieser Sprache (Server-Default ist 'de').
+        outputLang: reportLang.value,
       },
       signal,
     })
@@ -367,11 +384,12 @@ async function runAnalysis() {
       state.value = 'analysis_error'
       return
     }
-    resultVm.value = buildAnalysisViewModel(raw, submittedUsageForm.value ?? undefined)
+    resultVm.value = buildAnalysisViewModel(raw, submittedUsageForm.value ?? undefined, reportLang.value)
     // Submit-State fuer die Druckansicht festhalten (was tatsaechlich gesendet wurde).
     submittedContext.value = contextText.value || null
     submittedPrompt.value = promptText.value || null
-    generatedAt.value = new Date().toLocaleString('de-CH')
+    // generatedAt gehoert zum Report → Datumsformat folgt der eingefrorenen Report-Sprache.
+    generatedAt.value = new Date().toLocaleString(reportLang.value === 'en' ? 'en-GB' : 'de-CH')
     state.value = 'result'
   } catch (err) {
     // User-Abbruch (kein Timeout) → stiller Rücksprung (error-taxonomy §2.7, kein Fehler).
@@ -400,9 +418,10 @@ function mapFetchError(err: unknown, timedOut: boolean): ErrorKind {
     // die Nutzdaten unter body.data → also error.data.data (Codex-Review B).
     const rl = e?.data?.data
     if (rl?.resetsAt) {
+      // UI-Chrome (kein Report): Datumsformat folgt der reaktiven UI-Locale.
       rateLimitInfo.value = {
         remaining: rl.remaining ?? 0,
-        resetsAt: new Date(rl.resetsAt).toLocaleString('de-CH'),
+        resetsAt: new Date(rl.resetsAt).toLocaleString(locale.value === 'en' ? 'en-GB' : 'de-CH'),
       }
     }
     return 'rate_limited'
@@ -499,7 +518,10 @@ function exportPdf() {
     String(now.getDate()).padStart(2, '0'),
   ].join('-')
   printTitleActive = true
-  document.title = `SemantIC-Pruefbefund_${stamp}`
+  // PDF-Dateiname folgt der Report-Sprache (eingefroren zu Analysebeginn).
+  document.title = reportLang.value === 'en'
+    ? `SemantIC-Report_${stamp}`
+    : `SemantIC-Pruefbefund_${stamp}`
   window.addEventListener('afterprint', restoreTitle, { once: true })
   try {
     window.print()
@@ -529,6 +551,10 @@ function exportPdf() {
         <span class="step" :class="{ 'is-active': activeStep === 'befund' }">{{ $t('pages.analyze.steps.finding') }}</span>
       </span>
     </div>
+
+    <!-- Tageslimit-Stand (aus dem Header hierher verlegt): direkt am Input,
+         sichtbar in allen Eingabe-Zuständen, verschwindet bei aktivem Bypass. -->
+    <p v-if="rateLimitHint" class="stage__quota">{{ rateLimitHint }}</p>
 
     <div class="stage__body">
       <!-- EMPTY + UPLOAD_ERROR teilen die Dropzone -->
@@ -848,6 +874,18 @@ function exportPdf() {
 }
 .stage__strip .step.is-active::before {
   content: '› ';
+}
+/* Tageslimit-Zeile: schmale Mono-Zeile zwischen Strip und Body, rechtsbündig –
+   gleiche Anmutung wie der frühere Header-Hint, nur auf heller Fläche. Der
+   Body-Innenabstand (28px) liefert den Abstand nach unten. */
+.stage__quota {
+  margin: 0;
+  padding: 10px 18px 0;
+  text-align: right;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--subtle);
 }
 .stage__body {
   padding: 28px;

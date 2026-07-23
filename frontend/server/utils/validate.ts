@@ -39,6 +39,9 @@ export const AnalyzeBodySchema = z.object({
   prompt: z.string().max(MAX_TEXT_CHARS).optional(),
   context: z.string().max(MAX_TEXT_CHARS).optional(),
   declaredIntent: z.enum(['unspecified', 'affirmative', 'critical', 'illustrative']).optional(),
+  // Zielsprache der Report-Freitexte (Client sendet die zu Analysebeginn
+  // fixierte UI-Locale mit). Optional; ohne Wert bleibt Deutsch (Default).
+  outputLang: z.enum(['de', 'en']).optional(),
 }).strict() // unbekannte Keys hart ablehnen (Datenkontrakt-Disziplin: kein usage_form etc.)
 export type AnalyzeBody = z.infer<typeof AnalyzeBodySchema>
 

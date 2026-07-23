@@ -12,6 +12,7 @@ import { computed, ref, toRef } from 'vue'
 import type { Severity } from '~/lib/severity'
 import type { DimensionStatus } from '~/types/analysis'
 import { useCountUp } from '~/composables/useCountUp'
+import { useReportT } from '~/composables/useReportT'
 
 interface HeroDim {
   key: 'physics' | 'semantics' | 'bias'
@@ -34,6 +35,9 @@ const props = defineProps<{
   readingModeLabel: string
   dims: HeroDim[]
 }>()
+
+// Statik in der eingefrorenen Report-Sprache (nicht UI-Locale).
+const { rt } = useReportT()
 
 const clampPct = (n: number) => Math.max(0, Math.min(100, n))
 const integrityDisplay = useCountUp(toRef(props, 'integrity'), { duration: 1100, delay: 200 })
@@ -83,18 +87,18 @@ const open = ref(false)
           </svg>
         </div>
 
-        <p class="la-eyebrow">Integrität</p>
+        <p class="la-eyebrow">{{ rt('report.common.integrity') }}</p>
         <div class="la-score__head">
           <span class="la-score__num">{{ integrityDisplay }}</span><span class="la-score__den">/ 100</span>
         </div>
         <div
           class="la-bar"
           role="meter"
-          aria-label="Integrität"
+          :aria-label="rt('report.common.integrity')"
           :aria-valuenow="clampPct(integrity)"
           aria-valuemin="0"
           aria-valuemax="100"
-          :aria-valuetext="`Integrität ${clampPct(integrity)} von 100`"
+          :aria-valuetext="rt('report.common.scoreOf100', { name: rt('report.common.integrity'), n: clampPct(integrity) })"
           :style="{ '--fill': `${clampPct(integrity)}%` }"
         >
           <span class="la-bar__fill" />
@@ -103,11 +107,11 @@ const open = ref(false)
         <div class="la-bar__ends" aria-hidden="true"><span>0</span><span>50</span><span>100</span></div>
         <div class="la-lines">
           <div class="la-line">
-            <span class="la-line__k">Ästhetik</span>
-            <span class="la-line__v">{{ aesthetic }} / 100<em class="la-line__note">kein Urteil</em></span>
+            <span class="la-line__k">{{ rt('report.common.aesthetic') }}</span>
+            <span class="la-line__v">{{ aesthetic }} / 100<em class="la-line__note">{{ rt('report.common.noVerdict') }}</em></span>
           </div>
           <div class="la-line">
-            <span class="la-line__k">Leseart</span>
+            <span class="la-line__k">{{ rt('report.common.readingMode') }}</span>
             <span class="la-line__v">{{ readingModeLabel }}</span>
           </div>
         </div>
@@ -124,8 +128,8 @@ const open = ref(false)
         @click="open = !open"
       >
         <span class="la-tab__label">
-          <span class="la-tab__show">Dimensionen anzeigen</span>
-          <span class="la-tab__hide">Dimensionen ausblenden</span>
+          <span class="la-tab__show">{{ rt('report.verdikt.showDims') }}</span>
+          <span class="la-tab__hide">{{ rt('report.verdikt.hideDims') }}</span>
         </span>
         <span class="la-tab__preview" aria-hidden="true">
           <span v-for="d in dims" :key="d.key" class="la-tab__chip" :class="`tint-${d.severity}`">
@@ -149,7 +153,7 @@ const open = ref(false)
       </button>
 
       <div id="la-dimwrap" class="la-dimwrap" :class="{ 'is-collapsed': !open }" :inert="!open">
-        <div class="la-dimgrid" aria-label="Dimensionen auf einen Blick">
+        <div class="la-dimgrid" :aria-label="rt('report.verdikt.dimsAria')">
           <div v-for="(d, i) in dims" :key="d.key" class="la-dim" :class="`tint-${d.severity}`">
             <p class="la-dim__name">{{ d.name }}</p>
             <p class="la-dim__desc">{{ d.desc }}</p>
@@ -165,7 +169,7 @@ const open = ref(false)
               :aria-valuenow="clampPct(d.score)"
               aria-valuemin="0"
               aria-valuemax="100"
-              :aria-valuetext="`${d.name} ${clampPct(d.score)} von 100`"
+              :aria-valuetext="rt('report.common.scoreOf100', { name: d.name, n: clampPct(d.score) })"
               :style="{ '--fill': `${clampPct(d.score)}%` }"
             >
               <span class="la-dim__gauge-fill" />

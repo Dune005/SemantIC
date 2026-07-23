@@ -1,22 +1,9 @@
 // Deterministische F2-Logik des Bild-Overlays (Diagnose-Cockpit, Etappe 3).
-// Pur und framework-frei gehalten, damit sie ausserhalb von Vue unit-testbar ist
-// (alle Typ-Importe sind `import type` → vom Bundler/tsx zur Laufzeit entfernt).
-import type { EvidenceSpot, InspectorSpot, VisualDriverCode } from '~/types/analysis'
-
-// Statische Labels der visuellen Treiber (Research-Vokabular, vgl. Projekt-CLAUDE.md
-// und research_layer.visual_drivers). Ein Maskierungs-Spot trägt nur den Treiber-
-// Code; für Tooltip/Liste brauchen wir den ausgeschriebenen Namen.
-export const VISUAL_DRIVER_LABEL: Record<VisualDriverCode, string> = {
-  CL: 'Cinematic Lighting',
-  BK: 'Bokeh / geringe Tiefenschärfe',
-  WCG: 'Warmes Color Grading',
-  HDT: 'Hyper-Detail-Textur',
-  MO: 'Makellose Oberflächen',
-  GF: 'Gesättigte Farben',
-  DS: 'Dynamische Spiegelungen',
-  NL: 'Natürliches Licht',
-  MH: 'Maximale Helligkeit',
-}
+// Pur und framework-frei gehalten, damit sie ausserhalb von Vue unit-testbar ist.
+// Treiber-Labels kommen seit feature/output-language aus @pipeline/vocab
+// (EINZIGE Label-Quelle, DE/EN) – keine eigene Label-Map mehr in dieser Datei.
+import type { EvidenceSpot, InspectorSpot } from '~/types/analysis'
+import { visualDriverLabel, type OutputLang } from '@pipeline/vocab'
 
 // Box-Guard – spiegelt src/analyze.ts:isValidBox: genau 4 ganzzahlige Werte in
 // [0,1000] mit y_min < y_max und x_min < x_max. Schützt das Overlay vor
@@ -43,7 +30,8 @@ export function qualifiesAsBox(spot: EvidenceSpot): boolean {
 
 // Reichert die rohen evidenceSpots um Render-/F2-Metadaten an. Wird im Root
 // (DiagnoseCockpit) projiziert; der Bild-Inspektor konsumiert nur das Ergebnis.
-export function buildInspectorSpots(spots: EvidenceSpot[]): InspectorSpot[] {
+// `lang` = eingefrorene Report-Sprache (vm.reportLang) fuer das Treiber-Label.
+export function buildInspectorSpots(spots: EvidenceSpot[], lang: OutputLang = 'de'): InspectorSpot[] {
   return spots.map((s) => ({
     id: s.id,
     source: s.source,
@@ -51,6 +39,6 @@ export function buildInspectorSpots(spots: EvidenceSpot[]): InspectorSpot[] {
     text: s.text,
     layer: s.source === 'masking' ? 'mask' : 'finding',
     qualifiesAsBox: qualifiesAsBox(s),
-    driverLabel: s.source === 'masking' ? VISUAL_DRIVER_LABEL[s.driver] : null,
+    driverLabel: s.source === 'masking' ? visualDriverLabel(s.driver, lang) : null,
   }))
 }

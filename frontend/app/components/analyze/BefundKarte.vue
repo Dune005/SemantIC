@@ -27,6 +27,7 @@ import {
   NORMATIVE_ASPECT_LABELS,
   RISK_LEVEL_LABEL,
 } from '~/lib/severity'
+import { useReportT } from '~/composables/useReportT'
 import type { AnalysisViewModel, UsageForm } from '~/types/analysis'
 
 const props = withDefaults(
@@ -43,6 +44,9 @@ const props = withDefaults(
 
 const open = reactive({ deep: false })
 
+// Statik in der eingefrorenen Report-Sprache (vm.reportLang via analyze.vue-provide).
+const { rt, rtp, reportLang } = useReportT()
+
 const status = computed(() => props.vm.overallVerdict.status)
 const statusSeverity = computed(() => STATUS_TO_SEVERITY[status.value])
 
@@ -58,8 +62,8 @@ const dimMarkers = computed(() =>
 const dims = computed(() =>
   (['physics', 'semantics', 'bias'] as const).map((d) => ({
     key: d,
-    label: DIMENSION_LABELS[d],
-    desc: DIMENSION_DESC[d],
+    label: DIMENSION_LABELS[d][reportLang.value],
+    desc: DIMENSION_DESC[d][reportLang.value],
     score: props.vm.dimensions[d].score,
     status: props.vm.dimensions[d].status,
     sev: STATUS_TO_SEVERITY[props.vm.dimensions[d].status],
@@ -107,7 +111,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <article class="combo-card" aria-label="Analyse-Ergebnis">
+  <article class="combo-card" :aria-label="rt('report.befundKarte.cardAria')">
     <!-- Top-Strip: Identifier + Severity-Echo der drei Dimensionen -->
     <div class="strip">
       <span>{{ sampleId ?? 'SEMANTIC' }}</span>
@@ -120,22 +124,22 @@ onBeforeUnmount(() => {
     <div class="verdict-display">
       <div class="verdict-label">
         <span class="status-dot" :class="SEV_DOT[statusSeverity]" aria-hidden="true" />
-        Gesamturteil
+        {{ rt('report.befundKarte.verdictLabel') }}
       </div>
       <h2 class="head">{{ headlineMain }}<span v-if="headlineHasDot" class="accent">.</span></h2>
       <span class="status-word" :class="STATUS_BG[statusSeverity]">
-        <span aria-hidden="true">●</span> Status: {{ STATUS_WORD[status] }}
+        <span aria-hidden="true">●</span> {{ rt('report.common.statusWord', { word: STATUS_WORD[status][reportLang] }) }}
       </span>
     </div>
 
     <!-- Block 2 · Diagnose auf einen Blick: Bild + Score + Dimensionen -->
     <div class="diag">
-      <div class="block-head">Diagnose auf einen Blick</div>
+      <div class="block-head">{{ rt('report.befundKarte.blockDiag') }}</div>
       <div class="body">
         <div class="imgwrap">
           <div class="img">
-            <img v-if="imageUrl" :src="imageUrl" alt="Geprüftes Bild" class="abs-img" />
-            <div v-else class="ph"><span>Bild · {{ imageAspect }}</span></div>
+            <img v-if="imageUrl" :src="imageUrl" :alt="rt('report.print.imageAlt')" class="abs-img" />
+            <div v-else class="ph"><span>{{ rt('report.befundKarte.imagePlaceholder', { aspect: imageAspect }) }}</span></div>
           </div>
         </div>
         <div class="data" :class="`tint-${statusSeverity}`">
@@ -146,13 +150,13 @@ onBeforeUnmount(() => {
             <span class="hero" aria-hidden="true">{{ displayScore }}</span>
             <span class="hero-den" aria-hidden="true">/ 100</span>
             <!-- Urteil farbig (separates Status-Element) -->
-            <span class="hero-status" :class="STATUS_BG[statusSeverity]">{{ STATUS_WORD[status] }}</span>
+            <span class="hero-status" :class="STATUS_BG[statusSeverity]">{{ STATUS_WORD[status][reportLang] }}</span>
           </div>
           <ScoreBar
             variant="meter"
             :tone="statusSeverity"
             :value="vm.integrityScore"
-            :ariaLabel="`Integritätsscore ${vm.integrityScore} von 100. Das Gesamturteil wird unabhängig vom Score bestimmt.`"
+            :ariaLabel="rt('report.befundKarte.scoreBarAria', { n: vm.integrityScore })"
           />
           <div class="lines">
             <div class="l">
@@ -166,7 +170,7 @@ onBeforeUnmount(() => {
           </div>
         </div>
       </div>
-      <ul class="dims" aria-label="Die drei Dimensionen">
+      <ul class="dims" :aria-label="rt('report.befundKarte.dimsAria')">
         <li v-for="d in dims" :key="d.key" class="d" :class="`tint-${d.sev}`">
           <DimBadge :label="d.label" :desc="d.desc" :score="d.score" :status="d.status" />
         </li>
@@ -175,26 +179,28 @@ onBeforeUnmount(() => {
            Hinweise RECHTS daneben – asymmetrisch, spart Blockhöhe (Codex + Nutzer). Mobil
            gestapelt. Bewusst „Verortung/Tendenz", KEINE Maskierungs-Messzahl. -->
       <div class="locate">
-        <p class="locate__cap">Verortung dieser Analyse – Tendenz, keine geeichte Messung.</p>
+        <p class="locate__cap">{{ rt('report.befundKarte.locateCap') }}</p>
         <div class="locate__row">
           <div class="locate__quad">
             <MaskingQuadrant
               :aesthetic="vm.aestheticCombined"
               :integrity="vm.integrityScore"
-              point-label="Dieses Bild"
+              :point-label="rt('report.befundKarte.pointLabel')"
+              :x-axis-label="rt('report.entscheidung.xAxisLabel')"
+              :y-axis-label="rt('report.entscheidung.yAxisLabel')"
               variant="compact"
             />
           </div>
           <div class="locate__notes">
-            <p class="locate__note">
-              Der Score ist ein <strong>Messwert</strong> – das Gesamturteil berücksichtigt
-              zusätzlich Kontext und Risiken. Ein hoher Score bedeutet daher nicht automatisch
-              „unkritisch".
-            </p>
+            <!-- i18n-t: der <strong>-Teil („Messwert") sitzt mitten im Satz → Slot-Interpolation
+                 in der festen Report-Locale (kein v-html). -->
+            <i18n-t keypath="report.befundKarte.scoreNote" tag="p" class="locate__note" :locale="reportLang" scope="global">
+              <template #measure><strong>{{ rt('report.befundKarte.scoreNoteMeasure') }}</strong></template>
+            </i18n-t>
             <!-- Maskierungs-Hinweis nur, wenn die Pipeline validierte Treiber↔Befund-
                  Verknüpfungen markiert hat. -->
             <p v-if="vm.maskingReviewNote" class="locate__note">
-              <strong>Maskierungs-Hinweis:</strong> {{ vm.maskingReviewNote.text }}
+              <strong>{{ rt('report.befundKarte.maskingHintLabel') }}</strong> {{ vm.maskingReviewNote.text }}
             </p>
           </div>
         </div>
@@ -203,7 +209,7 @@ onBeforeUnmount(() => {
 
     <!-- Block 3 · Was jetzt zu tun ist (Empfehlung + flache Bedingungen) -->
     <div class="recommendation">
-      <div class="block-head">Was jetzt zu tun ist</div>
+      <div class="block-head">{{ rt('report.befundKarte.blockTodo') }}</div>
       <p class="rec-text">{{ vm.overallVerdict.recommendation }}</p>
       <div v-if="hasNotes" class="notes">
         <NoteBlock :content="vm.intentRecommendationNote" type="intent" flat />
@@ -213,38 +219,37 @@ onBeforeUnmount(() => {
 
     <!-- Block 4 · Warum dieses Urteil? (Befunde + eine Vertiefung) -->
     <div class="why">
-      <div class="block-head">Warum dieses Urteil?</div>
+      <div class="block-head">{{ rt('report.befundKarte.blockWhy') }}</div>
       <ul v-if="vm.userHints.length" class="hint-list">
         <HintItem v-for="(h, i) in vm.userHints" :key="i" :hint="h" />
       </ul>
       <!-- F2-Transparenz: grün = «nichts gefunden», nicht «fehlerfrei» (validierte
            Grenze, s. how-it-works «Validierte Grenzen»). -->
       <p v-else class="no-finding">
-        Keine spezifischen Auffälligkeiten – das Tool hat nichts gefunden. Das heisst
-        „nichts gefunden", nicht „fehlerfrei": Deine eigene Sichtprüfung ersetzt es nicht.
+        {{ rt('report.befundKarte.noFinding') }}
       </p>
     </div>
     <div class="disclosure-wrap">
-      <Disclosure v-model:open="open.deep" title="Analyse vertiefen">
+      <Disclosure v-model:open="open.deep" :title="rt('report.befundKarte.deepen')">
         <div class="deep">
-          <p class="deep-label">Normative Bildwirkung</p>
+          <p class="deep-label">{{ rt('report.befundKarte.normativeLabel') }}</p>
           <template v-if="vm.normativeMasking.verdict !== 'not_applicable'">
             <p class="deep-text">
-              Idealisierende Norm: {{ NORMATIVE_VERDICT_LABELS[vm.normativeMasking.verdict] }}.
+              {{ rt('report.befundKarte.idealizingNorm', { level: NORMATIVE_VERDICT_LABELS[vm.normativeMasking.verdict][reportLang] }) }}
               <template v-if="vm.normativeMasking.reasoning"> {{ vm.normativeMasking.reasoning }}</template>
             </p>
             <div v-if="vm.normativeMasking.aspects.length" class="deep-chips">
-              <Chip v-for="a in vm.normativeMasking.aspects" :key="a" :label="NORMATIVE_ASPECT_LABELS[a]" />
+              <Chip v-for="a in vm.normativeMasking.aspects" :key="a" :label="NORMATIVE_ASPECT_LABELS[a][reportLang]" />
             </div>
             <p v-if="vm.normativeMaskingNote" class="deep-text">{{ vm.normativeMaskingNote }}</p>
           </template>
-          <p v-else class="deep-text">Keine normative Bildwirkung erkannt – für dieses Bild nicht einschlägig.</p>
+          <p v-else class="deep-text">{{ rt('report.befundKarte.noNormative') }}</p>
 
           <template v-if="vm.biasAxesDetails.length">
-            <p class="deep-label">Bias-Achsen</p>
+            <p class="deep-label">{{ rt('report.common.biasAxes') }}</p>
             <p class="deep-text">
-              {{ vm.biasAxesSummary.count }} {{ vm.biasAxesSummary.count === 1 ? 'Achse' : 'Achsen' }} erkannt
-              · maximales Risiko: {{ RISK_LEVEL_LABEL[vm.biasAxesSummary.maxRisk] }}.
+              {{ rtp('report.common.axesDetected', vm.biasAxesSummary.count) }}
+              · {{ rt('report.common.maxRisk', { level: RISK_LEVEL_LABEL[vm.biasAxesSummary.maxRisk][reportLang] }) }}.
             </p>
             <!-- F3 (1.8): pro Achse Beobachtung (deskriptiv) vs. Lesart (interpretativ)
                  sichtbar getrennt; nicht-stützende Evidenz wird abgesetzt (kein Box-Aktivismus). -->
@@ -252,7 +257,7 @@ onBeforeUnmount(() => {
               <li v-for="ax in vm.biasAxesDetails" :key="ax.axisId" class="axis">
                 <p class="axis__head">
                   <span class="axis__name">{{ ax.label }}</span>
-                  <span class="axis__risk">Risiko {{ RISK_LEVEL_LABEL[ax.riskLevel] }}</span>
+                  <span class="axis__risk">{{ rt('report.common.risk', { level: RISK_LEVEL_LABEL[ax.riskLevel][reportLang] }) }}</span>
                 </p>
                 <ul class="ev-list">
                   <li
@@ -262,13 +267,13 @@ onBeforeUnmount(() => {
                     :class="{ 'ev--nonbias': !e.supportsBiasFinding }"
                   >
                     <p class="ev__row">
-                      <span class="ev__tag ev__tag--obs">Beobachtung</span>{{ e.observation }}
+                      <span class="ev__tag ev__tag--obs">{{ rt('report.common.observation') }}</span>{{ e.observation }}
                     </p>
                     <p class="ev__row">
-                      <span class="ev__tag ev__tag--int">Lesart</span>{{ e.interpretation }}
+                      <span class="ev__tag ev__tag--int">{{ rt('report.common.reading') }}</span>{{ e.interpretation }}
                     </p>
                     <p v-if="!e.supportsBiasFinding" class="ev__note">
-                      Beschreibung – stützt keinen Bias-Befund.
+                      {{ rt('report.befundKarte.descriptionNoBias') }}
                     </p>
                   </li>
                 </ul>
@@ -276,19 +281,19 @@ onBeforeUnmount(() => {
             </ul>
           </template>
 
-          <p class="deep-label">Leseart</p>
-          <p class="deep-text">{{ READING_MODE_DESC[vm.readingMode.code] }}</p>
+          <p class="deep-label">{{ rt('report.common.readingMode') }}</p>
+          <p class="deep-text">{{ READING_MODE_DESC[vm.readingMode.code][reportLang] }}</p>
           <p v-if="vm.readingModeMaskingLogic" class="deep-text">
-            <span class="ev__tag ev__tag--int">Maskierungs-Logik</span>{{ vm.readingModeMaskingLogic }}
+            <span class="ev__tag ev__tag--int">{{ rt('report.befundKarte.maskingLogicTag') }}</span>{{ vm.readingModeMaskingLogic }}
           </p>
 
           <!-- Die Stellen hinter dem Maskierungs-Hinweis – «prüfbarer Hinweis»
                heisst: hier steht, WO und WAS am Bild nachgeschaut werden kann. -->
           <template v-if="vm.maskingMarkedSpots.length">
-            <p class="deep-label">Markierte Stellen (Maskierungs-Hinweis)</p>
+            <p class="deep-label">{{ rt('report.befundKarte.markedSpots') }}</p>
             <ul class="spot-list">
               <li v-for="(s, i) in vm.maskingMarkedSpots" :key="`spot-${i}`" class="deep-text">
-                <strong>{{ s.driverLabel }}</strong> könnte den {{ s.area }}-Befund überdecken: {{ s.text }}
+                <strong>{{ s.driverLabel }}</strong> {{ rt('report.befundKarte.maskingSpotCover', { area: s.area }) }} {{ s.text }}
               </li>
             </ul>
           </template>
@@ -296,7 +301,7 @@ onBeforeUnmount(() => {
           <!-- F5: Befunde unterhalb der Sichtbarkeits-Schwelle – ein Klick entfernt
                statt unsichtbar (Print zeigte sie schon immer). -->
           <template v-if="vm.hiddenHints.length">
-            <p class="deep-label">Weitere Befunde</p>
+            <p class="deep-label">{{ rt('report.befundKarte.moreFindings') }}</p>
             <ul class="hint-list">
               <HintItem v-for="(h, i) in vm.hiddenHints" :key="`hidden-${i}`" :hint="h" />
             </ul>
@@ -306,7 +311,7 @@ onBeforeUnmount(() => {
     </div>
 
     <div class="card-footnote">
-      Diese Befunde sind Hinweise, kein abschliessendes Urteil. Das letzte Urteil bleibt bei dir.
+      {{ rt('report.befundKarte.footnote') }}
     </div>
   </article>
 </template>

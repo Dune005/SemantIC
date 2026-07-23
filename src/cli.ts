@@ -17,10 +17,11 @@ const imagePath = args[0]
 
 if (!imagePath || imagePath.startsWith('--')) {
   console.error([
-    'Usage: npm run spike -- <bildpfad> [--prompt "..."] [--context "..."] [--intent affirmative|critical|illustrative|unspecified] [--model "<provider:model>"] [--aesthetic-model "<provider:model>"] [--lang de|en] [--temperature 0.1] [--thinking-level medium] [--media-resolution high]',
+    'Usage: npm run spike -- <bildpfad> [--prompt "..."] [--context "..."] [--intent affirmative|critical|illustrative|unspecified] [--model "<provider:model>"] [--aesthetic-model "<provider:model>"] [--lang de|en] [--output-lang de|en] [--temperature 0.1] [--thinking-level medium] [--media-resolution high]',
     '',
     'Hinweis: --model steuert NUR den Analyse-Call. Der Aesthetik-Call laeuft per Default gegen anthropic:claude-sonnet-5 (feinere Aesthetik-Differenzierung); --aesthetic-model ueberschreibt nur diesen Call (z.B. anthropic:claude-sonnet-4-6).',
-    '         --lang waehlt die Analyse-Prompt-Sprache. Default ist "en" (R4.1.2: Englischer Prompt liefert stabilere Detection mit Gemini). Output-Texte bleiben Deutsch.',
+    '         --lang waehlt die Analyse-Prompt-Sprache. Default ist "en" (R4.1.2: Englischer Prompt liefert stabilere Detection mit Gemini).',
+    '         --output-lang waehlt die Sprache der Report-Freitexte (Findings, Reasonings, Hinweise). Default ist "de".',
     '         --intent setzt die erklaerte redaktionelle Haltung (Default: "unspecified"). Beeinflusst nur die Empfehlungs-Rahmung, nicht die Codebook-Flags oder den Verdict-Status.',
     '         --thinking-level und --media-resolution sind Gemini-spezifisch und greifen nur, wenn der Analyse-Call gegen Gemini laeuft.',
   ].join('\n'))
@@ -48,6 +49,11 @@ if (langIdx !== -1) {
     process.exit(1)
   }
   lang = langValue
+}
+const outputLangRaw = getFlag(args, '--output-lang')
+if (outputLangRaw !== undefined && outputLangRaw !== 'de' && outputLangRaw !== 'en') {
+  console.error('--output-lang muss "de" oder "en" sein.')
+  process.exit(1)
 }
 
 const allowedThinkingLevels = ['minimal', 'low', 'medium', 'high'] as const
@@ -117,7 +123,8 @@ const result = await runSemanticAnalysis(imageBase64, {
   ...(temperature !== undefined ? { temperature } : {}),
   ...(thinkingLevel !== undefined ? { thinkingLevel: thinkingLevel as SemanticAnalysisOptions['thinkingLevel'] } : {}),
   ...(mediaResolutionRaw !== undefined ? { mediaResolution: mediaResolutionMap[mediaResolutionRaw as keyof typeof mediaResolutionMap] } : {}),
-  ...(lang !== undefined ? { lang: lang as 'de' | 'en' } : {}),
+  ...(lang !== undefined ? { promptLang: lang as 'de' | 'en' } : {}),
+  ...(outputLangRaw !== undefined ? { outputLang: outputLangRaw as 'de' | 'en' } : {}),
 })
 
 fs.mkdirSync('spike-test/output', { recursive: true })

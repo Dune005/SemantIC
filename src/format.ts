@@ -1,4 +1,5 @@
 import type { SemanticAnalysisResult } from './analyze.js'
+import { readingModeLabel } from './vocab.js'
 
 export function formatResult(result: SemanticAnalysisResult): string {
   const { analysis, aesthetic, computed, meta } = result
@@ -115,7 +116,9 @@ export function formatResult(result: SemanticAnalysisResult): string {
 
   const drivers = rl.visual_drivers.length > 0 ? rl.visual_drivers.join(', ') : '–'
   lines.push('Research Layer')
-  lines.push(`  Leseart:              ${rl.reading_mode} – ${rl.reading_mode_label}`)
+  // Vocab-Label folgt der Ausgabesprache des Laufs; der übrige CLI-Rahmen
+  // bleibt bewusst deutsch (Dev-Werkzeug, analog aesthetic_reasoning).
+  lines.push(`  Leseart:              ${rl.reading_mode} – ${readingModeLabel(rl.reading_mode, meta.output_lang)}`)
   lines.push(`  Visuelle Treiber:     ${drivers}`)
   lines.push(`  Fehlertyp (LLM):     ${rl.dominant_error_type}`)
   lines.push('')

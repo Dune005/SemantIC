@@ -33,7 +33,6 @@ import {
   STATUS_WORD,
   DIMENSION_LABELS,
   DIMENSION_DESC,
-  READING_MODE_DESC,
   INPUT_COMPLETENESS_LABELS,
   NORMATIVE_ASPECT_LABELS,
   HINT_SEVERITY_TO_SEVERITY,
@@ -42,6 +41,7 @@ import {
   USAGE_FORM_LABELS,
   RISK_LEVEL_LABEL,
 } from '~/lib/severity'
+import { useReportT } from '~/composables/useReportT'
 import type {
   AnalysisViewModel,
   UsageForm,
@@ -67,6 +67,10 @@ const vm = computed(() => props.viewModel)
 const status = computed(() => vm.value.overallVerdict.status)
 const statusSeverity = computed(() => STATUS_TO_SEVERITY[status.value])
 
+// Statik in der eingefrorenen Report-Sprache (vm.reportLang via analyze.vue-provide),
+// nicht in der reaktiven UI-Locale – ein Sprachwechsel mischt das PDF nicht.
+const { rt, rtp, reportLang } = useReportT()
+
 // Hero: heroScore ist kontraktlich number; Fallback auf integrityScore (Variante A).
 // Kein eigenes Severity-Wort am Score (wie am Screen) – das Urteil trägt der Status.
 const hero = computed(() => props.heroScore ?? vm.value.integrityScore)
@@ -74,9 +78,11 @@ const clampPct = (n: number) => Math.max(0, Math.min(100, n))
 const readingModeLabel = computed(() => `${vm.value.readingMode.label} (${vm.value.readingMode.code})`)
 
 // Eingabe-Zusammenfassung – Labels aus dem eingefrorenen Submit-State.
-const intentLabel = computed(() => INTENT_LABELS[vm.value.intentAssessment.declaredIntent])
+const intentLabel = computed(() => INTENT_LABELS[vm.value.intentAssessment.declaredIntent][reportLang.value])
 const usageFormLabel = computed(() =>
-  props.submittedUsageForm ? USAGE_FORM_LABELS[props.submittedUsageForm] : 'nicht angegeben',
+  props.submittedUsageForm
+    ? USAGE_FORM_LABELS[props.submittedUsageForm][reportLang.value]
+    : rt('report.common.notProvided'),
 )
 
 // Dimensionen: Farbe/Severity STATUSGETRIEBEN (wie DiagnoseCockpit), der Score
@@ -84,13 +90,14 @@ const usageFormLabel = computed(() =>
 const dims = computed(() =>
   (['physics', 'semantics', 'bias'] as const).map((d) => {
     const dim = vm.value.dimensions[d]
+    const lang = reportLang.value
     return {
       key: d,
-      label: DIMENSION_LABELS[d],
-      desc: DIMENSION_DESC[d],
+      label: DIMENSION_LABELS[d][lang],
+      desc: DIMENSION_DESC[d][lang],
       score: dim.score,
       severity: STATUS_TO_SEVERITY[dim.status],
-      statusWord: STATUS_WORD[dim.status],
+      statusWord: STATUS_WORD[dim.status][lang],
     }
   }),
 )
@@ -100,13 +107,7 @@ const headlineMain = computed(() => vm.value.overallVerdict.headline.replace(/\.
 const headlineHasDot = computed(() => vm.value.overallVerdict.headline.endsWith('.'))
 
 // ── Lokalisierte Bildbefunde: F2-Projektion wie der Bild-Inspektor ────────────
-const SPOT_SOURCE_LABEL: Record<InspectorSpot['source'], string> = {
-  physics: 'Physik',
-  anatomy: 'Anatomie',
-  context: 'Kontext',
-  masking: 'Maskierung',
-}
-const allSpots = computed(() => buildInspectorSpots(vm.value.evidenceSpots))
+const allSpots = computed(() => buildInspectorSpots(vm.value.evidenceSpots, vm.value.reportLang))
 // Bild-Overlay (Seite 1): nur sicher verortete Boxen (F2-Schwelle) werden gedruckt;
 // unsichere Spots erscheinen ausschliesslich in den Textlisten.
 const boxedSpots = computed(() => allSpots.value.filter((s) => s.qualifiesAsBox))
@@ -114,8 +115,11 @@ const codebookSpots = computed(() => allSpots.value.filter((s) => s.source !== '
 const maskingSpots = computed(() => allSpots.value.filter((s) => s.source === 'masking'))
 
 function spotSourceLabel(s: InspectorSpot): string {
-  if (s.source === 'masking') return s.driverLabel ? `Maskierung · ${s.driverLabel}` : 'Maskierung'
-  return SPOT_SOURCE_LABEL[s.source]
+  if (s.source === 'masking') {
+    const masking = rt('report.spotSource.masking')
+    return s.driverLabel ? `${masking} · ${s.driverLabel}` : masking
+  }
+  return rt(`report.spotSource.${s.source}`)
 }
 // Box [y_min, x_min, y_max, x_max], normiert 0–1000 → %-Position auf dem Bild.
 // Das Overlay liegt auf einem shrink-wrap-Wrapper (Wrapper = Bildfläche, kein
@@ -145,18 +149,8 @@ const normText = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim()
 
 // Kategorie-Tag pro Topic – ersetzt den generischen Hint-Satz als Kopfzeile,
 // sobald konkrete Belege (Spots/Findings) den Inhalt tragen (Straffung 2026-07-17).
-const TOPIC_TAG: Record<ConsolidatedHint['topic'], string> = {
-  physics: 'Physik · Licht/Schatten/Material',
-  anatomy: 'Anatomie · Hände/Gesicht/Proportionen',
-  context_logic: 'Szenenlogik',
-  role_stereotype: 'Bias · Rollen',
-  body_stereotype: 'Bias · Körper',
-  gender_bias: 'Bias · Geschlecht',
-  masking: 'Maskierung',
-  style_mismatch: 'Bildstil',
-  hallucination: 'Halluzination',
-  bias_combined: 'Bias',
-}
+// Texte: report.print.topicTag.* (feste Report-Sprache).
+const topicTag = (topic: ConsolidatedHint['topic']): string => rt(`report.print.topicTag.${topic}`)
 
 // Prüffragen den Befunden zuordnen – über die vorhandenen rule:<id>-Signale
 // (Codex-Review: NICHT über Reihenfolge oder Textähnlichkeit). Nicht zuordenbare
@@ -175,13 +169,13 @@ function ruleQuestionFor(h: ConsolidatedHint): { id: string; question: string } 
 function groupText(h: ConsolidatedHint, evidenceCount: number): string | null {
   if (evidenceCount > 0) return null
   if (h.topic === 'hallucination') {
-    return 'Halluzinationshinweis erkannt, aber nicht sicher lokalisiert – gegen Prompt und Bildinhalt prüfen.'
+    return rt('report.print.groupText.hallucination')
   }
   if (h.topic === 'bias_combined' && vm.value.biasAxesDetails.length > 0) {
-    return 'Mehrere Bias-Indikatoren erkannt – Details unter «Bias-Achsen».'
+    return rt('report.print.groupText.biasCombined')
   }
   if (h.topic === 'masking' && hasFactualMasking.value) {
-    return 'Maskierungs-Hinweis erkannt – Details unter «Maskierung & Bildwirkung».'
+    return rt('report.print.groupText.masking')
   }
   return h.text
 }
@@ -203,7 +197,7 @@ const findingGroups = computed(() => {
       hint: h,
       spots,
       findings,
-      tag: TOPIC_TAG[h.topic],
+      tag: topicTag(h.topic),
       text: groupText(h, spots.length + findings.length),
       question: rule?.question ?? null,
     }
@@ -235,9 +229,9 @@ const hasBiasAxes = computed(
 )
 const notReported = computed(() => {
   const parts: string[] = []
-  if (!hasFactualMasking.value) parts.push('keine faktische Maskierungsevidenz')
-  if (!hasNormative.value) parts.push('normative Bildwirkung nicht einschlägig')
-  if (!hasBiasAxes.value) parts.push('keine Bias-Achsen abgeleitet')
+  if (!hasFactualMasking.value) parts.push(rt('report.print.notReportedItems.noFactualMasking'))
+  if (!hasNormative.value) parts.push(rt('report.print.notReportedItems.noNormative'))
+  if (!hasBiasAxes.value) parts.push(rt('report.print.notReportedItems.noBiasAxes'))
   return parts
 })
 
@@ -246,41 +240,25 @@ const notReported = computed(() => {
 // und die NORMATIVE_*-Notes waren für Nicht-Fachpublikum unverständlich
 // (Nutzer-Feedback 2026-07-17). Gleiche Datenlage, klarere Sprache; die
 // Intent-Differenzierung der high-Notes bleibt erhalten.
-const NORMATIVE_DEGREE_WORD: Record<string, string> = {
-  low: 'kaum',
-  medium: 'erkennbar',
-  high: 'stark',
-}
+// Texte: report.print.normative* (feste Report-Sprache).
+const NORMATIVE_DEGREES = new Set(['low', 'medium', 'high'])
 const normativeSentence = computed(() => {
-  const word = NORMATIVE_DEGREE_WORD[vm.value.normativeMasking.verdict]
-  return word ? `Das Bild idealisiert die gezeigte Szene ${word}.` : null
+  const v = vm.value.normativeMasking.verdict
+  if (!NORMATIVE_DEGREES.has(v)) return null
+  return rt('report.print.normativeSentence', { degree: rt(`report.print.normativeDegree.${v}`) })
 })
-const PRINT_NORMATIVE_HIGH_NOTES: Record<string, string> = {
-  affirmative:
-    'Die idealisierte Darstellung im Begleittext offen benennen – sie ist kein automatischer Ausschlussgrund.',
-  critical:
-    'Die Idealisierung ist hier genau der Punkt der Kritik – im Begleittext ausdrücklich benennen.',
-  illustrative:
-    'Als neutrales Beispielbild ungeeignet – im Begleittext benennen, dass die Darstellung idealisiert ist.',
-  unspecified:
-    'Vor der Verwendung prüfen, ob die idealisierte Darstellung zum Einsatz passt.',
-}
 const printNormativeNote = computed(() => {
   if (!vm.value.normativeMaskingNote) return null
   const v = vm.value.normativeMasking.verdict
-  if (v === 'high') return PRINT_NORMATIVE_HIGH_NOTES[vm.value.intentAssessment.declaredIntent] ?? null
-  if (v === 'medium') {
-    return 'Beim Veröffentlichen im Begleittext einordnen, dass die Darstellung idealisiert ist.'
-  }
+  if (v === 'high') return rt(`report.print.normativeHighNote.${vm.value.intentAssessment.declaredIntent}`)
+  if (v === 'medium') return rt('report.print.normativeMediumNote')
   return null
 })
 
-// Leseart: EINE Maskierungs-Logik-Zeile (keine Dopplung mit READING_MODE_DESC –
-// die statische Beschreibung ist Fallback für Alt-JSON ohne Logik-Feld oder
-// Leerstring; das Schema garantiert keinen nicht-leeren Text).
-const readingModeLogic = computed(
-  () => vm.value.readingModeMaskingLogic?.trim() || READING_MODE_DESC[vm.value.readingMode.code],
-)
+// Leseart: EINE Maskierungs-Logik-Zeile. Seit @pipeline/vocab liefert das
+// ViewModel immer einen nicht-leeren vocab-String – defensiver Leerstring genügt
+// (kein READING_MODE_DESC-Fallback mehr).
+const readingModeLogic = computed(() => vm.value.readingModeMaskingLogic?.trim() ?? '')
 </script>
 
 <template>
@@ -290,14 +268,13 @@ const readingModeLogic = computed(
       <!-- Dokument-Kopf -->
       <header class="print-head">
         <div class="print-head__row">
-          <h1 class="print-doc-title">SemantIC – Prüfbefund</h1>
-          <p class="print-date">Geprüft am {{ generatedAt }}</p>
+          <h1 class="print-doc-title">{{ rt('report.print.docTitle') }}</h1>
+          <p class="print-date">{{ rt('report.print.checkedOn', { date: generatedAt }) }}</p>
         </div>
         <!-- Einziger genereller Disclaimer des Dokuments (Codex-Review: gehört auf
              Seite 1, weil diese am ehesten allein weitergegeben wird). -->
         <p class="print-disclaimer">
-          KI-gestützte Diagnose, kein Echtheits- oder Herkunftsnachweis. Befunde sind begründete
-          Hinweise, keine Beweise – vor der Publikation redaktionell prüfen.
+          {{ rt('report.print.disclaimer') }}
         </p>
       </header>
 
@@ -306,13 +283,13 @@ const readingModeLogic = computed(
         <div class="pv-verdict">
           <span class="pv-status">
             <span class="pv-status__dot" :class="`bg-${statusSeverity}`" aria-hidden="true" />
-            Status: {{ STATUS_WORD[status] }}
+            {{ rt('report.common.statusWord', { word: STATUS_WORD[status][reportLang] }) }}
           </span>
           <p class="pv-headline">{{ headlineMain }}<span v-if="headlineHasDot" class="accent">.</span></p>
           <p class="pv-rec">{{ vm.overallVerdict.recommendation }}</p>
         </div>
         <div class="pv-score">
-          <p class="pv-eyebrow">Integrität</p>
+          <p class="pv-eyebrow">{{ rt('report.common.integrity') }}</p>
           <div class="pv-score__head">
             <span class="pv-score__num">{{ hero }}</span><span class="pv-score__den">/ 100</span>
           </div>
@@ -323,11 +300,11 @@ const readingModeLogic = computed(
           <div class="pv-bar__ends" aria-hidden="true"><span>0</span><span>50</span><span>100</span></div>
           <div class="pv-lines">
             <div class="pv-line">
-              <span class="pv-line__k">Ästhetik</span>
-              <span class="pv-line__v">{{ vm.aestheticCombined }} / 100<em class="pv-line__note">kein Urteil</em></span>
+              <span class="pv-line__k">{{ rt('report.common.aesthetic') }}</span>
+              <span class="pv-line__v">{{ vm.aestheticCombined }} / 100<em class="pv-line__note">{{ rt('report.common.noVerdict') }}</em></span>
             </div>
             <div class="pv-line">
-              <span class="pv-line__k">Leseart</span>
+              <span class="pv-line__k">{{ rt('report.common.readingMode') }}</span>
               <!-- Nur das Kürzel – der volle Name folgt im Leseart-Block; das 240px-Panel
                    würde das Label sonst hässlich umbrechen (Codex-Review). -->
               <span class="pv-line__v">{{ vm.readingMode.code }}</span>
@@ -338,7 +315,7 @@ const readingModeLogic = computed(
 
       <!-- Dimensionen: statusgetriebene Dreierzeile mit Mini-Gauge -->
       <section class="print-block">
-        <h2 class="print-h2">Die drei Dimensionen</h2>
+        <h2 class="print-h2">{{ rt('report.print.dimensionsTitle') }}</h2>
         <div class="print-dims">
           <div v-for="d in dims" :key="d.key" class="print-dim">
             <div class="pd-name">{{ d.label }}</div>
@@ -357,11 +334,11 @@ const readingModeLogic = computed(
 
       <!-- Geprüfte Angaben: Bild mit Marker-Overlay + eingefrorener Submit-State -->
       <section class="print-block">
-        <h2 class="print-h2">Geprüfte Angaben</h2>
+        <h2 class="print-h2">{{ rt('report.print.checkedInputs') }}</h2>
         <div class="print-input-grid">
           <div class="print-figure">
             <div v-if="imageUrl" class="print-img-wrap">
-              <img :src="imageUrl" alt="Geprüftes Bild" />
+              <img :src="imageUrl" :alt="rt('report.print.imageAlt')" />
               <span
                 v-for="s in boxedSpots"
                 :key="s.id"
@@ -372,33 +349,33 @@ const readingModeLogic = computed(
                 <span class="print-spot-box__id">{{ s.id }}</span>
               </span>
             </div>
-            <p v-else class="print-img-missing">Bild nicht verfügbar</p>
+            <p v-else class="print-img-missing">{{ rt('report.print.imageMissing') }}</p>
             <p v-if="imageUrl && boxedSpots.length" class="print-figure-caption">
-              Markierte Stellen sind LLM-verortet und nicht pixelgenau.
+              {{ rt('report.print.figureCaption') }}
             </p>
           </div>
           <dl class="print-kv">
             <!-- Empfehlungs-Notes stehen HIER als «Einordnung» (algorithmische Rahmung
                  der Empfehlung, keine Nutzereingabe – Codex-Review), nicht mehr als
                  Banner unter dem Urteil. -->
-            <dt>Haltung</dt>
+            <dt>{{ rt('report.print.kv.intent') }}</dt>
             <dd>
               {{ intentLabel }}
-              <span v-if="vm.intentRecommendationNote" class="print-kv-note">Einordnung der Empfehlung: {{ vm.intentRecommendationNote }}</span>
+              <span v-if="vm.intentRecommendationNote" class="print-kv-note">{{ rt('report.print.recommendationContext', { note: vm.intentRecommendationNote }) }}</span>
             </dd>
-            <dt>Verwendungsform</dt>
+            <dt>{{ rt('report.print.kv.usageForm') }}</dt>
             <dd>
               {{ usageFormLabel }}
-              <span v-if="vm.usageFormNote" class="print-kv-note">Einordnung der Empfehlung: {{ vm.usageFormNote }}</span>
+              <span v-if="vm.usageFormNote" class="print-kv-note">{{ rt('report.print.recommendationContext', { note: vm.usageFormNote }) }}</span>
             </dd>
-            <dt>Nutzungskontext</dt>
-            <dd>{{ submittedContext || 'nicht angegeben' }}</dd>
-            <dt>Original-Prompt</dt>
-            <dd>{{ submittedPrompt || 'nicht angegeben' }}</dd>
-            <dt>Vollständigkeit</dt>
+            <dt>{{ rt('report.print.kv.usageContext') }}</dt>
+            <dd>{{ submittedContext || rt('report.common.notProvided') }}</dd>
+            <dt>{{ rt('report.print.kv.originalPrompt') }}</dt>
+            <dd>{{ submittedPrompt || rt('report.common.notProvided') }}</dd>
+            <dt>{{ rt('report.print.kv.completeness') }}</dt>
             <dd>
-              {{ INPUT_COMPLETENESS_LABELS[vm.inputCompleteness] }}.
-              <span v-if="vm.hasContextWarning" class="print-ctx-warn">Ohne Nutzungskontext bleibt die Bias-Einschätzung allgemeiner.</span>
+              {{ INPUT_COMPLETENESS_LABELS[vm.inputCompleteness][reportLang] }}.
+              <span v-if="vm.hasContextWarning" class="print-ctx-warn">{{ rt('report.print.contextWarn') }}</span>
             </dd>
           </dl>
         </div>
@@ -406,7 +383,7 @@ const readingModeLogic = computed(
 
       <!-- Leseart & visuelle Treiber (Einordnung → Seite 1): EINE kompakte Zeile -->
       <section class="print-block">
-        <h2 class="print-h2">Leseart &amp; visuelle Treiber</h2>
+        <h2 class="print-h2">{{ rt('report.print.readingDriversTitle') }}</h2>
         <p class="print-line"><strong>{{ readingModeLabel }}</strong> · {{ readingModeLogic }}</p>
         <div v-if="vm.visualDrivers.length" class="print-chips">
           <Chip v-for="(drv, i) in vm.visualDrivers" :key="`${drv.code}-${i}`" :code="drv.code" :label="drv.label" />
@@ -418,14 +395,14 @@ const readingModeLogic = computed(
     <div class="print-page print-page--details">
       <!-- Konsolidierter Befundblock: Hints als Gruppen, Spots als Belege darunter -->
       <section class="print-block">
-        <h2 class="print-h2">Befunde</h2>
+        <h2 class="print-h2">{{ rt('report.print.findingsTitle') }}</h2>
         <div v-if="hasFindingContent" class="print-findings">
           <!-- Zweistufig statt dreistufig: Kategorie-Tag + Severity als Kopf, die
                konkreten Belege tragen den Inhalt; die zugeordnete Prüffrage hängt
                direkt an der Karte (ersetzt die separate Prüf-Hinweise-Sektion). -->
           <div v-for="(g, gi) in findingGroups.groups" :key="gi" class="print-finding">
             <div class="pf-head">
-              <span class="pf-sev" :class="`sev-${HINT_SEVERITY_TO_SEVERITY[g.hint.severity]}`">{{ HINT_SEVERITY_LABEL[g.hint.severity] }}</span>
+              <span class="pf-sev" :class="`sev-${HINT_SEVERITY_TO_SEVERITY[g.hint.severity]}`">{{ HINT_SEVERITY_LABEL[g.hint.severity][reportLang] }}</span>
               <span class="pf-tag">{{ g.tag }}</span>
               <span v-if="g.text" class="pf-text">{{ g.text }}</span>
             </div>
@@ -434,42 +411,41 @@ const readingModeLogic = computed(
                 <span class="pf-spot__id">{{ s.id }}</span>
                 <span class="pf-spot__body">
                   {{ s.text }}
-                  <span v-if="!s.qualifiesAsBox" class="pf-spot__meta">ohne sichere Verortung</span>
+                  <span v-if="!s.qualifiesAsBox" class="pf-spot__meta">{{ rt('report.print.noSecureLocation') }}</span>
                 </span>
               </li>
               <li v-for="(c, ci) in g.findings" :key="`c-${ci}`" class="pf-concrete">{{ c.text }}</li>
             </ul>
-            <p v-if="g.question" class="pf-question"><span class="pn-label">Prüffrage</span>{{ g.question }}</p>
+            <p v-if="g.question" class="pf-question"><span class="pn-label">{{ rt('report.print.reviewQuestion') }}</span>{{ g.question }}</p>
           </div>
           <div v-if="findingGroups.restSpots.length" class="print-finding">
             <div class="pf-head">
-              <span class="pf-sev sev-neutral">Bildstelle</span>
-              <span class="pf-text">Weitere lokalisierte Bildbefunde</span>
+              <span class="pf-sev sev-neutral">{{ rt('report.print.imageSpot') }}</span>
+              <span class="pf-text">{{ rt('report.print.moreLocatedFindings') }}</span>
             </div>
             <ul class="pf-evidence">
               <li v-for="s in findingGroups.restSpots" :key="s.id" class="pf-spot">
                 <span class="pf-spot__id">{{ s.id }}</span>
                 <span class="pf-spot__body">
-                  {{ s.text }} <span class="pf-spot__meta">{{ spotSourceLabel(s) }}<template v-if="!s.qualifiesAsBox"> · ohne sichere Verortung</template></span>
+                  {{ s.text }} <span class="pf-spot__meta">{{ spotSourceLabel(s) }}<template v-if="!s.qualifiesAsBox"> · {{ rt('report.print.noSecureLocation') }}</template></span>
                 </span>
               </li>
             </ul>
           </div>
           <p v-if="codebookSpots.length" class="print-caption">
-            P/A/K = LLM-verortete Bildstellen, nicht pixelgenau<template v-if="boxedSpots.length"> – sicher verortete Marker siehe Bild auf Seite 1</template>.
+            {{ rt('report.print.pakCaption') }}<template v-if="boxedSpots.length">{{ rt('report.print.pakCaptionSuffix') }}</template>.
           </p>
         </div>
         <p v-else class="print-sub">
-          Keine spezifischen Hinweise – das Tool hat nichts gefunden. Das heisst „nichts
-          gefunden", nicht „fehlerfrei": Die eigene Sichtprüfung ersetzt es nicht.
+          {{ rt('report.print.noFindings') }}
         </p>
         <!-- Prüffragen ohne zugeordneten Befund (z.B. visual_overload) als kompakte
              Restliste – die früheren generischen Erklärabsätze entfallen im PDF. -->
         <div v-if="extraQuestions.length" class="print-extra-questions">
-          <p class="print-sublabel">Weitere Prüffragen</p>
+          <p class="print-sublabel">{{ rt('report.print.moreQuestions') }}</p>
           <div v-for="h in extraQuestions" :key="h.id" class="print-check">
             <div class="pc-head">
-              <span class="pf-sev" :class="`sev-${HINT_SEVERITY_TO_SEVERITY[h.severity]}`">{{ HINT_SEVERITY_LABEL[h.severity] }}</span>
+              <span class="pf-sev" :class="`sev-${HINT_SEVERITY_TO_SEVERITY[h.severity]}`">{{ HINT_SEVERITY_LABEL[h.severity][reportLang] }}</span>
               <p class="pc-q">{{ h.reviewQuestion }}</p>
             </div>
           </div>
@@ -479,45 +455,45 @@ const readingModeLogic = computed(
       <!-- Maskierung & Bildwirkung: faktisch ≠ normativ – nur gerenderte Unterabschnitte
            mit Inhalt; Nullfälle laufen in die «Nicht ausgewiesen»-Sammelzeile unten. -->
       <section v-if="hasFactualMasking || hasNormative" class="print-block">
-        <h2 class="print-h2">Maskierung &amp; Bildwirkung</h2>
+        <h2 class="print-h2">{{ rt('report.print.maskingTitle') }}</h2>
         <div v-if="hasFactualMasking" class="print-subblock">
-          <p class="print-sublabel">Faktische Maskierung</p>
+          <p class="print-sublabel">{{ rt('report.print.factualMasking') }}</p>
           <p v-if="vm.maskingReviewNote" class="print-line">{{ vm.maskingReviewNote.text }}</p>
           <ul v-if="maskingSpots.length" class="pf-evidence pf-evidence--tight">
             <li v-for="s in maskingSpots" :key="s.id" class="pf-spot">
               <span class="pf-spot__id">{{ s.id }}</span>
               <span class="pf-spot__body">
-                {{ s.text }} <span class="pf-spot__meta">{{ spotSourceLabel(s) }}<template v-if="!s.qualifiesAsBox"> · ohne sichere Verortung</template></span>
+                {{ s.text }} <span class="pf-spot__meta">{{ spotSourceLabel(s) }}<template v-if="!s.qualifiesAsBox"> · {{ rt('report.print.noSecureLocation') }}</template></span>
               </span>
             </li>
           </ul>
         </div>
         <div v-if="hasNormative" class="print-subblock">
-          <p class="print-sublabel">Idealisierung (normative Bildwirkung)</p>
+          <p class="print-sublabel">{{ rt('report.print.idealization') }}</p>
           <p v-if="normativeSentence" class="print-line">{{ normativeSentence }}</p>
           <p v-if="vm.normativeMasking.reasoning" class="print-sub">{{ vm.normativeMasking.reasoning }}</p>
           <div v-if="vm.normativeMasking.aspects.length" class="print-chips">
-            <Chip v-for="a in [...new Set(vm.normativeMasking.aspects)]" :key="a" :label="NORMATIVE_ASPECT_LABELS[a]" />
+            <Chip v-for="a in [...new Set(vm.normativeMasking.aspects)]" :key="a" :label="NORMATIVE_ASPECT_LABELS[a][reportLang]" />
           </div>
           <p v-if="printNormativeNote" class="print-note-line">
-            <span class="pn-label">Hinweis</span>{{ printNormativeNote }}
+            <span class="pn-label">{{ rt('report.print.hintLabel') }}</span>{{ printNormativeNote }}
           </p>
         </div>
       </section>
 
       <!-- Bias-Achsen (nur mit Inhalt – Nullfall siehe Sammelzeile) -->
       <section v-if="hasBiasAxes" class="print-block">
-        <h2 class="print-h2">Bias-Achsen</h2>
+        <h2 class="print-h2">{{ rt('report.common.biasAxes') }}</h2>
         <p class="print-line" v-if="vm.biasAxesSummary.count > 0">
-          {{ vm.biasAxesSummary.count }} {{ vm.biasAxesSummary.count === 1 ? 'Achse' : 'Achsen' }} erkannt
-          · maximales Risiko: {{ RISK_LEVEL_LABEL[vm.biasAxesSummary.maxRisk] }}.
+          {{ rtp('report.common.axesDetected', vm.biasAxesSummary.count) }}
+          · {{ rt('report.common.maxRisk', { level: RISK_LEVEL_LABEL[vm.biasAxesSummary.maxRisk][reportLang] }) }}.
         </p>
         <div v-for="ax in vm.biasAxesDetails" :key="ax.axisId" class="print-axis">
-          <p class="print-axis__head">{{ ax.label }} · Risiko {{ RISK_LEVEL_LABEL[ax.riskLevel] }}</p>
+          <p class="print-axis__head">{{ ax.label }} · {{ rt('report.common.risk', { level: RISK_LEVEL_LABEL[ax.riskLevel][reportLang] }) }}</p>
           <template v-for="(e, i) in ax.evidence" :key="`ev-${i}`">
-            <p class="print-sub"><strong>Beobachtung:</strong> {{ e.observation }}</p>
+            <p class="print-sub"><strong>{{ rt('report.print.observationLabel') }}</strong> {{ e.observation }}</p>
             <p class="print-sub">
-              <strong>Lesart:</strong> {{ e.interpretation }}<template v-if="!e.supportsBiasFinding"> – stützt keinen Bias-Befund</template>
+              <strong>{{ rt('report.print.readingLabel') }}</strong> {{ e.interpretation }}<template v-if="!e.supportsBiasFinding"> {{ rt('report.print.noBiasSupport') }}</template>
             </p>
           </template>
         </div>
@@ -527,19 +503,19 @@ const readingModeLogic = computed(
            P/A/K/M-Spots). Bewusst leichte Sublabel-Überschrift: nur 1–2 Zeilen
            Inhalt, eine volle H2 würde die Mini-Sektion übergewichten. -->
       <section v-if="vm.provenanceMarkers.length" class="print-block">
-        <h2 class="print-h2 print-h2--light">Sichtbare Bildmarkierung</h2>
+        <h2 class="print-h2 print-h2--light">{{ rt('report.print.provTitle') }}</h2>
         <p v-for="(m, i) in vm.provenanceMarkers" :key="i" class="print-sub print-sub--first">
-          {{ m.description }} – Erkennungssicherheit: {{ m.confidence === 'high' ? 'hoch' : 'mittel' }}
+          {{ m.description }} – {{ rt('report.print.detectionConfidence', { level: rt(`report.common.confidence.${m.confidence}`) }) }}
         </p>
         <p class="print-caption print-caption--tight">
-          Unverifizierte Modellbeobachtung; keine Aussage über Herkunft, Echtheit oder Urheberschaft.
+          {{ rt('report.print.provCaption') }}
         </p>
       </section>
 
       <!-- Nullfall-Sammelzeile: ersetzt die früheren Erklär-Leertexte pro Sektion,
            mit je eigener Formulierung (Semantiken nicht vermischen, Codex-Review). -->
       <section v-if="notReported.length" class="print-block">
-        <p class="print-sub">Nicht ausgewiesen: {{ notReported.join(' · ') }}.</p>
+        <p class="print-sub">{{ rt('report.print.notReported', { items: notReported.join(' · ') }) }}</p>
       </section>
     </div>
   </div>

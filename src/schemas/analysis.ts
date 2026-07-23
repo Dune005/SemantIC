@@ -1,21 +1,31 @@
 import { z } from 'zod'
+import type { OutputLang } from '../vocab.js'
 
-const FindingSchema = z.object({
-  finding: z.string().describe(
-    'Concrete problem finding (defect, error, issue) in German free text. ' +
-    'Findings are PROBLEMS ONLY — never include positive or neutral observations ' +
-    'like "no anomalies" or "physical consistency is excellent". For clean ' +
-    'dimensions return an empty findings[] array.',
-  ),
-  severity: z.enum(['minor', 'moderate', 'severe']).describe(
-    'severe = concrete visible problem that would prevent publishable use in ' +
-    'the named usage context. moderate = recognisable problem critical in ' +
-    'many editorial/journalistic contexts. minor = subtle anomaly tolerable ' +
-    'in most contexts. When uncertain between two levels, choose the higher ' +
-    'one if clear visual evidence supports it.',
-  ),
-  category: z.string(),
-})
+// outputLang-Parametrierung (2026-07-20): Die describe()-Texte gehen bei
+// Gemini (generateObject) mit ans Modell – sprachbindende Formulierungen
+// («in German free text») müssen deshalb zur outputLang passen. Nur die
+// Sprachnennungen sind variabel; buildAnalysisSchema('de') entspricht dem
+// bisherigen Schema (Non-Regression-Pfad). Struktur/Typen sind identisch.
+const LANG_NAME: Record<OutputLang, string> = { de: 'German', en: 'English' }
+
+function buildFindingSchema(langName: string) {
+  return z.object({
+    finding: z.string().describe(
+      `Concrete problem finding (defect, error, issue) in ${langName} free text. ` +
+      'Findings are PROBLEMS ONLY — never include positive or neutral observations ' +
+      'like "no anomalies" or "physical consistency is excellent". For clean ' +
+      'dimensions return an empty findings[] array.',
+    ),
+    severity: z.enum(['minor', 'moderate', 'severe']).describe(
+      'severe = concrete visible problem that would prevent publishable use in ' +
+      'the named usage context. moderate = recognisable problem critical in ' +
+      'many editorial/journalistic contexts. minor = subtle anomaly tolerable ' +
+      'in most contexts. When uncertain between two levels, choose the higher ' +
+      'one if clear visual evidence supports it.',
+    ),
+    category: z.string(),
+  })
+}
 
 const CodebookEvidenceSchema = z.object({
   region_box_2d: z.array(z.number()).length(4),
@@ -53,12 +63,6 @@ const ProvenanceMarkerSchema = z.object({
 
 export type ProvenanceMarker = z.infer<typeof ProvenanceMarkerSchema>
 
-const DimensionSchema = z.object({
-  score: z.number(),
-  status: z.enum(['green', 'yellow', 'red']),
-  findings: z.array(FindingSchema),
-})
-
 const ObservedEvidenceSchema = z.object({
   observation: z.string(),
   interpretation: z.string(),
@@ -77,7 +81,15 @@ const BiasAxisSchema = z.object({
   codebook_mapping: z.array(z.string()),
 })
 
-export const AnalysisSchema = z.object({
+export function buildAnalysisSchema(outputLang: OutputLang) {
+  const langName = LANG_NAME[outputLang]
+  const FindingSchema = buildFindingSchema(langName)
+  const DimensionSchema = z.object({
+    score: z.number(),
+    status: z.enum(['green', 'yellow', 'red']),
+    findings: z.array(FindingSchema),
+  })
+  return z.object({
   input_completeness: z.object({
     image: z.boolean(),
     usage_context: z.boolean(),
@@ -95,11 +107,11 @@ export const AnalysisSchema = z.object({
     bias: DimensionSchema,
   }),
   research_layer: z.object({
+    // reading_mode_label / reading_mode_masking_logic / visual_drivers_labels
+    // wurden entfernt (2026-07-20): statische Code→Label-Zuordnungen sind keine
+    // Analyse – sie werden deterministisch aus src/vocab.ts abgeleitet.
     reading_mode: z.enum(['WA', 'DA', 'CI', 'AA', 'MI']),
-    reading_mode_label: z.string(),
-    reading_mode_masking_logic: z.string(),
     visual_drivers: z.array(z.enum(['CL', 'BK', 'WCG', 'HDT', 'MO', 'GF', 'DS', 'NL', 'MH'])),
-    visual_drivers_labels: z.array(z.string()),
     dominant_error_type: z.enum(['physics', 'anatomy', 'context', 'mixed', 'none']),
     codebook: z.object({
       visual_realism_level: z.enum(['low', 'medium', 'high']),
@@ -142,7 +154,7 @@ export const AnalysisSchema = z.object({
       ),
       reasoning: z.string().max(280).describe(
         'Short justification (max ~280 chars) for the verdict and aspects. ' +
-        'Output in German. Analytical framing — describe the normative effect, ' +
+        `Output in ${langName}. Analytical framing — describe the normative effect, ` +
         'do not moralise.',
       ),
     }).describe(
@@ -165,7 +177,7 @@ export const AnalysisSchema = z.object({
         'generation or ownership of the image from them. NEVER an authenticity / AI-vs-real / ' +
         'manipulation / authorship verdict, and never a Codebook flaw: a marker here is NOT a ' +
         'physics/anatomy/context issue and MUST NOT influence any flag, severity, score, ' +
-        'masking_evidence, normative_masking or reading_mode. description in German. Output [] ' +
+        `masking_evidence, normative_masking or reading_mode. description in ${langName}. Output [] ` +
         'when nothing is clearly visible; do not invent markers.',
       )
       .optional()
@@ -197,10 +209,17 @@ export const AnalysisSchema = z.object({
     ),
     reasoning: z.string().max(280).describe(
       'Short justification (max ~280 chars) for the alignment and framing_risk values. ' +
-      'Output language follows the rest of the analysis (German by default).',
+      (outputLang === 'de'
+        ? 'Output language follows the rest of the analysis (German by default).'
+        : 'Output language follows the rest of the analysis (English for this analysis).'),
     ),
   }),
-})
+  })
+}
+
+// Kanonische Instanz für Typinferenz + bestehende Importe (Struktur ist in
+// beiden Sprachen identisch, nur describe()-Texte variieren).
+export const AnalysisSchema = buildAnalysisSchema('de')
 
 export type AnalysisOutput = z.infer<typeof AnalysisSchema>
 export type IntentAssessment = AnalysisOutput['intent_assessment']

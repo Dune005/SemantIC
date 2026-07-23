@@ -17,6 +17,8 @@ const activeNav = computed<'home' | 'analyze' | 'how-it-works' | 'error-guide' |
 // Chrome-State (Etappe 6 verkabelt): bypassActive + rateLimitHint sind via useState
 // mit der analyze-Seite geteilt (sie schreibt die Werte aus den Response-Headern);
 // bypassState/bypassError leben nur lokal im Layout (Status des Bypass-Felds).
+// rateLimitHint wird seit der Verlegung nur noch auf der analyze-Seite angezeigt –
+// das Layout hält den State weiterhin, um ihn beim Bypass-Einlösen zu nullen.
 const bypassActive = useState<boolean>('chrome:bypassActive', () => false)
 const rateLimitHint = useState<string | null>('chrome:rateLimitHint', () => null)
 const bypassState = ref<'idle' | 'submitting' | 'success' | 'error'>('idle')
@@ -45,7 +47,7 @@ async function onRedeemBypass(code: string) {
   <div class="layout">
     <a class="skip-link" href="#main">{{ $t('common.skipToContent') }}</a>
 
-    <AppHeader :active="activeNav" :bypass-active="bypassActive" :rate-limit-hint="rateLimitHint" />
+    <AppHeader :active="activeNav" :bypass-active="bypassActive" />
 
     <main id="main" class="layout__main">
       <slot />

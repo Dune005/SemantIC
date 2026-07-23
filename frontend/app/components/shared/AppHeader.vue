@@ -1,7 +1,8 @@
 <script setup lang="ts">
 // AppHeader (primitives.md §9 + header.html) – globale Kopfzeile (Shared Chrome).
 // Brand + Hauptnav (aria-current, Unterstrich – keine Severity-Farbe) + Status-
-// Bereich (Demo-Badge bei aktivem Bypass, optionaler Rate-Limit-Hinweis) + CTA.
+// Bereich (Demo-Badge bei aktivem Bypass) + CTA. Der Tageslimit-Hinweis lebt
+// seit der Verlegung auf der analyze-Seite (Stage-Karte), nicht mehr hier.
 // Nav als NuxtLink (Nuxt-Routing statt navigate-Emit – idiomatischer Port).
 // Mobile: Hamburger-Disclosure (aria-expanded, Label wechselt). Kein v-html.
 // 1.5b: dunkle Kopfzeile (Ink-Inversion, --ink-*-Tokens) als Kontrast zur hellen
@@ -17,9 +18,8 @@ const props = withDefaults(
   defineProps<{
     active?: 'home' | 'analyze' | 'how-it-works' | 'error-guide'
     bypassActive?: boolean
-    rateLimitHint?: string | null
   }>(),
-  { active: undefined, bypassActive: false, rateLimitHint: null },
+  { active: undefined, bypassActive: false },
 )
 
 const menuOpen = ref(false)
@@ -51,7 +51,6 @@ function closeMenu() {
       </nav>
 
       <div class="header-actions">
-        <span v-if="rateLimitHint" class="rate-hint">{{ rateLimitHint }}</span>
         <Badge v-if="bypassActive" mode="neutral" :label="$t('header.badgeDemo')" class="badge-on-dark" />
         <!-- CTA wie v16-g: Mess-Punkt + Text statt weisser Kachel (kein Pfeil).
              Bewusst auch auf /analyze sichtbar, sonst springt die Kopfzeile beim
@@ -194,7 +193,7 @@ function closeMenu() {
   border-bottom-color: var(--ink-text);
 }
 
-/* Rechte Gruppe: Rate-Hinweis + Demo-Badge + CTA. Sitzt direkt nach der Nav
+/* Rechte Gruppe: Demo-Badge + CTA. Sitzt direkt nach der Nav
    (margin-left:auto liegt jetzt auf .nav → Nav + Aktionen bilden den rechten Block). */
 .header-actions {
   display: flex;
@@ -225,13 +224,6 @@ function closeMenu() {
   border-radius: 50%;
   background: var(--crit);
   flex: 0 0 auto;
-}
-.rate-hint {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  color: var(--ink-text-muted);
-  white-space: nowrap;
 }
 /* Badge-Neutral (helle Tokens) auf die dunkle Fläche umgelegt – nur hier im
    Header, die Badge-Komponente selbst bleibt unverändert. */

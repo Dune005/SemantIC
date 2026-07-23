@@ -691,5 +691,301 @@
         }
       }
     }
+  },
+  "report": {
+    "common": {
+      "integrity": "Integrity",
+      "aesthetic": "Aesthetics",
+      "noVerdict": "no verdict",
+      "readingMode": "Reading mode",
+      "statusWord": "Status: {word}",
+      "observation": "Observation",
+      "interpretation": "Interpretation",
+      "reading": "Reading",
+      "unverified": "unverified",
+      "notProvided": "not provided",
+      "boxesCaption": "Boxes are LLM-located, not pixel-accurate.",
+      "risk": "Risk {level}",
+      "biasAxes": "Bias axes",
+      "axesDetected": "{n} axis detected | {n} axes detected",
+      "maxRisk": "maximum risk: {level}",
+      "scoreOf100": "{name} {n} of 100",
+      "confidence": {
+        "high": "high",
+        "medium": "medium"
+      }
+    },
+    "findingCategory": {
+      "text_error": "Text/display",
+      "light_consistency": "Light consistency",
+      "shadow": "Shadow",
+      "reflection": "Reflection",
+      "perspective": "Perspective",
+      "proportion": "Proportion",
+      "material": "Material",
+      "anatomy": "Anatomy",
+      "role_stereotype": "Role stereotype",
+      "body_stereotype": "Body image",
+      "gender_bias": "Gender portrayal",
+      "context_break": "Context break",
+      "hallucination": "Hallucination"
+    },
+    "findingSeverity": {
+      "severe": "severe",
+      "moderate": "moderate",
+      "minor": "minor"
+    },
+    "spotSource": {
+      "physics": "Physics",
+      "anatomy": "Anatomy",
+      "context": "Context",
+      "masking": "Masking"
+    },
+    "align": {
+      "match": "consistent",
+      "partial": "partial",
+      "mismatch": "inconsistent",
+      "not_assessable": "not assessable"
+    },
+    "framing": {
+      "low": "low",
+      "medium": "medium",
+      "high": "high"
+    },
+    "realism": {
+      "high": "high",
+      "medium": "medium",
+      "low": "low"
+    },
+    "errorType": {
+      "physics": "Physics",
+      "anatomy": "Anatomy",
+      "context": "Context",
+      "mixed": "mixed",
+      "none": "none"
+    },
+    "cockpit": {
+      "sectionAria": "Diagnostic cockpit – analysis report",
+      "contextline": "Analysis report",
+      "imageAlt": "Analyzed AI image in the diagnostic cockpit",
+      "findingsCount": "{n} finding recorded | {n} findings recorded",
+      "priorityHeadline": {
+        "green": "Release possible",
+        "yellow": "Inspect visually before release",
+        "red": "Revise before release"
+      },
+      "priorityCopy": {
+        "verdictDrivenEmpty": "The overall verdict follows from the dimension scores and further review signals, not from a single image finding. Look at the dimension(s) marked yellow or red above.",
+        "greenEmpty": "No findings named – within the scope of this check, nothing speaks against using the image. Decide within your usage context.",
+        "default": "No blanket exclusion. Review the specifically named findings first and decide within your usage context."
+      },
+      "priorityEmptyNote": "No individual image finding named.",
+      "context": {
+        "declaredIntent": "Declared stance",
+        "alignment": "Fit",
+        "framingRisk": "Framing risk",
+        "usageContext": "Usage context",
+        "originalPrompt": "Original prompt",
+        "contextNotProvided": "not provided",
+        "promptNotProvided": "not available"
+      },
+      "bias": {
+        "confidence": "Confidence {level}",
+        "descriptiveAxis": "Descriptive review axis",
+        "noBiasFinding": "no bias finding"
+      },
+      "meta": {
+        "summary": "Pipeline metadata & raw values",
+        "analysisModel": "Analysis model",
+        "aestheticModel": "Aesthetics model",
+        "duration": "Runtime",
+        "realism": "Realism",
+        "errorType": "Error type",
+        "laion": "LAION norm."
+      },
+      "footerLead": "Cues, not proof. The final decision stays with you.",
+      "footerNote": "Findings are unverified model claims."
+    },
+    "verdikt": {
+      "showDims": "Show dimensions",
+      "hideDims": "Hide dimensions",
+      "dimsAria": "Dimensions at a glance"
+    },
+    "entscheidung": {
+      "asideAria": "Editorial decision aid",
+      "nextStep": "02 · Next step",
+      "locationEyebrow": "03 · Positioning · Surface × Integrity",
+      "noOpenHints": "No open review hints.",
+      "quadNote": "The dot shows how integrity and aesthetics relate to each other – no masking verdict follows from its position.",
+      "quadNoteSmall": "Illustrative schema · no masking level, no difference value.",
+      "pointLabel": "This sample",
+      "xAxisLabel": "Integrity high →",
+      "yAxisLabel": "Aesthetics high →"
+    },
+    "protokoll": {
+      "eyebrow": "04 · Review log",
+      "title": "Why this verdict?",
+      "note": "Observation, interpretation and editorial context stay separate. Open only the layer you need for your decision.",
+      "tabsAria": "Review log sections",
+      "tabFindings": "Image findings · {n}",
+      "tabBias": "Bias axes · {n}",
+      "tabContext": "Context & impact",
+      "noFindings": "No image findings recorded.",
+      "maskingEyebrow": "Masking hint · interpretation",
+      "maskingTitle": "The visual style can draw the eye away from the flaws.",
+      "readingModeLogicLabel": "Reading mode · masking logic",
+      "supportsBias": "→ supports the bias finding",
+      "supportsNoBias": "→ descriptive, does not support a standalone bias finding",
+      "noBiasAxes": "No bias axes derived (null case – no forced bias-hunting).",
+      "editorialContext": "Editorial context",
+      "visualDrivers": "Visual drivers",
+      "noDrivers": "No visual drivers named.",
+      "normativeTitle": "Normative image impact · {verdict}"
+    },
+    "inspektor": {
+      "eyebrow": "01 · Image inspector",
+      "togglesAria": "Overlay layers",
+      "toggleFindings": "Findings",
+      "toggleMasking": "Masking",
+      "noLocatableMasking": "No masking locatable in the image",
+      "imageAltDefault": "Analyzed AI image",
+      "noImage": "No image",
+      "tooltipFinding": "Finding",
+      "pinAria": "{id}, {meta}, image area {pos} – unverified model hint: {text}",
+      "pos": {
+        "left": "left",
+        "right": "right",
+        "hCenter": "center",
+        "top": "top",
+        "bottom": "bottom",
+        "vCenter": "center"
+      },
+      "zoomAria": "Open image in large view",
+      "lightboxTitle": "Image inspector · large view",
+      "close": "Close",
+      "locatedFindingsAria": "Located findings",
+      "provCaptionSuffix": "Dotted box = visible image marking (not a finding).",
+      "spotlistHead": "Located model hints",
+      "legend": "P physics · A anatomy · K context · M masking",
+      "inImageMarked": "marked in the image",
+      "withoutBox": "without box (not reliably located)",
+      "noSpots": "No finding locations marked in the image.",
+      "provLabel": "Visible image marking",
+      "provConfidence": "detection confidence {level}",
+      "provNote": "Unverified model observation – no verdict on authenticity or origin."
+    },
+    "print": {
+      "docTitle": "SemantIC – Review Report",
+      "checkedOn": "Checked on {date}",
+      "disclaimer": "AI-assisted diagnosis, not proof of authenticity or origin. Findings are reasoned cues, not evidence – review editorially before publication.",
+      "dimensionsTitle": "The three dimensions",
+      "checkedInputs": "Checked inputs",
+      "imageAlt": "Checked image",
+      "imageMissing": "Image not available",
+      "figureCaption": "Marked locations are LLM-located, not pixel-accurate.",
+      "kv": {
+        "intent": "Stance",
+        "usageForm": "Usage form",
+        "usageContext": "Usage context",
+        "originalPrompt": "Original prompt",
+        "completeness": "Completeness"
+      },
+      "recommendationContext": "Context for the recommendation: {note}",
+      "contextWarn": "Without a usage context, the bias assessment stays more generic.",
+      "readingDriversTitle": "Reading mode & visual drivers",
+      "findingsTitle": "Findings",
+      "noSecureLocation": "without reliable location",
+      "imageSpot": "Image location",
+      "moreLocatedFindings": "Further located image findings",
+      "pakCaption": "P/A/K = LLM-located image spots, not pixel-accurate",
+      "pakCaptionSuffix": " – for reliably located markers, see the image on page 1",
+      "noFindings": "No specific hints – the tool found nothing. That means \"nothing found\", not \"flawless\": it does not replace your own visual inspection.",
+      "moreQuestions": "Further review questions",
+      "reviewQuestion": "Review question",
+      "maskingTitle": "Masking & image impact",
+      "factualMasking": "Evidence-based masking",
+      "idealization": "Idealization (normative image impact)",
+      "hintLabel": "Note",
+      "observationLabel": "Observation:",
+      "readingLabel": "Reading:",
+      "noBiasSupport": "– does not support a bias finding",
+      "provTitle": "Visible image marking",
+      "detectionConfidence": "detection confidence: {level}",
+      "provCaption": "Unverified model observation; no statement about origin, authenticity or authorship.",
+      "notReported": "Not reported: {items}.",
+      "notReportedItems": {
+        "noFactualMasking": "no factual masking evidence",
+        "noNormative": "normative image impact not applicable",
+        "noBiasAxes": "no bias axes derived"
+      },
+      "topicTag": {
+        "physics": "Physics · light/shadow/material",
+        "anatomy": "Anatomy · hands/face/proportions",
+        "context_logic": "Scene logic",
+        "role_stereotype": "Bias · roles",
+        "body_stereotype": "Bias · body",
+        "gender_bias": "Bias · gender",
+        "masking": "Masking",
+        "style_mismatch": "Visual style",
+        "hallucination": "Hallucination",
+        "bias_combined": "Bias"
+      },
+      "groupText": {
+        "hallucination": "Hallucination hint detected but not reliably located – check against the prompt and the image content.",
+        "biasCombined": "Multiple bias indicators detected – details under «Bias axes».",
+        "masking": "Masking hint detected – details under «Masking & image impact»."
+      },
+      "normativeDegree": {
+        "low": "barely",
+        "medium": "noticeably",
+        "high": "strongly"
+      },
+      "normativeSentence": "The image {degree} idealizes the depicted scene.",
+      "normativeHighNote": {
+        "affirmative": "Name the idealized depiction openly in the accompanying text – it is not an automatic reason for exclusion.",
+        "critical": "The idealization is precisely the point of the critique here – name it explicitly in the accompanying text.",
+        "illustrative": "Unsuitable as a neutral example image – state in the accompanying text that the depiction is idealized.",
+        "unspecified": "Before using the image, check whether the idealized depiction fits the intended use."
+      },
+      "normativeMediumNote": "When publishing, note in the accompanying text that the depiction is idealized."
+    },
+    "befundKarte": {
+      "cardAria": "Analysis result",
+      "verdictLabel": "Overall verdict",
+      "blockDiag": "Diagnosis at a glance",
+      "blockTodo": "What to do now",
+      "blockWhy": "Why this verdict?",
+      "imagePlaceholder": "Image · {aspect}",
+      "scoreBarAria": "Integrity score {n} of 100. The overall verdict is determined independently of the score.",
+      "dimsAria": "The three dimensions",
+      "locateCap": "Positioning of this analysis – a tendency, not a calibrated measurement.",
+      "scoreNote": "The score is a {measure} – the overall verdict additionally takes context and risks into account. A high score therefore does not automatically mean \"uncritical\".",
+      "scoreNoteMeasure": "measured value",
+      "maskingHintLabel": "Masking hint:",
+      "pointLabel": "This image",
+      "noFinding": "No specific anomalies – the tool found nothing. That means \"nothing found\", not \"flawless\": it does not replace your own visual inspection.",
+      "deepen": "Deepen the analysis",
+      "normativeLabel": "Normative image impact",
+      "idealizingNorm": "Idealizing norm: {level}.",
+      "noNormative": "No normative image impact detected – not applicable for this image.",
+      "descriptionNoBias": "Description – does not support a bias finding.",
+      "maskingLogicTag": "Masking logic",
+      "markedSpots": "Marked locations (masking hint)",
+      "maskingSpotCover": "could cover up the {area} finding:",
+      "moreFindings": "Further findings",
+      "footnote": "These findings are cues, not a final verdict. The final judgment stays with you.",
+      "details": "Details",
+      "detailSeverity": {
+        "severe": "severe",
+        "moderate": "moderate",
+        "minor": "minor"
+      }
+    },
+    "noteBlock": {
+      "label": "Note",
+      "intent": "With your stance in mind",
+      "masking": "On the normative impact",
+      "usage": "For this usage form"
+    }
   }
 }

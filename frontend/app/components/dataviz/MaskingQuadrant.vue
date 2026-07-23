@@ -37,7 +37,10 @@ const props = withDefaults(
 // i18n (Seitentext-Migration): Text-Defaults (Achsentitel, pointLabel) aus
 // components.maskingQuadrant.* -> folgen dem Sprachwechsel. Uebergibt der Aufrufer
 // (z. B. das Report-Cockpit) eigene Achsentitel/pointLabel, gewinnen diese weiterhin.
-const { t } = useI18n()
+// An die eingefrorene Report-Sprache gebunden (useReportT): im Analyse-Report
+// folgt der Quadrant der Erzeugungssprache des Reports, ausserhalb (z.B.
+// how-it-works, ohne Injection) der aktiven UI-Locale.
+const { rt: t } = useReportT()
 const xLabel = computed(() => props.xAxisLabel ?? t('components.maskingQuadrant.xAxisDefault'))
 const yLabel = computed(() => props.yAxisLabel ?? t('components.maskingQuadrant.yAxisDefault'))
 const pointLabelResolved = computed(() => props.pointLabel ?? t('components.maskingQuadrant.pointDefault'))
@@ -146,32 +149,32 @@ const ariaLabel = computed(() =>
         </svg>
 
         <!-- HTML-Overlay-Labels (deckungsgleich mit dem SVG) -->
-        <span class="quad__zonelbl">{{ $t('components.maskingQuadrant.zoneLabel') }}</span>
+        <span class="quad__zonelbl">{{ t('components.maskingQuadrant.zoneLabel') }}</span>
         <span class="quad__valbox" :style="valboxStyle" aria-hidden="true">
           <span class="quad__valkicker">{{ pointLabelResolved }}</span>
-          <span class="quad__val quad__val--aesth">{{ $t('components.maskingQuadrant.valueAesthetic', { value: aesthetic }) }}</span>
-          <span class="quad__val quad__val--integ">{{ $t('components.maskingQuadrant.valueIntegrity', { value: integrity }) }}</span>
+          <span class="quad__val quad__val--aesth">{{ t('components.maskingQuadrant.valueAesthetic', { value: aesthetic }) }}</span>
+          <span class="quad__val quad__val--integ">{{ t('components.maskingQuadrant.valueIntegrity', { value: integrity }) }}</span>
         </span>
       </div>
 
     <div class="quad__legend">
-      <h3>{{ $t('components.maskingQuadrant.legendH3') }}</h3>
-      <p>{{ $t('components.maskingQuadrant.legendP') }}</p>
+      <h3>{{ t('components.maskingQuadrant.legendH3') }}</h3>
+      <p>{{ t('components.maskingQuadrant.legendP') }}</p>
       <ul>
         <li>
           <i class="quad__sw quad__sw--zone" aria-hidden="true" />
-          <span><b>{{ $t('components.maskingQuadrant.legendZoneTerm') }}</b> {{ $t('components.maskingQuadrant.legendZoneDesc') }}</span>
+          <span><b>{{ t('components.maskingQuadrant.legendZoneTerm') }}</b> {{ t('components.maskingQuadrant.legendZoneDesc') }}</span>
         </li>
         <li>
           <i class="quad__sw quad__sw--diag" aria-hidden="true" />
-          <span><b>{{ $t('components.maskingQuadrant.legendDiagTerm') }}</b> {{ $t('components.maskingQuadrant.legendDiagDesc') }}</span>
+          <span><b>{{ t('components.maskingQuadrant.legendDiagTerm') }}</b> {{ t('components.maskingQuadrant.legendDiagDesc') }}</span>
         </li>
         <li>
           <i class="quad__sw quad__sw--pt" aria-hidden="true" />
           <span>
-            <b>{{ $t('components.maskingQuadrant.legendPointTerm') }}</b> –
-            <span class="quad__val--aesth">{{ $t('components.maskingQuadrant.valueAesthetic', { value: aesthetic }) }}</span> /
-            <span class="quad__val--integ">{{ $t('components.maskingQuadrant.valueIntegrity', { value: integrity }) }}</span>.
+            <b>{{ t('components.maskingQuadrant.legendPointTerm') }}</b> –
+            <span class="quad__val--aesth">{{ t('components.maskingQuadrant.valueAesthetic', { value: aesthetic }) }}</span> /
+            <span class="quad__val--integ">{{ t('components.maskingQuadrant.valueIntegrity', { value: integrity }) }}</span>.
           </span>
         </li>
       </ul>

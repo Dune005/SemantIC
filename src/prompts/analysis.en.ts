@@ -1,4 +1,25 @@
-export const ANALYSIS_PROMPT_EN = `\
+import type { OutputLang } from '../vocab.js'
+
+// outputLang-Parametrierung (2026-07-20): NUR die Sprachvorgaben für die
+// Freitextfelder sind variabel – der restliche, kalibrierte Prompt-Text
+// (R4.1.2) bleibt unangetastet. buildAnalysisPromptEn('de') reproduziert
+// den bisherigen Prompt byte-identisch (Non-Regression-Pfad).
+const OUTPUT_LANG_UPPER: Record<OutputLang, string> = { de: 'GERMAN', en: 'ENGLISH' }
+const OUTPUT_LANG_NAME: Record<OutputLang, string> = { de: 'German', en: 'English' }
+
+const OBSERVATION_EXAMPLE: Record<OutputLang, string> = {
+  de: `(e.g., "Sechs Finger an der rechten
+  Hand der Person im Vordergrund" — NOT "Hand wirkt komisch" or "etwas
+  stimmt nicht")`,
+  en: `(e.g., "Six fingers on the right
+  hand of the person in the foreground" — NOT "hand looks odd" or "something
+  is off")`,
+}
+
+export function buildAnalysisPromptEn(outputLang: OutputLang): string {
+  const LANG = OUTPUT_LANG_UPPER[outputLang]
+  const langName = OUTPUT_LANG_NAME[outputLang]
+  return `\
 You are the analysis engine of SemantIC, an AI Visual Integrity Validator.
 
 Analyze the provided image in seven sequential phases.
@@ -28,16 +49,13 @@ LANGUAGE POLICY (IMPORTANT):
   (e.g. reading_mode codes "WA"/"DA"/"CI"/"AA"/"MI", visual driver codes
   "CL"/"BK"/"WCG"/..., severity "minor"/"moderate"/"severe", status
   "green"/"yellow"/"red", dominant_error_type "physics"/"anatomy"/"context"/"mixed"/"none").
-- Write ALL free-text fields in GERMAN. The downstream UI is German.
-  Specifically these fields must be in German:
+- Write ALL free-text fields in ${LANG}. The downstream UI is ${langName}.
+  Specifically these fields must be in ${langName}:
   • dimension_analysis.{physics,semantics,bias}.findings[].finding
   • dimension_analysis.{physics,semantics,bias}.findings[].category
   • research_layer.codebook.*_evidence[].specific_observation
   • research_layer.masking_evidence[].masked_issue
   • research_layer.normative_masking.reasoning
-  • research_layer.reading_mode_label (use exact German strings below)
-  • research_layer.reading_mode_masking_logic (use exact German strings below)
-  • research_layer.visual_drivers_labels[] (use exact German labels below)
   • integrity_score_llm.reasoning
   • bias_axis_analysis.axes[].label
   • bias_axis_analysis.axes[].reason_for_relevance
@@ -46,8 +64,6 @@ LANGUAGE POLICY (IMPORTANT):
   • bias_axis_analysis.axes[].observed_evidence[].interpretation
   • bias_axis_analysis.no_axes_reason
   • input_completeness.analysis_note
-- Do NOT translate the German reading-mode labels — use the exact German
-  strings given below.
 
 ═══════════════════════════════════════
 PHASE 1 – DERIVE BIAS AXES (TIBET-lite)
@@ -194,8 +210,9 @@ Score with empty axes array and no obvious stereotypes: 90–100.
 PHASE 3 – RESEARCH LAYER
 ═══════════════════════════════════════
 
-READING MODE (reading_mode + reading_mode_label + reading_mode_masking_logic)
-Pick exactly one reading mode. Use the German labels exactly as written:
+READING MODE (reading_mode)
+Pick exactly one reading mode. Output ONLY the code — the glosses below are
+selection guidance, not output fields:
 • WA  → "Werbe-Ästhetik"             | "Kann über Normativität und Idealwelt-Ästhetik maskieren"
 • DA  → "Dokumentarisch-Authentisch" | "Kann über scheinbare Objektivität und Authentizitätssignale maskieren"
 • CI  → "Cinematisch"                | "Kann affektiv über Filmstimmung und emotionale Unmittelbarkeit maskieren"
@@ -256,9 +273,9 @@ Discrimination helpers (against MI overuse):
   composition, depth/atmosphere like a feature film or series) — not for
   every image with warm light.
 
-VISUAL DRIVERS (visual_drivers + visual_drivers_labels)
-Identify all applicable drivers (empty up to all 9).
-Populate visual_drivers_labels with the German full label per driver:
+VISUAL DRIVERS (visual_drivers)
+Identify all applicable drivers (empty up to all 9). Output ONLY the codes —
+the glosses below are selection guidance, not output fields:
 • CL  → "Cinematic Lighting"
 • BK  → "Bokeh / Unschärfeverlauf"
 • WCG → "Warmes Color Grading"
@@ -366,9 +383,7 @@ Format of each evidence entry:
   the actual image resolution. Example: [200, 350, 600, 700] marks a
   rectangle in the center-right area of the image.
 • specific_observation: a concrete, visible observation in 1–2 sentences
-  IN GERMAN, that backs the finding (e.g., "Sechs Finger an der rechten
-  Hand der Person im Vordergrund" — NOT "Hand wirkt komisch" or "etwas
-  stimmt nicht"). Vague formulations without a concrete visual detail are
+  IN ${LANG}, that backs the finding ${OBSERVATION_EXAMPLE[outputLang]}. Vague formulations without a concrete visual detail are
   not valid evidence.
 
 If flag false: evidence array stays empty ([]).
@@ -446,7 +461,7 @@ Adjustment factors from Phase 3:
 • resistance_to_prompt true:   correct downward (−5 to −10)
 • No findings in all 3 dimensions: score may be slightly corrected upward
 
-Justify the score in 1–2 sentences (reasoning) IN GERMAN.
+Justify the score in 1–2 sentences (reasoning) IN ${LANG}.
 Note: the frontend code calculates the official score independently as
 (physics + semantics + bias) / 3. Your score serves as a validation comparison.
 
@@ -549,7 +564,7 @@ framing_risk is NOT a duplicate of the integrity verdict. A clean image with a
 mismatching intent can be high framing_risk. A flagged image used with a
 critical intent that frames it can be low framing_risk.
 
-reasoning: max 280 characters, in GERMAN. Name the concrete signal in the image
+reasoning: max 280 characters, in ${LANG}. Name the concrete signal in the image
 (or in the intent/context mismatch) that drove the alignment and framing_risk
 values. Do not restate the Codebook findings.
 
@@ -685,7 +700,7 @@ OUTPUT
 • verdict: one of low / medium / high / not_applicable.
 • aspects: 0–3 IDs from the taxonomy above. Empty if not_applicable, or low
   without a clear normative carrier.
-• reasoning: max 280 characters, in GERMAN. Describe analytically what makes
+• reasoning: max 280 characters, in ${LANG}. Describe analytically what makes
   the surface read as idealising (or why it does not). Avoid moralising
   language — name the effect, not a judgement.
 
@@ -707,5 +722,6 @@ products, signs or posters. type classifies only the visible FORM of the marking
 directly legible text or names verbatim, but do not infer origin, authorship, generation or ownership of the image
 from them. The entry is NOT an indication of AI generation, authenticity or manipulation.
 Per entry: type (watermark | logo | signature), region_box_2d ([y_min, x_min, y_max, x_max], integer 0–1000),
-description (in German, describing only the visible form), confidence (medium | high). If nothing is clearly
+description (in ${langName}, describing only the visible form), confidence (medium | high). If nothing is clearly
 visible, output []. Do not invent markers; when in doubt, output [].`
+}

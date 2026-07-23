@@ -2,10 +2,11 @@ import { generateObject, generateText } from 'ai'
 import { google, type GoogleLanguageModelOptions } from '@ai-sdk/google'
 import { anthropic } from '@ai-sdk/anthropic'
 import { createOpenAI } from '@ai-sdk/openai'
-import { AnalysisSchema, type AnalysisOutput, type DeclaredIntent } from './schemas/analysis.js'
+import { buildAnalysisSchema, type AnalysisOutput, type DeclaredIntent } from './schemas/analysis.js'
 import { AestheticSchema, type AestheticOutput } from './schemas/aesthetic.js'
-import { ANALYSIS_PROMPT } from './prompts/analysis.js'
-import { ANALYSIS_PROMPT_EN } from './prompts/analysis.en.js'
+import { buildAnalysisPrompt } from './prompts/analysis.js'
+import { buildAnalysisPromptEn } from './prompts/analysis.en.js'
+import type { OutputLang } from './vocab.js'
 import { AESTHETIC_PROMPT } from './prompts/aesthetic.js'
 import { computeIntegrityScore } from './scoring.js'
 import { composeMaskingReviewNote, type MaskingReviewNote } from './masking-note.js'
@@ -122,7 +123,12 @@ export interface ConsistencyReconcileReport {
 // Audit-Trail in `applied_rules` zeigt welcher Pfad getriggert hat (auch
 // wenn der Score bereits durch eine andere Regel gecappt war); `score_caps`
 // listet nur die effektiven Score-Änderungen.
-const ANATOMY_KEYWORDS = /\b(finger|hand|hände|gesicht|antlitz|face|proport|gliedmass|extremit|limb|arm|fuss|fuß|leg)/i
+// Bilingual (DE+EN) – die Findings/Categories folgen seit outputLang der
+// Report-Sprache; foot/feet ergänzt (2026-07-20, EN-Pendant zu fuss/fuß).
+// arm/leg mit Wortgrenzen (Codex-Review: «armchair»/«legibility» wären sonst
+// Anatomie-Treffer), füss/füß ergänzt. Impact-Check gegen alle Regressions-
+// Wellen (63 Findings): 0 Klassifikations-Differenzen.
+const ANATOMY_KEYWORDS = /\b(finger|hand|hände|gesicht|antlitz|face|proport|gliedmass|extremit|limb|arm(e|en|s)?\b|fuss|fuß|füss|füß|foot|feet|legs?\b)/i
 const PLACEHOLDER_FINDING_PATTERNS = [
   /^\s*(noch\s+zu\s+pr[üu]fen|noch\s+unklar|needs?\s+(review|checking)|unclear\s+issue|tbd|to\s+be\s+(determined|reviewed)|no\s+(specific|concrete)\s+finding)\s*\.?\s*$/i,
   /^\s*(siehe|see)\s+(oben|above|below|details?)\s*\.?\s*$/i,
@@ -200,7 +206,7 @@ function repairIntentAssessment(analysis: AnalysisOutput, requestedIntent: Decla
 // Intent-Sanity. Skopus ist hart auf research_layer.normative_masking begrenzt
 // — die Funktion liest und schreibt KEINE anderen Felder. Status-Isolation
 // (Plan, Codex-Review #4).
-function repairNormativeMasking(analysis: AnalysisOutput): {
+function repairNormativeMasking(analysis: AnalysisOutput, outputLang: OutputLang): {
   verdict_normalized?: { before: string; after: string; reason: string }
   aspects_truncated?: { before: number; after: number }
   reasoning_defaulted?: boolean
@@ -237,7 +243,9 @@ function repairNormativeMasking(analysis: AnalysisOutput): {
   // Sanity 3: not_applicable mit Aspect-Liste leer → reasoning bekommt
   // mindestens einen Default-Hinweis, damit das Feld nicht stumm bleibt.
   if (nm.verdict === 'not_applicable' && (!nm.reasoning || nm.reasoning.trim() === '')) {
-    nm.reasoning = 'Bild bietet keinen Anker für normative Bewertung.'
+    nm.reasoning = outputLang === 'en'
+      ? 'The image offers no anchor for a normative assessment.'
+      : 'Bild bietet keinen Anker für normative Bewertung.'
     report.reasoning_defaulted = true
   }
   // Sanity 4 (Round-3-Heuristik gegen Kontext-Inflation): wenn das LLM
@@ -261,8 +269,9 @@ function repairNormativeMasking(analysis: AnalysisOutput): {
     nm.aspects = []
     // Reasoning überschreiben, damit es nicht weiter von lifestyle_aspiration
     // redet, während verdict/aspects leer sind (Codex-Review Round 3).
-    nm.reasoning =
-      'Kein sichtbarer normativer Träger im Bild; Kontextlabel allein zählt nicht als lifestyle_aspiration.'
+    nm.reasoning = outputLang === 'en'
+      ? 'No visible normative carrier in the image; the context label alone does not count as lifestyle_aspiration.'
+      : 'Kein sichtbarer normativer Träger im Bild; Kontextlabel allein zählt nicht als lifestyle_aspiration.'
   }
   return report
 }
@@ -561,7 +570,9 @@ export function reconcileDominantErrorType(
 
 const DEFAULT_MODEL = 'gemini-3-flash-preview'
 const DEFAULT_AESTHETIC_MODEL = 'anthropic:claude-sonnet-5'
-const DEFAULT_LANG: 'de' | 'en' = 'en'
+const DEFAULT_PROMPT_LANG: 'de' | 'en' = 'en'
+// Ausgabesprache der Freitexte. Deutsch bleibt Default (Non-Regression-Pfad).
+const DEFAULT_OUTPUT_LANG: OutputLang = 'de'
 
 type UseTextFallback = boolean
 type ThinkingLevel = NonNullable<NonNullable<GoogleLanguageModelOptions['thinkingConfig']>['thinkingLevel']>
@@ -579,7 +590,13 @@ export interface SemanticAnalysisOptions {
   temperature?: number
   thinkingLevel?: ThinkingLevel
   mediaResolution?: MediaResolution
-  lang?: 'de' | 'en'
+  // Sprache der Prompt-FORMULIERUNG (nicht der Ausgabe-Texte). Umbenannt von
+  // `lang` (2026-07-20), damit die Achse nicht mit outputLang verwechselt wird.
+  promptLang?: 'de' | 'en'
+  // Sprache der LLM-Freitexte UND der deterministisch komponierten Report-
+  // Texte (masking_review_note, context_review_hints, Repair-Fallbacks).
+  // Unabhängig von promptLang. Default 'de'.
+  outputLang?: OutputLang
   // Etappe 6 (additiv): Abbruch-/Timeout-Durchgriff. Wird an die vier AI-SDK-Calls
   // (Analyse + Aesthetik, je generateText/generateObject) als abortSignal gereicht.
   // Die parallelen Modal-Nebencalls (runModalAesthetic/runClipAlignment) behalten
@@ -632,7 +649,8 @@ function resolveModel(modelFlag?: string): { model: ReturnType<typeof google>; l
 
 const JSON_SUFFIX = '\n\nAntworte ausschliesslich mit einem validen JSON-Objekt. Kein Markdown, keine Erklärungen – nur das JSON.'
 
-const JSON_SUFFIX_EN = '\n\nRespond exclusively with a single valid JSON object. No markdown, no explanations — only the JSON. Remember: enum values stay as specified (English IDs), all free-text fields must be written in German per the LANGUAGE POLICY above.'
+const buildJsonSuffixEn = (langName: string): string =>
+  `\n\nRespond exclusively with a single valid JSON object. No markdown, no explanations — only the JSON. Remember: enum values stay as specified (English IDs), all free-text fields must be written in ${langName} per the LANGUAGE POLICY above.`
 
 const AESTHETIC_JSON_SKELETON = `
 
@@ -683,10 +701,7 @@ Dein JSON-Output MUSS exakt diese Top-Level-Struktur und Feldnamen verwenden:
   },
   "research_layer": {
     "reading_mode": "WA | DA | CI | AA | MI",
-    "reading_mode_label": "...",
-    "reading_mode_masking_logic": "...",
     "visual_drivers": ["CL", "BK", "WCG", "HDT", "MO", "GF", "DS", "NL", "MH"],
-    "visual_drivers_labels": ["..."],
     "dominant_error_type": "physics | anatomy | context | mixed | none",
     "codebook": {
       "visual_realism_level": "low | medium | high",
@@ -735,7 +750,7 @@ Dein JSON-Output MUSS exakt diese Top-Level-Struktur und Feldnamen verwenden:
 WICHTIG: Verwende EXAKT diese Feldnamen. Keine Umbenennung, keine Verschachtelung unter "phase1"/"phase2" etc.
 "declared_intent" muss EXAKT den vom User erklärten Wert echoen (siehe "Erklärte redaktionelle Haltung" im Input). Bei "nicht angegeben" → "unspecified" + "intent_alignment"="not_assessable".`
 
-const ANALYSIS_JSON_SKELETON_EN = `
+const buildAnalysisJsonSkeletonEn = (langName: string): string => `
 
 Your JSON output MUST use exactly this top-level structure and these field names:
 
@@ -776,10 +791,7 @@ Your JSON output MUST use exactly this top-level structure and these field names
   },
   "research_layer": {
     "reading_mode": "WA | DA | CI | AA | MI",
-    "reading_mode_label": "...",
-    "reading_mode_masking_logic": "...",
     "visual_drivers": ["CL", "BK", "WCG", "HDT", "MO", "GF", "DS", "NL", "MH"],
-    "visual_drivers_labels": ["..."],
     "dominant_error_type": "physics | anatomy | context | mixed | none",
     "codebook": {
       "visual_realism_level": "low | medium | high",
@@ -828,7 +840,7 @@ Your JSON output MUST use exactly this top-level structure and these field names
 IMPORTANT: use EXACTLY these field names. No renaming, no nesting under "phase1"/"phase2" etc.
 Enum values are English IDs as shown. Free-text fields (finding, observation, reasoning,
 reason_for_relevance, masked_issue, intent_assessment.reasoning, etc.)
-must be written in German per the LANGUAGE POLICY.
+must be written in ${langName} per the LANGUAGE POLICY.
 "declared_intent" must EXACTLY echo the user-declared value (see "Declared editorial intent"
 in the user input). When unspecified → "declared_intent"="unspecified" + "intent_alignment"="not_assessable".`
 
@@ -848,6 +860,9 @@ export interface SemanticAnalysisResult {
     model: string
     aesthetic_model?: string
     duration_ms: number
+    // Nachvollziehbarkeit gespeicherter Läufe: welche Sprach-Achsen aktiv waren.
+    prompt_lang: 'de' | 'en'
+    output_lang: OutputLang
     evidence_filter?: EvidenceFilterReport
     masking_filter?: MaskingFilterReport
     consistency_reconcile?: ConsistencyReconcileReport
@@ -913,10 +928,13 @@ export async function runSemanticAnalysis(
   options?: SemanticAnalysisOptions
 ): Promise<SemanticAnalysisResult> {
   const mediaType = options?.mediaType ?? 'image/jpeg'
-  const lang = options?.lang ?? DEFAULT_LANG
-  const analysisPrompt = lang === 'en' ? ANALYSIS_PROMPT_EN : ANALYSIS_PROMPT
+  const promptLang = options?.promptLang ?? DEFAULT_PROMPT_LANG
+  const outputLang = options?.outputLang ?? DEFAULT_OUTPUT_LANG
+  const outputLangName = outputLang === 'en' ? 'English' : 'German'
+  const analysisPrompt = promptLang === 'en' ? buildAnalysisPromptEn(outputLang) : buildAnalysisPrompt(outputLang)
+  const analysisSchema = buildAnalysisSchema(outputLang)
   const declaredIntent: DeclaredIntent = options?.declaredIntent ?? 'unspecified'
-  const intentLabel = lang === 'en'
+  const intentLabel = promptLang === 'en'
     ? DECLARED_INTENT_LABELS_EN[declaredIntent]
     : DECLARED_INTENT_LABELS_DE[declaredIntent]
   // Injection-Haertung (Etappe 6): User-Freitext (prompt/context) in benannte
@@ -927,9 +945,9 @@ export async function runSemanticAnalysis(
     s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   // Nullish-Semantik wie zuvor (Codex-Review A): leerer String bleibt leer,
   // nur null/undefined -> Platzhalter (keine Verhaltensaenderung ggü. dem alten `??`).
-  const promptField = options?.prompt != null ? escapeXml(options.prompt) : (lang === 'en' ? 'not provided' : 'nicht vorhanden')
-  const contextField = options?.context != null ? escapeXml(options.context) : (lang === 'en' ? 'not provided' : 'nicht vorhanden')
-  const userText = lang === 'en'
+  const promptField = options?.prompt != null ? escapeXml(options.prompt) : (promptLang === 'en' ? 'not provided' : 'nicht vorhanden')
+  const contextField = options?.context != null ? escapeXml(options.context) : (promptLang === 'en' ? 'not provided' : 'nicht vorhanden')
+  const userText = promptLang === 'en'
     ? `Original prompt:\n<original_prompt>${promptField}</original_prompt>\nUsage context:\n<usage_context>${contextField}</usage_context>\nDeclared editorial intent: ${intentLabel}`
     : `Original-Prompt:\n<original_prompt>${promptField}</original_prompt>\nNutzungskontext:\n<usage_context>${contextField}</usage_context>\nErklärte redaktionelle Haltung: ${intentLabel}`
   const imageBuffer = Buffer.from(imageBase64, 'base64')
@@ -982,8 +1000,8 @@ export async function runSemanticAnalysis(
   }
 
   const analysisCall = (): Promise<AnalysisOutput> => {
-    const skeleton = lang === 'en' ? ANALYSIS_JSON_SKELETON_EN : ANALYSIS_JSON_SKELETON
-    const suffix = lang === 'en' ? JSON_SUFFIX_EN : JSON_SUFFIX
+    const skeleton = promptLang === 'en' ? buildAnalysisJsonSkeletonEn(outputLangName) : ANALYSIS_JSON_SKELETON
+    const suffix = promptLang === 'en' ? buildJsonSuffixEn(outputLangName) : JSON_SUFFIX
     if (analysisResolved.useTextFallback) {
       return generateText({
         model: analysisResolved.model,
@@ -997,11 +1015,11 @@ export async function runSemanticAnalysis(
             { type: 'image', image: imageBuffer, mediaType: mediaType },
           ],
         }],
-      }).then(r => parseWithFallback(r.text, AnalysisSchema, 'Analysis'))
+      }).then(r => parseWithFallback(r.text, analysisSchema, 'Analysis'))
     }
     return generateObject({
       model: analysisResolved.model,
-      schema: AnalysisSchema,
+      schema: analysisSchema,
       system: analysisPrompt,
       ...analysisGenerationSettings,
       abortSignal: options?.signal,
@@ -1124,7 +1142,7 @@ export async function runSemanticAnalysis(
 
   // Normative-Masking-Sanity (Plan: nach Intent-Repair, vor dominant_error_type-
   // Reconcile). Skopus hart auf research_layer.normative_masking begrenzt.
-  const normRepair = repairNormativeMasking(analysis)
+  const normRepair = repairNormativeMasking(analysis, outputLang)
   if (normRepair.verdict_normalized) {
     console.warn(
       `[Normative-Masking-Repair] verdict normalisiert: ${normRepair.verdict_normalized.before} → ${normRepair.verdict_normalized.after} (${normRepair.verdict_normalized.reason})`,
@@ -1180,6 +1198,7 @@ export async function runSemanticAnalysis(
   const maskingReviewNote = composeMaskingReviewNote(
     analysis.research_layer.reading_mode,
     analysis.research_layer.masking_evidence,
+    outputLang,
   )
   const hints = deriveContextReviewHints({
     readingMode: analysis.research_layer.reading_mode,
@@ -1199,7 +1218,7 @@ export async function runSemanticAnalysis(
       hasAnatomyIssue: analysis.research_layer.codebook.has_anatomy_issue,
       hasContextIssue: analysis.research_layer.codebook.has_context_issue,
     },
-  })
+  }, outputLang)
 
   return {
     analysis,
@@ -1215,6 +1234,8 @@ export async function runSemanticAnalysis(
       model: analysisResolved.label,
       aesthetic_model: aestheticResolved.label,
       duration_ms,
+      prompt_lang: promptLang,
+      output_lang: outputLang,
       evidence_filter: evidenceReport,
       masking_filter: maskingReport,
       consistency_reconcile: reconcileReport,
