@@ -552,6 +552,10 @@ function exportPdf() {
       </span>
     </div>
 
+    <!-- Tageslimit-Stand (aus dem Header hierher verlegt): direkt am Input,
+         sichtbar in allen Eingabe-Zuständen, verschwindet bei aktivem Bypass. -->
+    <p v-if="rateLimitHint" class="stage__quota">{{ rateLimitHint }}</p>
+
     <div class="stage__body">
       <!-- EMPTY + UPLOAD_ERROR teilen die Dropzone -->
       <div v-if="state === 'empty' || state === 'upload_error'">
@@ -870,6 +874,18 @@ function exportPdf() {
 }
 .stage__strip .step.is-active::before {
   content: '› ';
+}
+/* Tageslimit-Zeile: schmale Mono-Zeile zwischen Strip und Body, rechtsbündig –
+   gleiche Anmutung wie der frühere Header-Hint, nur auf heller Fläche. Der
+   Body-Innenabstand (28px) liefert den Abstand nach unten. */
+.stage__quota {
+  margin: 0;
+  padding: 10px 18px 0;
+  text-align: right;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--subtle);
 }
 .stage__body {
   padding: 28px;
