@@ -20,8 +20,11 @@ let active = false
 let onMove: ((e: PointerEvent) => void) | null = null
 
 // Über diesen Elementen gilt der native Cursor (Text-Eingabe-Affordanz) —
-// muss zur CSS-Ausnahme unten passen.
-const NATIVE_CURSOR_SELECTOR = 'input, textarea, select, [contenteditable="true"], [contenteditable=""]'
+// muss zur CSS-Ausnahme unten passen. `[data-cursor="native"]` ist das
+// allgemeine Opt-out für Flächen, auf denen der Kreis stört statt hilft
+// (z. B. das Hero-Medium: dort soll das Bild wirken, nicht der Zeiger).
+const NATIVE_CURSOR_SELECTOR =
+  'input, textarea, select, [contenteditable="true"], [contenteditable=""], [data-cursor="native"]'
 
 onMounted(() => {
   const el = circle.value
@@ -83,6 +86,11 @@ html.verdict-cursor-active textarea,
 html.verdict-cursor-active select,
 html.verdict-cursor-active [contenteditable='true'],
 html.verdict-cursor-active [contenteditable=''] {
+  cursor: auto !important;
+}
+/* Opt-out-Flächen: nativer Zeiger statt Kreis, inkl. aller Kinder. */
+html.verdict-cursor-active [data-cursor='native'],
+html.verdict-cursor-active [data-cursor='native'] * {
   cursor: auto !important;
 }
 

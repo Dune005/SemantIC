@@ -279,7 +279,7 @@
           "title": "The conspicuous flaw is the exception – the subtle one is the rule.",
           "prose": "Hunting for the sixth finger alone doesn't get you far: even in this corpus it is not the anatomy artefacts that dominate but physics and context breaks – and the more strongly an image is curated, the harder the flaw is to spot. Pure artefact hunting is therefore unreliable. That is why SemantIC checks not “real or fake” but the {coherence} of an image.",
           "coherence": "coherence",
-          "cta": "Check image",
+          "cta": "Have an image checked",
           "crossref": "How SemantIC forms a verdict from this is explained under {link}.",
           "crossrefLink": "How SemantIC works"
         }
@@ -467,7 +467,7 @@
         "kicker": "Physics · Semantics · Bias",
         "headline": "Convincing isn't {tail}",
         "headlineTail": "enough",
-        "sub": "SemantIC grew out of the analysis of 144 AI-generated images: a research prototype that checks your images for physical coherence, semantic consistency and bias – and marks the spots that deserve a second look.",
+        "sub": "SemantIC grew out of the analysis of 144 AI-generated images – and checks yours for physical coherence, semantic consistency and bias.",
         "cta": "Have an image checked",
         "how": "How it works",
         "micro": "Research preview · created as part of a bachelor's thesis at Fachhochschule Graubünden",
@@ -529,7 +529,7 @@
       "context": {
         "eyebrow": "For context",
         "title": "Not an authenticity detector.",
-        "lead": "SemantIC does not tell you whether an image is “real” or “AI”, and does not sort into “fake” and “not fake”. It assesses the {quality} of an image already known to be AI-generated – bad AI versus good AI. And every finding is a cue, not a verdict.",
+        "lead": "SemantIC does not tell you whether an image is “real” or “AI”, and does not sort into “fake” and “not fake”. It assesses the {quality} of an image already known to be AI-generated – coherent, or merely beautiful? And every finding is a cue, not a verdict.",
         "quality": "quality"
       },
       "band": {

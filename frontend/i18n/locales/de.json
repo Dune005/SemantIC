@@ -279,7 +279,7 @@
           "title": "Der auffällige Fehler ist die Ausnahme – der subtile die Regel.",
           "prose": "Die Suche nach dem sechsten Finger allein trägt nicht weit: Schon in diesem Korpus dominieren nicht die Anatomie-Artefakte, sondern Physik- und Kontextbrüche – und je stärker ein Bild kuratiert ist, desto schwerer fällt der Fehler auf. Reine Artefakt-Suche ist damit unzuverlässig. Deshalb prüft SemantIC nicht «echt oder gefälscht», sondern die {coherence} eines Bildes.",
           "coherence": "Kohärenz",
-          "cta": "Bild prüfen",
+          "cta": "Bild prüfen lassen",
           "crossref": "Wie SemantIC daraus ein Urteil bildet, steht unter {link}.",
           "crossrefLink": "So funktioniert SemantIC"
         }
@@ -467,7 +467,7 @@
         "kicker": "Physik · Semantik · Bias",
         "headline": "Überzeugend ist {tail}",
         "headlineTail": "nicht genug",
-        "sub": "SemantIC entstand aus der Analyse von 144 KI-generierten Bildern: ein Forschungsprototyp, der deine Bilder auf physikalische Kohärenz, semantische Konsistenz und Bias prüft – und dir die Stellen markiert, die einen zweiten Blick verdienen.",
+        "sub": "SemantIC entstand aus der Analyse von 144 KI-generierten Bildern – und prüft deine auf physikalische Kohärenz, semantische Konsistenz und Bias.",
         "cta": "Bild prüfen lassen",
         "how": "Wie das funktioniert",
         "micro": "Research Preview · entstanden im Rahmen einer Bachelorarbeit an der Fachhochschule Graubünden",
@@ -529,7 +529,7 @@
       "context": {
         "eyebrow": "Zur Einordnung",
         "title": "Kein Echtheits-Detektor.",
-        "lead": "SemantIC sagt dir nicht, ob ein Bild „echt“ oder „KI“ ist, und sortiert nicht in „Fake“ und „nicht Fake“. Es bewertet die {quality} eines bereits als KI-generiert bekannten Bildes – schlechte KI gegen gute KI. Und jeder Befund ist ein Hinweis, kein Urteil.",
+        "lead": "SemantIC sagt dir nicht, ob ein Bild „echt“ oder „KI“ ist, und sortiert nicht in „Fake“ und „nicht Fake“. Es bewertet die {quality} eines bereits als KI-generiert bekannten Bildes – stimmig oder nur schön? Und jeder Befund ist ein Hinweis, kein Urteil.",
         "quality": "Qualität"
       },
       "band": {
