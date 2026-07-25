@@ -569,6 +569,7 @@ function exportPdf() {
           :class="{ 'is-dragover': isDragover }"
           tabindex="0"
           role="button"
+          data-cursor="drop"
           :aria-label="$t('pages.analyze.upload.dropzoneAria')"
           @click="triggerPick"
           @keydown.enter.prevent="triggerPick"
