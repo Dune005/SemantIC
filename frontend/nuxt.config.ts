@@ -54,6 +54,12 @@ export default defineNuxtConfig({
   app: {
     head: {
       link: [
+        // Favicon: roter Kreis (--crit) + weisses S. Das S ist im SVG als Pfad
+        // eingebacken, nicht als <text> - Browser laden im Favicon-Kontext keine
+        // Webfonts und wuerden sonst auf die Systemschrift zurueckfallen.
+        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+        { rel: 'alternate icon', type: 'image/x-icon', href: '/favicon.ico', sizes: '16x16 32x32 48x48' },
+        { rel: 'apple-touch-icon', href: '/apple-touch-icon.png', sizes: '180x180' },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
         {
