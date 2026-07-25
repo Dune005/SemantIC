@@ -1,8 +1,20 @@
 <script setup lang="ts">
 // Custom-Cursor «08 Dual-State» (Frontend 1.5, L3) — Produktisierung aus
-// Konzept_Frontend/umsetzung-1.5/cursor-konzepte.html. Ein 30px-Kreis folgt dem
-// Zeiger 1:1 (direktes translate, kein Lerp); über [data-verdict]-Zonen wird er
-// zum Verdikt: ✓ (ok) / ✕ (crit), sonst neutraler Punkt.
+// Konzept_Frontend/umsetzung-1.5/cursor-konzepte.html.
+//
+// Zwei getrennte Signal-Kanäle (Erweiterung 1.11):
+// - Farbe/Zeichen = SEMANTIK: was ist das hier? ✓ (ok) / ✕ (crit) / · neutral,
+//   gesteuert über [data-verdict]-Zonen.
+// - Form/Grösse   = AFFORDANZ: was kann ich damit tun? Über klickbaren Elementen
+//   füllt sich der Kreis und wächst (30 → 40px), über Fliesstext wird er zum
+//   Strich (I-Beam-Äquivalent), über der Upload-Zone zeigt er ⬆.
+// Beide Kanäle überschreiben einander NICHT: eine klickbare Verdikt-Zone füllt
+// sich in --safe/--crit statt in --ink und behält ihr ✓/✕.
+//
+// Vorher kannte der Kreis nur den Semantik-Kanal — und weil [data-verdict] nur
+// auf den Landing-Dimensionskarten sitzt, war er auf allen anderen Seiten
+// konstant derselbe graue Punkt, während `cursor: none` gleichzeitig jedes
+// `cursor: pointer` im Projekt neutralisierte.
 //
 // Leitplanken:
 // - Nur auf hover+fine-Geräten initialisiert (Touch/Coarse: nativer Cursor, kein Loop).
@@ -10,7 +22,8 @@
 // - Formularfelder behalten den nativen Cursor (CSS-Ausnahme), der Kreis blendet aus.
 // - prefers-reduced-motion: keine Scale/Farb-Transition (Position ist nutzergesteuert).
 // - Abschalten/Austauschen = eine Zeile in layouts/default.vue (User-Vorbehalt).
-const circle = ref<HTMLElement | null>(null)
+const root = ref<HTMLElement | null>(null)
+const dot = ref<HTMLElement | null>(null)
 
 let raf = 0
 let framePending = false
@@ -18,6 +31,8 @@ let px = -100
 let py = -100
 let active = false
 let onMove: ((e: PointerEvent) => void) | null = null
+let onDown: (() => void) | null = null
+let onUp: (() => void) | null = null
 
 // Über diesen Elementen gilt der native Cursor (Text-Eingabe-Affordanz) —
 // muss zur CSS-Ausnahme unten passen. `[data-cursor="native"]` ist das
@@ -26,9 +41,23 @@ let onMove: ((e: PointerEvent) => void) | null = null
 const NATIVE_CURSOR_SELECTOR =
   'input, textarea, select, [contenteditable="true"], [contenteditable=""], [data-cursor="native"]'
 
+// Klickbar. Deckt die reka-ui-Primitives mit ab, die ihre Rolle über role=
+// statt über das Tag deklarieren.
+const INTERACTIVE_SELECTOR =
+  'a[href], button, summary, label[for], [role="button"], [role="link"], [role="tab"], [role="menuitem"], [tabindex]:not([tabindex="-1"])'
+
+// Markierbarer Fliesstext. Bewusst NUR echte Textcontainer und nicht jedes
+// span/div — sonst wäre der Kreis auf Textseiten dauerhaft ein Strich.
+const TEXT_SELECTOR = 'p, li, blockquote, dd, dt, figcaption, td, th, h1, h2, h3, h4, h5, h6'
+
+// Upload-Fläche (analyze.vue). Eigenes Attribut statt Klassenname, damit die
+// Zuordnung nicht an einem CSS-Namen hängt.
+const DROP_SELECTOR = '[data-cursor="drop"]'
+
 onMounted(() => {
-  const el = circle.value
-  if (!el) return
+  const el = root.value
+  const d = dot.value
+  if (!el || !d) return
   if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return
 
   active = true
@@ -39,16 +68,45 @@ onMounted(() => {
   // ein Update + ein elementFromPoint, egal wie viele move-Events feuern.
   const process = () => {
     framePending = false
+    // Position trägt der Anker (.vc), die Zentrierung übernimmt translate(-50%,-50%)
+    // im CSS des Punkts — dadurch bleibt die Mitte beim Grössenwechsel exakt stehen,
+    // ohne dass hier Margins nachgerechnet werden müssen.
     el.style.transform = `translate(${px}px, ${py}px)`
+
     const target = document.elementFromPoint(px, py)
     const overNative = !!target?.closest(NATIVE_CURSOR_SELECTOR)
-    const zone = target?.closest('[data-verdict]')
-    const verdict = zone?.getAttribute('data-verdict') ?? null
+
+    const drop = target?.closest(DROP_SELECTOR) ?? null
+    const interactive = target?.closest(INTERACTIVE_SELECTOR) ?? null
+    // Die Dropzone ist selbst role="button" und enthält einen echten Button.
+    // Der Drop-Zustand gilt nur, solange kein NÄHER liegendes interaktives
+    // Element im Spiel ist — sonst schlüge ⬆ auch über «Bild auswählen» an.
+    const inDrop = !!drop && (!interactive || interactive === drop || !drop.contains(interactive))
+    const isLink = !inDrop && !!interactive
+    const isText = !inDrop && !isLink && !!target?.closest(TEXT_SELECTOR)
+
+    const verdict = target?.closest('[data-verdict]')?.getAttribute('data-verdict') ?? null
+
     el.classList.toggle('is-hidden', overNative)
+    el.classList.toggle('is-drop', inDrop)
+    el.classList.toggle('is-link', isLink)
+    el.classList.toggle('is-text', isText)
     el.classList.toggle('ok', verdict === 'ok')
     el.classList.toggle('crit', verdict === 'crit')
-    el.textContent = verdict === 'ok' ? '✓' : verdict === 'crit' ? '✕' : '·'
+
+    // Im Link-Zustand bleibt der Punkt zeichenlos: bei 18px wird jeder Glyph
+    // unleserlich, und die Farbe trägt die Aussage bereits.
+    d.textContent = isText || isLink
+      ? ''
+      : inDrop
+        ? '⬆'
+        : verdict === 'ok'
+          ? '✓'
+          : verdict === 'crit'
+            ? '✕'
+            : '·'
   }
+
   onMove = (e: PointerEvent) => {
     px = e.clientX
     py = e.clientY
@@ -57,19 +115,37 @@ onMounted(() => {
       raf = requestAnimationFrame(process)
     }
   }
+  // Klick-Feedback: rein visuell, kein elementFromPoint nötig.
+  onDown = () => el.classList.add('is-down')
+  onUp = () => el.classList.remove('is-down')
+
   window.addEventListener('pointermove', onMove, { passive: true })
+  window.addEventListener('pointerdown', onDown, { passive: true })
+  window.addEventListener('pointerup', onUp, { passive: true })
+  // Ohne pointercancel bliebe der gedrückte Zustand hängen, wenn der Browser
+  // die Geste übernimmt (Drag-Start, Kontextmenü, Tab-Wechsel).
+  window.addEventListener('pointercancel', onUp, { passive: true })
+  window.addEventListener('blur', onUp)
 })
 
 onBeforeUnmount(() => {
   if (!active) return
   cancelAnimationFrame(raf)
   if (onMove) window.removeEventListener('pointermove', onMove)
+  if (onDown) window.removeEventListener('pointerdown', onDown)
+  if (onUp) {
+    window.removeEventListener('pointerup', onUp)
+    window.removeEventListener('pointercancel', onUp)
+    window.removeEventListener('blur', onUp)
+  }
   document.documentElement.classList.remove('verdict-cursor-active')
 })
 </script>
 
 <template>
-  <div ref="circle" class="vc" aria-hidden="true">·</div>
+  <div ref="root" class="vc" aria-hidden="true">
+    <span ref="dot" class="vc__dot">·</span>
+  </div>
 </template>
 
 <style>
@@ -94,25 +170,17 @@ html.verdict-cursor-active [data-cursor='native'] * {
   cursor: auto !important;
 }
 
+/* Anker: trägt AUSSCHLIESSLICH die Position. Bewusst ohne eigene Ausdehnung und
+   ohne transform-Transition — sichtbare Position und elementFromPoint-Hit-Test
+   müssen synchron bleiben (Codex-Review 2026-06-11). Alles Visuelle passiert in
+   .vc__dot, das dadurch gefahrlos animieren darf. */
 .vc {
   position: fixed;
   left: 0;
   top: 0;
-  width: 30px;
-  height: 30px;
-  margin: -15px 0 0 -15px;
-  border-radius: 50%;
-  border: 2px solid var(--line-strong);
-  background: rgba(255, 255, 255, 0.85);
+  width: 0;
+  height: 0;
   display: none;
-  align-items: center;
-  justify-content: center;
-  font: 700 15px/1 'IBM Plex Sans', system-ui, sans-serif;
-  color: var(--muted);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.4);
-  /* KEINE transform-Transition: sichtbare Position und elementFromPoint-Hit-Test
-     müssen synchron bleiben (Codex-Review 2026-06-11). */
-  transition: border-color 0.12s, color 0.12s, opacity 0.12s;
   pointer-events: none;
   z-index: 9999;
   will-change: transform;
@@ -120,22 +188,108 @@ html.verdict-cursor-active [data-cursor='native'] * {
   transform: translate(-100px, -100px);
 }
 html.verdict-cursor-active .vc {
-  display: flex;
+  display: block;
 }
-.vc.ok {
+
+.vc__dot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  /* Zentriert sich selbst — unabhängig von der aktuellen Grösse, deshalb bleibt
+     die Mitte auch während der Wachstums-Transition auf dem Zeiger. */
+  transform: translate(-50%, -50%);
+  width: 30px;
+  height: 30px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 2px solid var(--line-strong);
+  background: rgba(255, 255, 255, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 700 15px/1 'IBM Plex Sans', system-ui, sans-serif;
+  color: var(--muted);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.4);
+  transition:
+    width 0.12s ease,
+    height 0.12s ease,
+    border-radius 0.12s ease,
+    border-color 0.12s,
+    background-color 0.12s,
+    color 0.12s,
+    font-size 0.12s,
+    opacity 0.12s,
+    transform 0.09s ease;
+}
+
+/* SEMANTIK-Kanal: Verdikt-Zonen färben Rand und Zeichen. */
+.vc.ok .vc__dot {
   border-color: var(--safe);
   color: var(--safe);
 }
-.vc.crit {
+.vc.crit .vc__dot {
   border-color: var(--crit);
   color: var(--crit);
 }
-.vc.is-hidden {
+
+/* AFFORDANZ-Kanal: klickbar = der Ring zieht sich zu einem satten roten Punkt
+   zusammen. Bewusst KLEINER statt grösser — der grosse gefüllte Kreis legte sich
+   über den Inhalt, den man gerade anklicken will. Der Punkt greift ausserdem ein
+   bestehendes Motiv des Design-Systems auf (.header-cta__dot, .kicker .dot: 7px
+   in --crit), statt eine neue Form einzuführen. */
+.vc.is-link .vc__dot {
+  width: 18px;
+  height: 18px;
+  font-size: 0;
+  background: var(--crit);
+  border-color: var(--crit);
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.55);
+}
+/* Klickbare Verdikt-Zone: der Punkt übernimmt die Verdikt-Farbe, damit Affordanz
+   und Semantik gleichzeitig lesbar bleiben. */
+.vc.is-link.ok .vc__dot {
+  background: var(--safe);
+  border-color: var(--safe);
+}
+
+/* Ablegen ist keine Klick-Geste: die Upload-Fläche behält den grossen Kreis mit
+   Richtungszeichen, damit «hier Bild ablegen» vor dem Ziehen lesbar ist. */
+.vc.is-drop .vc__dot {
+  width: 40px;
+  height: 40px;
+  font-size: 17px;
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+/* Markierbarer Text: schmaler Strich statt Kreis. */
+.vc.is-text .vc__dot {
+  width: 2px;
+  height: 22px;
+  border-radius: 1px;
+  border-width: 0;
+  background: var(--ink);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.55);
+}
+
+/* Klick-Moment: kurzes Einfedern — ersetzt das taktile Feedback, das der
+   native Zeiger beim Drücken gibt. */
+.vc.is-down .vc__dot {
+  transform: translate(-50%, -50%) scale(0.85);
+}
+
+.vc.is-hidden .vc__dot {
   opacity: 0;
 }
+
 @media (prefers-reduced-motion: reduce) {
-  .vc {
+  .vc__dot {
     transition: none;
+  }
+  /* Grössensprung beim Drücken entfällt, die Zustandsfarben bleiben. */
+  .vc.is-down .vc__dot {
+    transform: translate(-50%, -50%);
   }
 }
 @media print {
