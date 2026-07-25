@@ -35,6 +35,11 @@ useHead({
 // ---- Hero-Video-Gate: nur fine-pointer ohne reduced-motion bekommt das Video --
 const showMotion = ref(false)
 const heroVideo = ref<HTMLVideoElement | null>(null)
+// Bühnen-Ref: markiert die Zone, in der das Mess-Raster still bleibt.
+const heroStage = ref<HTMLElement | null>(null)
+// Erst wenn das Video tatsächlich läuft, wird es über das Standbild geblendet –
+// bleibt Autoplay aus (Safari, Datensparmodus), bleibt schlicht das Bild stehen.
+const videoPlaying = ref(false)
 onMounted(async () => {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches
@@ -176,6 +181,13 @@ onMounted(() => {
     framePending = true
     raf = requestAnimationFrame(() => {
       framePending = false
+      // Über dem Hero-Medium bleibt das Raster still: Dort trägt das Bild, und
+      // Punkte, die unter dem ausblendenden Rand mitwandern, irritieren nur.
+      // Das Rect wird im rAF-Callback gelesen (max. 1x pro Frame, kein Thrashing).
+      const stageRect = heroStage.value?.getBoundingClientRect()
+      if (stageRect && pointer.y >= stageRect.top && pointer.y <= stageRect.bottom) {
+        pointer.active = false
+      }
       draw(w, h, dotBase, dotInk, accent, true)
     })
   }
@@ -213,9 +225,66 @@ useReveal(page, '.reveal')
     <!-- Inhalts-Gruppe (Geschwister des Canvas) – liegt im normalen Fluss über
          dem z-index:-1-Canvas; bündelt alle Sektionen als eine Einheit. -->
     <div class="lp__main">
-      <!-- ============ HERO · Video rechts, Copy links, weicher Verlauf ======== -->
+      <!-- ============ HERO · Plakat: Motiv oben randabfallend, Copy darunter ==
+           Achsendrehung gegenüber 1.6 (Text links | Video rechts): Das Leinen-
+           Motiv ist ein Breitformat – der 90°-Verlauf hat es halbiert und das
+           «SemantIC»-Etikett ausgewaschen. Jetzt läuft das Medium über die volle
+           Breite, seine UNTERkante blendet sich per Verlauf selbst aus, und die
+           Copy greift von unten in diese Kante hinein. Dieselbe «das Medium
+           blendet sich selbst ein»-Geste wie bisher schon auf Mobile, nur um 90°
+           gedreht – und damit auf allen Breiten dieselbe Komposition.
+           Bewusst NICHT im Hero: Befund-Zonen/Marker auf dem Motiv (F4: keine
+           erfundenen Befunde) und jedes zusätzliche Rot (offenes Finding zur
+           Rot-Inflation). Einziges Rot bleibt der Satzpunkt. -->
       <section class="hero" aria-labelledby="hero-headline">
+        <!-- data-cursor="native": Über dem Medium blendet der VerdictCursor aus
+             und der native Zeiger kommt zurück – der Kreis konkurriert dort mit
+             dem Bild, statt etwas zu erschliessen. Das Mess-Raster hält im
+             selben Bereich still (siehe onMove weiter oben). -->
+        <div ref="heroStage" class="hero__stage" data-cursor="native">
+          <!-- Standbild als bleibende Unterlage, Video legt sich darüber, sobald
+               es wirklich läuft. Vorher tauschte ein v-if/v-else das Element bei
+               der Hydration aus – das kostete einen leeren Frame UND startete
+               die Auftritts-Animation ein zweites Mal (im Browser gemessen:
+               hero-media bei 99 ms und nochmal bei 217 ms = sichtbares
+               Doppel-Flackern). Nebeneffekt: Der alt-Text gilt jetzt in beiden
+               Fällen, nicht nur im reduced-motion-Fall. -->
+          <img
+            class="hero__visual"
+            src="/landing/hero-loop-leine-poster.jpg"
+            width="2752"
+            height="1536"
+            fetchpriority="high"
+            :alt="$t('pages.index.hero.mediaAlt')"
+          />
+          <video
+            v-if="showMotion"
+            ref="heroVideo"
+            class="hero__visual hero__visual--motion"
+            :class="{ 'is-playing': videoPlaying }"
+            autoplay
+            muted
+            loop
+            playsinline
+            preload="metadata"
+            aria-hidden="true"
+            @playing="videoPlaying = true"
+          >
+            <source src="/landing/hero-loop-leine.webm" type="video/webm" />
+            <source src="/landing/hero-loop-leine.mp4" type="video/mp4" />
+          </video>
+        </div>
+
         <div class="hero__inner">
+          <!-- Fuge Bild|Text: die Transparenz-Deklaration steht als Bildunter-
+               schrift dort, wo sie hingehört (vorher: Kärtchen in der Bildecke).
+               Rechts eine Massstabs-Leiste im Laborjournal-Duktus. -->
+          <p class="hero__seam">
+            <span class="hero__ticks hero__ticks--l" aria-hidden="true" />
+            <span class="hero__decl">{{ showMotion ? $t('pages.index.hero.chipVideo') : $t('components.moodBand.chip') }}</span>
+            <span class="hero__ticks hero__ticks--r" aria-hidden="true" />
+          </p>
+
           <div class="hero__copy">
             <p class="kicker"><span class="kicker__dot" aria-hidden="true" />{{ $t('pages.index.hero.kicker') }}</p>
             <i18n-t keypath="pages.index.hero.headline" tag="h1" id="hero-headline" class="hero__head" scope="global">
@@ -223,41 +292,13 @@ useReveal(page, '.reveal')
             </i18n-t>
             <p class="hero__sub">{{ $t('pages.index.hero.sub') }}</p>
             <div class="hero__cta">
-              <Button as="a" href="/analyze" variant="primary" size="md">
-                {{ $t('pages.index.hero.cta') }} <span aria-hidden="true">→</span>
+              <Button as="a" href="/analyze" variant="primary" size="md" class="hero__go">
+                {{ $t('pages.index.hero.cta') }} <span class="hero__arrow" aria-hidden="true">→</span>
               </Button>
               <NuxtLink to="/how-it-works" class="hero__how">{{ $t('pages.index.hero.how') }}</NuxtLink>
             </div>
             <p class="hero__micro">{{ $t('pages.index.hero.micro') }}</p>
           </div>
-        </div>
-
-        <div class="hero__media">
-          <video
-            v-if="showMotion"
-            ref="heroVideo"
-            class="hero__visual"
-            poster="/landing/hero-loop-leine-poster.jpg"
-            autoplay
-            muted
-            loop
-            playsinline
-            preload="metadata"
-            aria-hidden="true"
-          >
-            <source src="/landing/hero-loop-leine.webm" type="video/webm" />
-            <source src="/landing/hero-loop-leine.mp4" type="video/mp4" />
-          </video>
-          <img
-            v-else
-            class="hero__visual"
-            src="/landing/hero-loop-leine-poster.jpg"
-            width="2752"
-            height="1536"
-            :alt="$t('pages.index.hero.mediaAlt')"
-          />
-          <span class="hero__fade" aria-hidden="true" />
-          <span class="hero__chip">{{ showMotion ? $t('pages.index.hero.chipVideo') : $t('components.moodBand.chip') }}</span>
         </div>
       </section>
 
@@ -1125,21 +1166,142 @@ useReveal(page, '.reveal')
 }
 
 /* ============================================================ */
-/* HERO · Video-Backdrop rechts, Copy links, weicher Verlauf     */
+/* HERO · Plakat-Komposition                                     */
+/* Motiv oben randabfallend über die volle Breite, Unterkante     */
+/* blendet sich selbst aus, Copy greift von unten hinein.         */
 /* ============================================================ */
+/* Transparent statt --canvas: So scheint das cursor-reaktive Mess-Raster
+   (.lp__grid, fixed auf z-index:-1) auch in der Hero durch und belebt die
+   Flächen neben der Copy – dieselbe Logik wie bei den .wall-Sektionen.
+   Ohne border-bottom: Hero und erste Sektion teilen denselben Grund, die
+   .wall__axis übernimmt die Trennung. */
 .hero {
   position: relative;
-  background-color: var(--canvas);
-  border-bottom: 1px solid var(--line-soft);
   overflow: hidden;
 }
+/* Warmer Lichtkegel unter der Copy: Er hält den Papierton der Marke (--canvas)
+   dort, wo gelesen wird, und läuft nach aussen ins Raster aus. Damit steht der
+   Text ruhig, ohne dass eine Karte oder Kante nötig wäre – und die Hero
+   gewinnt die Tiefe, die eine flache Fläche nicht hergibt. */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 64% 56% at 50% 64%,
+    var(--canvas) 0%,
+    rgba(238, 239, 233, 0.88) 40%,
+    rgba(238, 239, 233, 0.55) 62%,
+    rgba(238, 239, 233, 0.2) 80%,
+    rgba(238, 239, 233, 0) 94%
+  );
+}
+
+/* ---- Bühne: das Medium über die volle Breite ---- */
+.hero__stage {
+  position: relative;
+  z-index: 1;
+  /* Kein 100svh-Zwang: Bühne + Copy sollen zusammen in eine 900er-Viewporthöhe
+     passen, ohne dass die CTA unter die Falz rutscht. */
+  height: clamp(290px, 42vh, 520px);
+  overflow: hidden;
+}
+.hero__visual {
+  position: absolute;
+  /* Breiter als die Bühne und rechts verankert: Links liegt im Motiv rund ein
+     Viertel leere Wand – die ragt so über den linken Rand hinaus (die Bühne
+     schneidet ab) und die Print-Reihe füllt die Fläche, statt sie halb leer
+     stehen zu lassen. */
+  inset: 0 0 0 auto;
+  width: 128%;
+  max-width: none;
+  height: 100%;
+  /* Vertikal 30 %: Bei Breitbild-Beschnitt entscheidet allein die Y-Achse, was
+     man sieht. 30 % legt die Leine mit Klammern und dem SemantIC-Etikett ins
+     obere Drittel der Bühne – bei 50 % wären beide oben weggeschnitten. */
+  object-position: 42% 30%;
+  object-fit: cover;
+  display: block;
+  /* Das Medium blendet sich selbst aus – Maske statt Farbverlauf darüber:
+     Dahinter bleibt die Fläche wirklich transparent, das Mess-Raster läuft
+     ohne Kante weiter. Ab 86 % ist nichts mehr da; dort sitzt die Fuge. */
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 52%,
+    rgba(0, 0, 0, 0.86) 63%,
+    rgba(0, 0, 0, 0.5) 73%,
+    rgba(0, 0, 0, 0.14) 82%,
+    transparent 90%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 52%,
+    rgba(0, 0, 0, 0.86) 63%,
+    rgba(0, 0, 0, 0.5) 73%,
+    rgba(0, 0, 0, 0.14) 82%,
+    transparent 90%
+  );
+}
+
+/* ---- Copy-Block: greift in die auslaufende Bildkante ---- */
 .hero__inner {
   position: relative;
   z-index: 1;
   max-width: var(--container);
   margin-inline: auto;
   padding-inline: var(--gutter);
+  /* Die Copy überlappt die Bühnen-Box, aber nicht das noch sichtbare Bild: Die
+     Fuge landet dort, wo der Verlauf bereits ~95 % deckt. Sonst liegt der
+     Massstab unruhig auf durchscheinenden Bildkanten. */
+  margin-top: clamp(-64px, -6vh, -40px);
+  padding-bottom: clamp(44px, 7vh, 84px);
 }
+
+/* Fuge Bild|Text: Bildunterschrift mittig, Massstab läuft nach beiden Seiten
+   aus. Sie ist genau so breit wie die Textspalte darunter – so rahmt sie die
+   Copy, statt als Balken quer durchs Motiv zu laufen. */
+.hero__seam {
+  display: flex;
+  align-items: center;
+  gap: clamp(14px, 2.5vw, 26px);
+  max-width: 820px;
+  margin-inline: auto;
+  margin-bottom: clamp(26px, 4.2vh, 46px);
+}
+.hero__decl {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.hero__ticks {
+  flex: 1;
+  height: 9px;
+  /* Massstab mit Hierarchie: kurze Teilstriche im 9px-Raster, jeder fünfte
+     länger und kräftiger – ein Lineal, kein gleichförmiges Streifenmuster. */
+  background-image:
+    repeating-linear-gradient(to right, var(--line-strong) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(to right, var(--line) 0 1px, transparent 1px 9px);
+  background-size: 100% 9px, 100% 5px;
+  background-repeat: no-repeat;
+}
+/* Der Massstab läuft von der Mitte nach aussen: beide Hälften sind an der
+   Deklaration verankert, damit die Teilstriche dort bündig anschliessen. */
+.hero__ticks--l {
+  background-position: right bottom, right bottom;
+  transform-origin: right center;
+}
+.hero__ticks--r {
+  background-position: left bottom, left bottom;
+  transform-origin: left center;
+}
+
 .kicker {
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
   font-weight: 500;
@@ -1158,18 +1320,26 @@ useReveal(page, '.reveal')
   border-radius: 50%;
   background: var(--ink);
 }
+/* Zentriert wie jede Sektion darunter: Linksbündig war die Hero der einzige
+   Ausreisser im Seitenaufbau und liess auf breiten Schirmen die halbe Fläche
+   rechts leer stehen. */
 .hero__copy {
-  max-width: 660px;
-  padding-block: clamp(80px, 15vh, 170px);
+  max-width: 820px;
+  margin-inline: auto;
+  text-align: center;
 }
 .hero__head {
   font-family: 'IBM Plex Sans', system-ui, sans-serif;
   font-weight: 700;
-  font-size: clamp(48px, 6.4vw, 88px);
-  line-height: 0.98;
+  /* 18ch statt 16ch: Der Umbruch fällt damit auf «Überzeugend ist / nicht
+     genug.» – zwei annähernd gleich lange Zeilen, die die Fläche tragen,
+     statt eines schmalen Turms in der Mitte. */
+  font-size: clamp(40px, 6.2vw, 92px);
+  line-height: 0.96;
   letter-spacing: -0.035em;
   color: var(--ink);
-  max-width: 16ch;
+  max-width: 18ch;
+  margin-inline: auto;
   text-wrap: balance;
 }
 .hero__head .nowrap {
@@ -1179,89 +1349,125 @@ useReveal(page, '.reveal')
   color: var(--accent);
 }
 .hero__sub {
-  margin-top: clamp(24px, 3.5vw, 36px);
-  font-size: clamp(16px, 1.7vw, 19px);
-  line-height: 1.6;
+  margin-top: clamp(20px, 3vw, 30px);
+  margin-inline: auto;
+  font-size: clamp(15.5px, 1.7vw, 19px);
+  line-height: 1.58;
   color: var(--ink-soft);
-  max-width: 52ch;
+  /* Etwa auf Headline-Breite: Läuft der Fliesstext breiter als die Zeile
+     darüber, kippt die Hierarchie. */
+  max-width: 60ch;
+  text-wrap: pretty;
 }
 .hero__cta {
-  margin-top: 30px;
+  margin-top: clamp(26px, 3.6vw, 34px);
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px 26px;
 }
+.hero__arrow {
+  display: inline-block;
+  transition: transform 0.16s ease;
+}
+.hero__go:hover .hero__arrow {
+  transform: translateX(3px);
+}
+/* Sekundäraktion: keine Unterstrich-Fussnote mehr, sondern eine eigene
+   Grundlinie, die auf Hover zur vollen Kante wird. */
 .hero__how {
   font-family: 'IBM Plex Sans', system-ui, sans-serif;
   font-weight: 500;
-  font-size: 13.5px;
+  font-size: 14px;
   color: var(--muted);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  text-decoration-color: var(--line-strong);
-  transition: color 0.12s ease, text-decoration-color 0.12s ease;
+  text-decoration: none;
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--line-strong);
+  transition: color 0.14s ease, border-color 0.14s ease;
 }
 .hero__how:hover {
   color: var(--ink);
-  text-decoration-color: var(--ink);
+  border-bottom-color: var(--ink);
 }
 .hero__micro {
-  margin-top: 24px;
+  margin-top: clamp(22px, 3.2vw, 30px);
+  margin-inline: auto;
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
   font-size: 11.5px;
   letter-spacing: 0.03em;
   color: var(--muted);
   line-height: 1.6;
-  max-width: 52ch;
+  /* Einzeilig, solange die Breite reicht: die kurze zweizeilige Fussnote war
+     der dritte schmale Block untereinander. */
+  max-width: 100ch;
+  text-wrap: balance;
 }
-.hero__media {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
+
+/* ---- Auftritt: reine CSS-Keyframes ------------------------------
+   Bewusst keine JS-Klasse: CSS greift vor dem ersten Paint, also kein
+   Flash zwischen SSR-Markup und Hydration – und der Auftritt läuft auch
+   ohne JS. Reihenfolge: Motiv → Fuge → Kicker → Headline → Sub → CTA. */
+@keyframes hero-media {
+  from { opacity: 0; transform: scale(1.035); }
+  to   { opacity: 1; transform: none; }
 }
-/* Full-bleed statt 66 %: es gibt KEINE harte Bildkante mehr (User-Feedback
-   17.06.). Das Medium deckt die ganze Hero-Fläche; der Verlauf links erzeugt
-   den Text-Freiraum und blendet nach rechts ins Bild aus – «Video läuft rechts»
-   bleibt visuell erhalten, ohne sichtbare Kante. */
-.hero__visual {
-  position: absolute;
-  inset: 0;
-  height: 100%;
-  width: 100%;
-  object-fit: cover;
-  display: block;
+@keyframes hero-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
 }
-.hero__fade {
-  position: absolute;
-  inset: 0;
-  /* Rechts früher auf null (User-Feedback 2026-07-19): voller Schutz bleibt
-     hinter der Copy (bis ~40 %), danach fällt der Verlauf zügig ab, damit das
-     Video ab Textende nicht flau wirkt. */
-  background: linear-gradient(
-    90deg,
-    var(--canvas) 0%,
-    var(--canvas) 44%,
-    rgba(238, 239, 233, 0.9) 53%,
-    rgba(238, 239, 233, 0.55) 61%,
-    rgba(238, 239, 233, 0.22) 69%,
-    rgba(238, 239, 233, 0.06) 77%,
-    rgba(238, 239, 233, 0) 85%
-  );
+@keyframes hero-scale-in {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
 }
-.hero__chip {
-  position: absolute;
-  right: 14px;
-  bottom: 12px;
-  padding: 4px 9px;
-  background: var(--canvas);
-  border: 1px solid var(--line);
-  border-radius: 3px;
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-size: 9.5px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted);
+/* Auftritt auf der BÜHNE, nicht auf dem Medium: Das Medium ist der einzige
+   Knoten, der sich zur Laufzeit ändern kann – läge die Animation dort, würde
+   sie bei jedem Wechsel neu anlaufen. Die Bühne bleibt stabil. */
+.hero__stage {
+  animation: hero-media 1100ms cubic-bezier(0.22, 0.61, 0.24, 1) both;
+}
+/* Weicher Übergang Standbild → Video statt hartem Austausch. */
+.hero__visual--motion {
+  opacity: 0;
+  transition: opacity 0.55s ease;
+}
+.hero__visual--motion.is-playing {
+  opacity: 1;
+}
+.hero__seam,
+.kicker,
+.hero__head,
+.hero__sub,
+.hero__cta,
+.hero__micro {
+  animation: hero-rise 620ms cubic-bezier(0.22, 0.61, 0.24, 1) both;
+}
+.hero__seam  { animation-delay: 200ms; }
+.kicker      { animation-delay: 300ms; }
+.hero__head  { animation-delay: 370ms; }
+.hero__sub   { animation-delay: 450ms; }
+.hero__cta   { animation-delay: 520ms; }
+.hero__micro { animation-delay: 590ms; }
+.hero__ticks {
+  animation: hero-scale-in 760ms cubic-bezier(0.22, 0.61, 0.24, 1) both;
+  animation-delay: 340ms;
+}
+/* base.css kürzt Animationen global auf 0.01ms; hier zusätzlich hart
+   abgeschaltet, damit garantiert der Endzustand steht. */
+@media (prefers-reduced-motion: reduce) {
+  .hero__stage,
+  .hero__seam,
+  .hero__ticks,
+  .kicker,
+  .hero__head,
+  .hero__sub,
+  .hero__cta,
+  .hero__micro {
+    animation: none;
+  }
+  .hero__visual--motion {
+    transition: none;
+  }
 }
 
 /* ============================================================ */
@@ -1301,61 +1507,51 @@ useReveal(page, '.reveal')
 /* RESPONSIVE + PRINT                                            */
 /* ============================================================ */
 @media (max-width: 959px) {
-  /* Mobil kein separater Bild-Block und kein Farb-Overlay (Codex-Review
-     2026-07-19): Das Medium sitzt als unten verankertes Fenster fester Höhe
-     im Hero; seine Oberkante läuft per mask-image ins Transparente aus, das
-     Bild blendet sich also selbst ein. Die geringere Höhe verkleinert den
-     Cover-Zoom → mehr Motivbreite (Klammern + SemantIC-Etikett sichtbar).
-     Gemeinsame Variable hält Copy-Abstand und Medienhöhe synchron. */
+  /* Gleiche Plakat-Komposition wie auf Desktop – die frühere Sonderlösung
+     (Medium als unten verankertes Fenster mit maskierter Oberkante) war die
+     Kompensation für das Text-links-Layout und entfällt mit der Achsendrehung.
+     Angepasst werden nur die Proportionen: flachere Bühne, geringere
+     Überlappung, engerer Bildausschnitt gegen den Cover-Zoom. */
   .hero {
-    --hero-mobile-media-h: clamp(200px, 30svh, 300px);
     border-bottom-color: var(--line);
   }
-  .hero__copy {
-    /* Bewusste Überlappung: die letzte Copy-Zeile liegt auf der ausgeblendeten
-       Bildoberkante, damit Text und Medium ineinandergreifen statt zu stapeln. */
-    padding-block: clamp(48px, 9svh, 96px) calc(var(--hero-mobile-media-h) - 28px);
+  .hero__stage {
+    height: clamp(240px, 34svh, 400px);
   }
   .hero__visual {
-    /* Breiter als der Viewport + rechts verankert: die leere Wandfläche links
-       im Motiv ragt über den Bildschirmrand hinaus (Hero hat overflow:hidden),
-       die Print-Reihe füllt die Breite. */
-    inset: auto 0 0 auto;
-    width: 140%;
-    max-width: none;
-    height: var(--hero-mobile-media-h);
-    object-position: 50% 16%;
-    -webkit-mask-image: linear-gradient(
-      to bottom,
-      transparent 0%,
-      rgba(0, 0, 0, 0.14) 12%,
-      rgba(0, 0, 0, 0.6) 24%,
-      #000 36%
-    );
-    mask-image: linear-gradient(
-      to bottom,
-      transparent 0%,
-      rgba(0, 0, 0, 0.14) 12%,
-      rgba(0, 0, 0, 0.6) 24%,
-      #000 36%
-    );
+    /* Deutlich stärker als auf Desktop (128 %): Auf schmalen Schirmen bestimmt
+       die Höhe die Skalierung, das Bild wird also kaum vergrössert – ohne
+       zusätzliche Breite bliebe die leere Wand links im Ausschnitt. 156 %
+       schiebt sie ganz hinaus, die Print-Reihe füllt den Rahmen. */
+    width: 156%;
+    object-position: 50% 40%;
   }
-  .hero__fade {
-    display: none;
+  .hero__inner {
+    margin-top: clamp(-48px, -4.5svh, -28px);
   }
 }
 @media (max-width: 719px) {
   .lead {
     text-align: center;
   }
+  /* Unter 720px bleibt für den Massstab neben der Deklaration nur ein Stummel
+     übrig – dann trägt die Fuge die Bildunterschrift allein, mittig. */
+  .hero__ticks {
+    display: none;
+  }
+  .hero__seam {
+    justify-content: center;
+  }
   .hero__cta {
+    flex-direction: column;
     align-items: stretch;
+    gap: 16px;
   }
   .hero__cta :deep(a:first-child) {
     width: 100%;
   }
   .hero__how {
-    align-self: flex-start;
+    align-self: center;
   }
   .pair {
     grid-template-columns: 1fr;
@@ -1387,6 +1583,38 @@ useReveal(page, '.reveal')
   .closer,
   .band {
     display: none;
+  }
+  /* Der Hero-Auftritt startet per fill-mode:both bei opacity 0. Ein Druck bzw.
+     PDF-Export direkt nach dem Laden erwischte sonst eine leere erste Seite
+     (in Chromium reproduziert, Codex-Review 2026-07-24) – auf Papier gilt
+     immer der Endzustand. */
+  .hero__stage,
+  .hero__seam,
+  .hero__ticks,
+  .kicker,
+  .hero__head,
+  .hero__sub,
+  .hero__cta,
+  .hero__micro {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  /* Auf Papier steht das Standbild; das Video-Overlay wäre ein leeres Feld. */
+  .hero__visual--motion {
+    display: none;
+  }
+  /* Der Lichtkegel braucht das Raster als Gegenstück – auf Papier gibt es
+     keins (.lp__grid ist ausgeblendet), er würde nur als grauer Fleck
+     drucken (base.css erzwingt print-color-adjust: exact). */
+  .hero::before {
+    display: none;
+  }
+  /* Ohne Maske im Druck: Der weiche Auslauf wird auf Papier zu einem
+     ausgewaschenen Rand; die klare Kante ist im Druck das ehrlichere Bild. */
+  .hero__visual {
+    -webkit-mask-image: none;
+    mask-image: none;
   }
   /* Bedienhinweis auf Papier sinnlos – der Regler laesst sich nicht ziehen. */
   .spec__pull {
