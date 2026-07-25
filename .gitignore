@@ -80,3 +80,6 @@ vercel.json
 # --- Interne Arbeitsdokumente ---
 /PRODUCT.md
 /PROVENANCE-MARKERS-FRONTEND-TODO.md
+
+# --- Dev-Spielwiese (nicht deployed, lokal) ---
+/web

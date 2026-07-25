@@ -570,6 +570,14 @@ export function reconcileDominantErrorType(
 
 const DEFAULT_MODEL = 'gemini-3-flash-preview'
 const DEFAULT_AESTHETIC_MODEL = 'anthropic:claude-sonnet-5'
+// Die Modell-Registry von @ai-sdk/anthropic (3.0.76) endet bei claude-opus-4-7;
+// neuere Modelle (Sonnet 5, Opus 5) gelten dort als unbekannt und bekommen den
+// Provider-Default max_tokens=4096. Für den kurzen Ästhetik-Output reicht das
+// (Call 2 bleibt deshalb unverändert), für das grosse Analyse-JSON nicht — bei
+// Opus 5 läuft adaptives Thinking zusätzlich aus demselben Budget. Darum im
+// Text-Fallback-Pfad von Call 1 explizit setzen. 16000 statt mehr, weil
+// generateText nicht streamt und höhere Werte HTTP-Timeouts riskieren.
+const ANALYSIS_TEXT_FALLBACK_MAX_OUTPUT_TOKENS = 16000
 const DEFAULT_PROMPT_LANG: 'de' | 'en' = 'en'
 // Ausgabesprache der Freitexte. Deutsch bleibt Default (Non-Regression-Pfad).
 const DEFAULT_OUTPUT_LANG: OutputLang = 'de'
@@ -626,7 +634,7 @@ const DECLARED_INTENT_LABELS_DE: Record<DeclaredIntent, string> = {
 // nicht-Default-Sampling (temperature/top_p/top_k) mit HTTP 400 ab. Für sie senden wir
 // gar keine Sampling-Parameter (siehe buildSampling). Ältere Modelle (z.B. Sonnet 4.6)
 // akzeptieren temperature/topK weiter und behalten so ihren Quasi-Determinismus.
-const ANTHROPIC_NO_SAMPLING_PREFIXES = ['claude-sonnet-5', 'claude-opus-4-7', 'claude-opus-4-8']
+const ANTHROPIC_NO_SAMPLING_PREFIXES = ['claude-sonnet-5', 'claude-opus-5', 'claude-opus-4-7', 'claude-opus-4-8']
 const anthropicAcceptsSampling = (modelId: string): boolean =>
   !ANTHROPIC_NO_SAMPLING_PREFIXES.some((prefix) => modelId.startsWith(prefix))
 
@@ -1006,6 +1014,7 @@ export async function runSemanticAnalysis(
       return generateText({
         model: analysisResolved.model,
         system: analysisPrompt + skeleton + suffix,
+        maxOutputTokens: ANALYSIS_TEXT_FALLBACK_MAX_OUTPUT_TOKENS,
         ...analysisGenerationSettings,
         abortSignal: options?.signal,
         messages: [{
@@ -1015,7 +1024,16 @@ export async function runSemanticAnalysis(
             { type: 'image', image: imageBuffer, mediaType: mediaType },
           ],
         }],
-      }).then(r => parseWithFallback(r.text, analysisSchema, 'Analysis'))
+      }).then(r => {
+        // Abschneiden am Token-Limit sichtbar machen: sonst landet ein
+        // abgeschnittenes JSON stumm im Parser und sieht wie ein Modellfehler aus.
+        if (r.finishReason === 'length') {
+          console.warn(
+            `[Analysis] Output am Token-Limit abgeschnitten (maxOutputTokens=${ANALYSIS_TEXT_FALLBACK_MAX_OUTPUT_TOKENS}) — JSON-Parsing wird voraussichtlich scheitern.`,
+          )
+        }
+        return parseWithFallback(r.text, analysisSchema, 'Analysis')
+      })
     }
     return generateObject({
       model: analysisResolved.model,

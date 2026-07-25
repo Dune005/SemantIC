@@ -9,7 +9,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "devDependencies": {
     "@playwright/cli": "^0.1.9",

@@ -1,0 +1,23 @@
+# Am Tag der Repo-Publikation ergänzen: date-released: "JJJJ-MM-TT" (dann diese Zeile entfernen).
+cff-version: 1.2.0
+message: "Wenn Sie dieses Repository referenzieren, zitieren Sie es bitte wie unten angegeben."
+title: "SemantIC – AI Visual Integrity Validator"
+type: software
+authors:
+  - family-names: "Riz"
+    given-names: "Claudio"
+repository-code: "https://github.com/Dune005/SemantIC"
+abstract: >-
+  SemantIC prüft KI-generierte Bilder vor der Veröffentlichung auf
+  physikalische Kohärenz, semantische Konsistenz und Bias/Stereotypisierung.
+  Lehrprojekt (praktischer Teil) der Bachelorarbeit «Visual Bias im
+  KI-generierten Bild – Manifestation und Wahrnehmung visueller Bevorzugung
+  in synthetischen Bildern», Bachelor of Science FHGR in Multimedia
+  Production, Fachhochschule Graubünden.
+keywords:
+  - ai-generated-images
+  - visual-bias
+  - image-integrity
+  - bias-detection
+license-url: "https://github.com/Dune005/SemantIC/blob/main/LICENSE"
+version: "1.0.0"
