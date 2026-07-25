@@ -12,7 +12,7 @@ Im Zentrum der Arbeit steht ein Phänomen, das hier **Maskierungseffekt** genann
 
 Kurz gesagt: Je perfekter ein KI-Bild auf den ersten Blick wirkt, desto eher übersieht man, dass es inhaltlich nicht stimmt – sei es eine physikalisch unmögliche Lichtsituation, eine anatomische Ungereimtheit oder eine stereotype Rollenbesetzung. Die ästhetische Oberfläche verdeckt den inhaltlichen Defekt.
 
-Daraus ergibt sich die zentrale Differenzierung von SemantIC: Das Tool ist **kein «Fake vs. Real»-Detektor** (wie Deepfake-Erkennung), sondern ein «Schlechte KI vs. Gute KI»-Bewerter für semantische und ethische Qualität. Es fragt nicht «Ist das echt?», sondern «Hält dieses Bild einer inhaltlichen und ethischen Prüfung stand – auch wenn es schön aussieht?».
+Daraus ergibt sich die zentrale Differenzierung von SemantIC: Das Tool ist **kein «Fake vs. Real»-Detektor** (wie Deepfake-Erkennung), sondern ein «Stimmig – oder nur schön?»-Bewerter für semantische und ethische Qualität. Es fragt nicht «Ist das echt?», sondern «Hält dieses Bild einer inhaltlichen und ethischen Prüfung stand – auch wenn es schön aussieht?».
 
 ## Theoretische Grundlage
 

@@ -12,7 +12,7 @@ Dieses Repository ist die Dokumentation des Lehrprojekts der Bachelorarbeit *«V
 
 ## Was ist SemantIC
 
-SemantIC ist ein praktisches Workflow-Tool für Content-Creators, Bildredaktionen, Lehrpersonen und alle, die ein KI-generiertes Bild unmittelbar vor der Veröffentlichung beurteilen müssen. Statt wie ein Deepfake-Detektor zu fragen «Fake oder echt?», fragt SemantIC: «Gute KI oder schlechte KI?» – also nach der semantischen und ethischen Qualität eines Bildes.
+SemantIC ist ein praktisches Workflow-Tool für Content-Creators, Bildredaktionen, Lehrpersonen und alle, die ein KI-generiertes Bild unmittelbar vor der Veröffentlichung beurteilen müssen. Statt wie ein Deepfake-Detektor zu fragen «Fake oder echt?», fragt SemantIC: «Stimmig – oder nur schön?» – also nach der semantischen und ethischen Qualität eines Bildes.
 
 Die Oberfläche ist für Menschen ohne KI-Vorkenntnisse verständlich und bietet zugleich nachprüfbare Details für professionelle Nutzer:innen. Modellbefunde werden bewusst von Nachweisen getrennt: Ein Ergebnis soll nie sicherer wirken, als es methodisch ist.
 
