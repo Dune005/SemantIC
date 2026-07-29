@@ -6,8 +6,8 @@
 // - Farbe/Zeichen = SEMANTIK: was ist das hier? ✓ (ok) / ✕ (crit) / · neutral,
 //   gesteuert über [data-verdict]-Zonen.
 // - Form/Grösse   = AFFORDANZ: was kann ich damit tun? Über klickbaren Elementen
-//   füllt sich der Kreis und wächst (30 → 40px), über Fliesstext wird er zum
-//   Strich (I-Beam-Äquivalent), über der Upload-Zone zeigt er ⬆.
+//   zieht sich der Ring zum roten Punkt zusammen (30 → 18px), über Fliesstext
+//   wird er zum Strich (I-Beam-Äquivalent).
 // Beide Kanäle überschreiben einander NICHT: eine klickbare Verdikt-Zone füllt
 // sich in --safe/--crit statt in --ink und behält ihr ✓/✕.
 //
@@ -50,10 +50,6 @@ const INTERACTIVE_SELECTOR =
 // span/div — sonst wäre der Kreis auf Textseiten dauerhaft ein Strich.
 const TEXT_SELECTOR = 'p, li, blockquote, dd, dt, figcaption, td, th, h1, h2, h3, h4, h5, h6'
 
-// Upload-Fläche (analyze.vue). Eigenes Attribut statt Klassenname, damit die
-// Zuordnung nicht an einem CSS-Namen hängt.
-const DROP_SELECTOR = '[data-cursor="drop"]'
-
 onMounted(() => {
   const el = root.value
   const d = dot.value
@@ -76,19 +72,14 @@ onMounted(() => {
     const target = document.elementFromPoint(px, py)
     const overNative = !!target?.closest(NATIVE_CURSOR_SELECTOR)
 
-    const drop = target?.closest(DROP_SELECTOR) ?? null
-    const interactive = target?.closest(INTERACTIVE_SELECTOR) ?? null
-    // Die Dropzone ist selbst role="button" und enthält einen echten Button.
-    // Der Drop-Zustand gilt nur, solange kein NÄHER liegendes interaktives
-    // Element im Spiel ist — sonst schlüge ⬆ auch über «Bild auswählen» an.
-    const inDrop = !!drop && (!interactive || interactive === drop || !drop.contains(interactive))
-    const isLink = !inDrop && !!interactive
-    const isText = !inDrop && !isLink && !!target?.closest(TEXT_SELECTOR)
+    // Die Upload-Fläche ist selbst role="button" und damit vom Link-Zustand
+    // abgedeckt — sie braucht kein eigenes Zeichen.
+    const isLink = !!target?.closest(INTERACTIVE_SELECTOR)
+    const isText = !isLink && !!target?.closest(TEXT_SELECTOR)
 
     const verdict = target?.closest('[data-verdict]')?.getAttribute('data-verdict') ?? null
 
     el.classList.toggle('is-hidden', overNative)
-    el.classList.toggle('is-drop', inDrop)
     el.classList.toggle('is-link', isLink)
     el.classList.toggle('is-text', isText)
     el.classList.toggle('ok', verdict === 'ok')
@@ -98,13 +89,11 @@ onMounted(() => {
     // unleserlich, und die Farbe trägt die Aussage bereits.
     d.textContent = isText || isLink
       ? ''
-      : inDrop
-        ? '⬆'
-        : verdict === 'ok'
-          ? '✓'
-          : verdict === 'crit'
-            ? '✕'
-            : '·'
+      : verdict === 'ok'
+        ? '✓'
+        : verdict === 'crit'
+          ? '✕'
+          : '·'
   }
 
   onMove = (e: PointerEvent) => {
@@ -250,17 +239,6 @@ html.verdict-cursor-active .vc {
 .vc.is-link.ok .vc__dot {
   background: var(--safe);
   border-color: var(--safe);
-}
-
-/* Ablegen ist keine Klick-Geste: die Upload-Fläche behält den grossen Kreis mit
-   Richtungszeichen, damit «hier Bild ablegen» vor dem Ziehen lesbar ist. */
-.vc.is-drop .vc__dot {
-  width: 40px;
-  height: 40px;
-  font-size: 17px;
-  background: var(--ink);
-  border-color: var(--ink);
-  color: #fff;
 }
 
 /* Markierbarer Text: schmaler Strich statt Kreis. */

@@ -14,13 +14,17 @@ const activeNav = computed<'home' | 'analyze' | 'how-it-works' | 'error-guide' |
   return undefined
 })
 
-// Chrome-State (Etappe 6 verkabelt): bypassActive + rateLimitHint sind via useState
+// Chrome-State (Etappe 6 verkabelt): bypassActive + rateLimitQuota sind via useState
 // mit der analyze-Seite geteilt (sie schreibt die Werte aus den Response-Headern);
 // bypassState/bypassError leben nur lokal im Layout (Status des Bypass-Felds).
-// rateLimitHint wird seit der Verlegung nur noch auf der analyze-Seite angezeigt –
-// das Layout hält den State weiterhin, um ihn beim Bypass-Einlösen zu nullen.
+// rateLimitQuota wird seit der Verlegung nur noch auf der analyze-Seite angezeigt –
+// das Layout hält den State weiterhin, um ihn beim Bypass-Einlösen zu nullen. Der
+// State trägt die Zahlen, nicht den fertigen Satz (sonst friert die Sprache ein).
 const bypassActive = useState<boolean>('chrome:bypassActive', () => false)
-const rateLimitHint = useState<string | null>('chrome:rateLimitHint', () => null)
+const rateLimitQuota = useState<{ n: number; total: number | null } | null>(
+  'chrome:rateLimitQuota',
+  () => null,
+)
 const bypassState = ref<'idle' | 'submitting' | 'success' | 'error'>('idle')
 const bypassError = ref<string | null>(null)
 
@@ -32,8 +36,8 @@ async function onRedeemBypass(code: string) {
     await $fetch('/api/bypass/redeem', { method: 'POST', body: { code } })
     bypassState.value = 'success'
     bypassActive.value = true
-    // Bypass hebt das Limit auf → alter Rate-Limit-Hint ist hinfaellig (Fixture-konform).
-    rateLimitHint.value = null
+    // Bypass hebt das Limit auf → alter Rate-Limit-Stand ist hinfaellig (Fixture-konform).
+    rateLimitQuota.value = null
   } catch {
     // Fehlertext i18n-fähig (Codex 1.8): sonst überschreibt der hartkodierte Layout-Text
     // den $t-Fallback in BypassCodeField. Einzige Fehler-Quelle = bypass.error.

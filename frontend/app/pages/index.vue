@@ -644,7 +644,10 @@ useReveal(page, '.reveal')
   margin: 0 auto clamp(20px, 3vw, 28px);
   border: 1px solid var(--line);
   border-radius: var(--r);
-  background: var(--surface);
+  /* Eingesenkte Rinne statt flacher Fläche: dadurch liest sich die aktive Kachel als
+     Schieber, der eine von drei Positionen einnimmt – die Gruppe ist als Umschalter
+     erkennbar, bevor man mit der Maus draufkommt. */
+  background: var(--surface-2);
   padding: 4px;
   max-width: fit-content;
   flex-wrap: wrap;
@@ -664,10 +667,18 @@ useReveal(page, '.reveal')
   display: inline-flex;
   align-items: center;
   gap: 9px;
-  transition: color 0.15s ease, background 0.15s ease;
+  transition: color 0.15s ease, background 0.15s ease, transform 0.1s ease;
 }
-.dims__tab:hover {
-  color: var(--ink-soft);
+/* Hover hob vorher nur die Textfarbe von --muted auf --ink-soft – zwei Grautöne, deren
+   Unterschied im Fliesstext nicht auffiel. Jetzt hebt sich die Kachel sichtbar aus der
+   Rinne heraus: helle Fläche wie die aktive Position, nur ohne Inversion.
+   :not(.is-active) statt Reihenfolgen-Abhängigkeit – der aktive Tab darf nicht aufhellen. */
+.dims__tab:not(.is-active):hover {
+  color: var(--ink);
+  background: var(--surface);
+}
+.dims__tab:not(.is-active):active {
+  transform: scale(0.97);
 }
 .dims__tab.is-active {
   background: var(--ink);
@@ -677,8 +688,29 @@ useReveal(page, '.reveal')
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--line-strong);
+  /* Monochrom – KEINE Severity-Farben (siehe Kommentar am Markup): ein roter oder grüner
+     Punkt läse sich hier als Bewertung der Dimension statt als Schalterzustand. */
+  background: var(--muted);
   flex: 0 0 auto;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+.dims__tab:not(.is-active):hover .dims__dot {
+  background: var(--ink);
+  transform: scale(1.3);
+}
+.dims__tab.is-active .dims__dot {
+  background: var(--surface);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dims__tab,
+  .dims__dot {
+    transition: none;
+  }
+  .dims__tab:not(.is-active):active,
+  .dims__tab:not(.is-active):hover .dims__dot {
+    transform: none;
+  }
 }
 .dims__tab.is-active .dims__dot {
   background: var(--surface);
