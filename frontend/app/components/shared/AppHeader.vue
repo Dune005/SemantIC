@@ -99,7 +99,10 @@ function closeMenu() {
           {{ $t('header.cta') }} →
         </Button>
         <div class="mobile-nav__lang">
-          <LangSwitcher />
+          <!-- Wie bei jedem anderen Eintrag im Panel: nach der Wahl schliesst das Menü,
+               damit der Seitentext in der neuen Sprache sichtbar wird, statt hinter dem
+               offenen Overlay zu bleiben. Der Desktop-Switcher oben braucht das nicht. -->
+          <LangSwitcher @switched="closeMenu" />
         </div>
       </div>
     </div>

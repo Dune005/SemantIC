@@ -6,7 +6,7 @@
 // ETAPPE 6 (Naht geschlossen): Upload → Canvas-Downscaling (prepareImage) → echter
 // $fetch.raw('/api/analyze', {signal}) → buildAnalysisViewModel(raw, submittedUsageForm)
 // → DiagnoseCockpit. usage_form bleibt frontend-only (nie im API-Body). Fehler werden über
-// mapFetchError(HTTP-Status → ErrorKind) abgebildet; rateLimitHint/bypassActive kommen
+// mapFetchError(HTTP-Status → ErrorKind) abgebildet; rateLimitQuota/bypassActive kommen
 // aus den Response-Headern in den geteilten Chrome-State (useState).
 import { ref, computed, provide, onBeforeUnmount, onMounted } from 'vue'
 import Button from '~/components/ui/Button.vue'
@@ -150,7 +150,14 @@ const apiImageBase64 = ref<string | null>(null)
 const apiMediaType = ref<string | null>(null)
 
 // Chrome-State (Header/Footer im Layout) ueber die Layout<->Page-Grenze teilen.
-const rateLimitHint = useState<string | null>('chrome:rateLimitHint', () => null)
+// Bewusst die ZAHLEN im State, nicht der fertige Satz: ein per t() erzeugter String
+// friert die Sprache ein, in der er entstanden ist – nach einem Sprachwechsel stand
+// der deutsche Satz auch auf der englischen Seite. Der Text entsteht jetzt erst im
+// Template und wird dadurch bei jedem Locale-Wechsel neu aufgebaut.
+const rateLimitQuota = useState<{ n: number; total: number | null } | null>(
+  'chrome:rateLimitQuota',
+  () => null,
+)
 const bypassActive = useState<boolean>('chrome:bypassActive', () => false)
 
 // Tageslimit-Stand schon beim Oeffnen der Seite zeigen. Client-only: der Stand
@@ -164,7 +171,7 @@ onMounted(async () => {
       return
     }
     if (quota.state === 'ok' && quota.remaining != null && quota.limit != null) {
-      rateLimitHint.value = t('pages.analyze.quota.remaining', { n: quota.remaining, total: quota.limit })
+      rateLimitQuota.value = { n: quota.remaining, total: quota.limit }
     }
   } catch {
     // Anzeige bleibt leer – exakt der Zustand vor diesem Feature.
@@ -363,17 +370,15 @@ async function runAnalysis() {
       signal,
     })
     if (signal.aborted) return
-    // rateLimitHint + bypassActive aus den Response-Headern (Spec §6.6).
+    // rateLimitQuota + bypassActive aus den Response-Headern (Spec §6.6).
     // Das Tageslimit kommt aus dem Header, nicht als Literal – sonst laeuft die
     // Anzeige beim naechsten Limit-Wechsel wieder aus dem Server-Wert heraus.
     const remaining = res.headers.get('x-ratelimit-remaining')
     if (remaining != null) {
       const n = Number(remaining)
       const total = Number(res.headers.get('x-ratelimit-limit'))
-      rateLimitHint.value = Number.isFinite(n)
-        ? Number.isFinite(total)
-          ? t('pages.analyze.quota.remaining', { n, total })
-          : t('pages.analyze.quota.remainingNoTotal', { n })
+      rateLimitQuota.value = Number.isFinite(n)
+        ? { n, total: Number.isFinite(total) ? total : null }
         : null
     }
     if (res.headers.get('x-ratelimit-bypass') === '1') bypassActive.value = true
@@ -554,7 +559,11 @@ function exportPdf() {
 
     <!-- Tageslimit-Stand (aus dem Header hierher verlegt): direkt am Input,
          sichtbar in allen Eingabe-Zuständen, verschwindet bei aktivem Bypass. -->
-    <p v-if="rateLimitHint" class="stage__quota">{{ rateLimitHint }}</p>
+    <p v-if="rateLimitQuota" class="stage__quota">
+      {{ rateLimitQuota.total != null
+        ? $t('pages.analyze.quota.remaining', { n: rateLimitQuota.n, total: rateLimitQuota.total })
+        : $t('pages.analyze.quota.remainingNoTotal', { n: rateLimitQuota.n }) }}
+    </p>
 
     <div class="stage__body">
       <!-- EMPTY + UPLOAD_ERROR teilen die Dropzone -->
@@ -569,7 +578,6 @@ function exportPdf() {
           :class="{ 'is-dragover': isDragover }"
           tabindex="0"
           role="button"
-          data-cursor="drop"
           :aria-label="$t('pages.analyze.upload.dropzoneAria')"
           @click="triggerPick"
           @keydown.enter.prevent="triggerPick"
@@ -986,6 +994,41 @@ function exportPdf() {
   font-size: 11px;
   letter-spacing: 0.06em;
   color: var(--subtle);
+}
+
+/* Mobile-Verdichtung der Eingabe-Karte. Auf 390px belegte sie 453px Höhe – über die
+   Hälfte des Bildschirms für ein leeres Feld. Zwei Ursachen: die Schrittleiste brach
+   auf zwei Zeilen um (51px statt 30px, beide Spans mitten im Wort getrennt), und die
+   Dropzone trug Desktop-Innenabstände. */
+@media (max-width: 639px) {
+  .stage__strip {
+    padding: 8px 14px;
+    font-size: 10px;
+    letter-spacing: 0.07em;
+  }
+  /* Das dekorative Präfix «SEMANTIC · INPUT» weicht, damit die Schrittfolge in eine
+     Zeile passt. Der ganze Strip ist aria-hidden – es geht keine Information verloren,
+     und die Schrittfolge ist die einzige Angabe darin, die etwas mitteilt. */
+  .stage__strip > span:first-child {
+    display: none;
+  }
+  .dz-head {
+    margin-bottom: 12px;
+  }
+  .dropzone {
+    padding: 26px 16px;
+  }
+  .dropzone__icon {
+    width: 26px;
+    height: 26px;
+    margin-bottom: 10px;
+  }
+  .dropzone__or {
+    margin: 9px 0;
+  }
+  .dropzone__formats {
+    margin-top: 12px;
+  }
 }
 /* Drag-Hinweis als Overlay: blendet OHNE Layout-Shift ueber dem ruhenden Inhalt
    ein. Feld bleibt konstant gross; nur Opacity + Rahmen/Flaeche signalisieren den
