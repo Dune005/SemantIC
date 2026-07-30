@@ -573,6 +573,47 @@ Geräteklassen statt Breite: auf `hover: none` / `pointer: coarse` wird die
 Canvas-Interaktion des Hero-Rasters deaktiviert (statisches Raster) und der
 VerdictCursor gar nicht erst initialisiert (nativer Cursor).
 
+## Agent Prompt Guide
+
+### Quick Reference
+
+| Token | Hex | Rolle |
+|:---|:---|:---|
+| `page-bg` | `#e4e5dd` | Seitenhintergrund (body) |
+| `canvas` | `#eeefe9` | Karten-Boden (warm-oliver Creme) |
+| `surface` | `#ffffff` | innere Karten-Fläche |
+| `surface-2` | `#e8e9e2` | eingesenkte Flächen |
+| `ink` | `#23251d` | Haupttext, Headlines |
+| `muted` | `#5c5e54` | Sekundärtext |
+| `line` | `#c4c6bb` | Hairline-Rahmen (1px) |
+| `accent` = `crit` | `#cd4239` | der EINE chromatische Akzent |
+| `safe` / `warn` / `crit` | `#2c8c66` / `#c8921f` / `#cd4239` | Severity-Ampel (immer mit Wort) |
+
+Schrift: **IBM Plex Sans** (Headlines, Fliesstext, grosse Score-Zahlen) +
+**IBM Plex Mono** (Kicker/Labels, uppercase, letter-spacing 0.12–0.16em;
+Kleindrucke/Chips weichen ab – Details siehe Typography).
+Radius: 6px (`--r`). Keine Schatten. Kein Links-Akzent-Streifen.
+
+### Ready-to-use Prompt
+
+> Baue die Komponente im SemantIC-Design-System (Variante C «Laborjournal»):
+> IBM Plex Sans für Headlines/Fliesstext, IBM Plex Mono uppercase mit weitem
+> letter-spacing für Kicker/Labels/Daten. Farben ausschliesslich als Tokens
+> aus `app/assets/css/tokens.css` per `var(--…)` bzw. Tailwind-Token-Klassen –
+> keine neuen Hex-Werte. Flache, bordered Karten (1px `--line`, Radius 6px),
+> KEINE box-shadows – Tiefe entsteht über Flächenwechsel
+> (page-bg → canvas → surface → surface-2). Genau EIN chromatischer Akzent
+> (#cd4239 = `--accent` = `--crit`), sparsam gesetzt. Severity immer doppelt
+> kodiert: Farbe + Wort (OK/WARN/CRIT); frei stehender Severity-Text nur in
+> den `*-ink`-Tönen (gefüllte Badges folgen den dokumentierten Paaren).
+> Verboten: farbiger Akzent-Streifen an der linken Kartenkante (in jeder Form),
+> zweite Akzentfarbe, Gradients auf Karten, Severity-Farben als Text auf
+> dunklen Flächen.
+
+Für dunkle Sektionen zusätzlich: `--ink-surface`/`--ink-surface-2` als Grund,
+Text in `--ink-text`/`--ink-text-soft`/`--ink-text-muted`, Hairlines in
+`--ink-line` – keine Severity-Wörter oder -Kleintexte auf dunklem Grund.
+
 ## Iteration Guide
 
 1. **Tokens referenzieren, nie duplizieren** – neue Farben/Radien gehören in
@@ -604,3 +645,7 @@ VerdictCursor gar nicht erst initialisiert (nativer Cursor).
 - **Dotted Dropzone nicht belegt.** Die Upload-/Dropzone-Komponente liegt
   ausserhalb der hier dokumentierten Quelldateien; ihr Stil (dotted Border)
   ist in diesem Sheet nicht mit Werten belegt.
+- **Dimensionsfarben nicht dokumentiert.** Die vier Kategorialfarben
+  `--substance`/`--substance-soft` und `--appeal`/`--appeal-soft`
+  (Frontend 1.7, nur Erklärgrafiken auf /how-it-works) sind in tokens.css
+  definiert und kommentiert, in diesem Sheet aber nicht ausgeführt.

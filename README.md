@@ -36,6 +36,7 @@ Oberfläche und Analyse-Report sind auf Deutsch und Englisch verfügbar; der fer
 - [Die drei Prüfdimensionen](#die-drei-pr%C3%BCfdimensionen)
 - [Wie es funktioniert](#wie-es-funktioniert)
 - [Tech-Stack](#tech-stack)
+- [Design](#design)
 - [Dokumentation](#dokumentation)
 - [Lokal ausführen](#lokal-ausf%C3%BChren)
 - [Projektkontext](#projektkontext)
@@ -89,14 +90,23 @@ Ausführliche Beschreibung der Architektur: [docs/architektur.md](docs/architekt
 | Deployment | Vercel |
 | Paketmanager | npm |
 
+## Design
+
+Die Oberfläche folgt einer eigenen Designrichtung – **«Laborjournal»**: nüchtern, dokumentarisch, mit der Anmutung eines Mess-Protokolls. Ein Werkzeug, das die verführerische Oberfläche von KI-Bildern zum Thema macht, soll nicht selbst auf Hochglanz setzen. Kernprinzipien: Tiefe über Flächenwechsel statt Schatten, genau eine Akzentfarbe, Ampelfarben immer doppelt kodiert (Farbe + Wort), IBM Plex Sans/Mono.
+
+- [docs/design-system.md](docs/design-system.md) – das Design-System vorgestellt: Idee, Farbwelt, Typografie und die harten Regeln.
+- [frontend/DESIGN.md](frontend/DESIGN.md) – die ausführliche, maschinenlesbare Referenz (im DESIGN.md-Format, direkt von KI-Coding-Agenten nutzbar).
+- [frontend/preview.html](frontend/preview.html) – visueller Katalog mit Farbmustern, Typografie-Skala und Komponenten (lokal im Browser öffnen).
+
 ## Dokumentation
 
 - [docs/wie-es-funktioniert.md](docs/wie-es-funktioniert.md) – das Tool aus Nutzersicht: was geprüft wird und wie der Report zu lesen ist.
 - [docs/thesis-kontext.md](docs/thesis-kontext.md) – der theoretische Hintergrund: Maskierungseffekt und die Verbindung zur Bachelorarbeit.
 - [docs/entwicklungsprozess.md](docs/entwicklungsprozess.md) – der Weg zum fertigen Tool: was erprobt, verworfen und daraus gelernt wurde.
+- [docs/design-system.md](docs/design-system.md) – das Design-System «Laborjournal»: Idee, Farbwelt, Typografie, harte Regeln.
 - [docs/architektur.md](docs/architektur.md) – technischer Aufbau der Analyse-Pipeline und der Server-Schicht.
 - [docs/lokal-ausfuehren.md](docs/lokal-ausfuehren.md) – Setup, Umgebungsvariablen und Quickstart für den lokalen Betrieb.
-- [docs/werkstattbericht.md](docs/werkstattbericht.md) – Entstehungsprozess und Reflexion in eigener Stimme.
+- [docs/lehrprojekt-dokumentation.md](docs/lehrprojekt-dokumentation.md) – Entstehungsprozess und Reflexion in eigener Stimme.
 
 ## Lokal ausführen
 

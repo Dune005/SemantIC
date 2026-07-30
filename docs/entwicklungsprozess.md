@@ -1,6 +1,6 @@
 # Entwicklungsprozess & Verworfenes
 
-Ein fertiges Tool zeigt nicht, wie es entstanden ist. Diese Seite dokumentiert den Weg: die Ansätze, die erprobt und wieder verworfen wurden, die Grenzen, die sich als unüberwindbar herausstellten, und die Entscheidungen, die SemantIC seine heutige Form gegeben haben. Sie ist bewusst sachlich gehalten – die persönliche Reflexion steht im [Werkstattbericht](werkstattbericht.md).
+Ein fertiges Tool zeigt nicht, wie es entstanden ist. Diese Seite dokumentiert den Weg: die Ansätze, die erprobt und wieder verworfen wurden, die Grenzen, die sich als unüberwindbar herausstellten, und die Entscheidungen, die SemantIC seine heutige Form gegeben haben. Sie ist bewusst sachlich gehalten – die persönliche Reflexion steht in der [Lehrprojekt-Dokumentation](lehrprojekt-dokumentation.md).
 
 Grundlage der meisten Entscheidungen waren systematische Testreihen: kleine Bildsets, Mehrfachläufe pro Bild (weil Sprachmodell-Antworten streuen) und der Abgleich mit der manuellen Codierung von 144 KI-generierten Bildern aus dem Forschungsteil der Bachelorarbeit. Grössere Eingriffe in die Analyse-Logik wurden zusätzlich extern gegengeprüft, bevor sie umgesetzt wurden. Die ausführlichen Testprotokolle sind interne Arbeitsdokumente und nicht Teil dieses Repositories; die wichtigsten Befunde sind hier zusammengefasst.
 
