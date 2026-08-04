@@ -106,7 +106,7 @@ Die Oberfläche folgt einer eigenen Designrichtung – **«Laborjournal»**: nü
 - [docs/design-system.md](docs/design-system.md) – das Design-System «Laborjournal»: Idee, Farbwelt, Typografie, harte Regeln.
 - [docs/architektur.md](docs/architektur.md) – technischer Aufbau der Analyse-Pipeline und der Server-Schicht.
 - [docs/lokal-ausfuehren.md](docs/lokal-ausfuehren.md) – Setup, Umgebungsvariablen und Quickstart für den lokalen Betrieb.
-- [docs/lehrprojekt-dokumentation.md](docs/lehrprojekt-dokumentation.md) – Entstehungsprozess und Reflexion in eigener Stimme.
+- [docs/lehrprojekt-dokumentation.md](docs/lehrprojekt-dokumentation.md) – Entstehungsprozess und Reflexion.
 
 ## Lokal ausführen
 
