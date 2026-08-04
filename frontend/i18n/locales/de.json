@@ -565,11 +565,11 @@
       "upload": {
         "heading": "Bild prüfen",
         "help": "Leg ein KI-generiertes Bild ab oder wähl eine Datei – den Rest fragen wir danach ab.",
-        "dropzoneAria": "Bild hierher ziehen oder Datei auswählen. JPEG, PNG oder WebP, bis 3.5 Megabyte.",
+        "dropzoneAria": "Bild hierher ziehen oder Datei auswählen. JPEG, PNG oder WebP – grosse Bilder werden automatisch verkleinert.",
         "dropPrimary": "Bild hierher ziehen",
         "or": "oder",
         "pick": "Datei auswählen",
-        "formats": "JPEG · PNG · WebP · bis 3.5 MB",
+        "formats": "JPEG · PNG · WebP · wird automatisch verkleinert",
         "dragMsg": "Loslassen, um das Bild zu laden"
       },
       "validating": {
@@ -667,7 +667,7 @@
         },
         "too_large": {
           "title": "Bild zu gross",
-          "message": "Diese Datei überschreitet das Limit von 3.5 MB. Grössere Bilder verkleinern wir normalerweise automatisch – hier hat das nicht gereicht. Exportier das Bild etwas kleiner (oder als JPEG) und versuch es erneut."
+          "message": "Dieses Bild ist zu gross für die Analyse (Limit: 30 MB). Exportier es etwas kleiner (oder als JPEG) und versuch es erneut."
         },
         "downscale_failed": {
           "title": "Bild liess sich nicht verkleinern",

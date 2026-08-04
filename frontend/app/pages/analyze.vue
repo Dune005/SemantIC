@@ -180,7 +180,8 @@ onMounted(async () => {
 
 const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp']
 // Client-Downscale (error-taxonomy.md §0). Base64-Ziel bewusst < Server-Limit (4.5 MB).
-const MAX_UPLOAD_BYTES = 3_500_000
+// Hard-Stop vor jedem Decode: Riesen-Dateien gar nicht erst in FileReader/Canvas laden.
+const HARD_LIMIT_BYTES = 30_000_000
 const DOWNSCALE_MAX_EDGE = 2000
 const CLIENT_BASE64_BUDGET = 4_000_000
 const QUALITY_STEPS = [0.85, 0.7, 0.55, 0.4]
@@ -255,10 +256,13 @@ async function prepareImage(file: File): Promise<{
   const w = img.naturalWidth
   const h = img.naturalHeight
 
-  // Original passt direkt (klein genug + Kante im Limit): kein Re-Encode.
-  if (file.size <= MAX_UPLOAD_BYTES && Math.max(w, h) <= DOWNSCALE_MAX_EDGE) {
+  // Original passt direkt (Base64 im Budget + Kante im Limit): kein Re-Encode.
+  // Massgeblich ist die Base64-Laenge (file.size × 4/3), nicht die Dateigroesse –
+  // sonst rutschen ~3.0–3.5-MB-Dateien am Server-Limit vorbei (413 nach Quota-Abzug).
+  const originalBase64 = originalUrl.slice(originalUrl.indexOf(',') + 1)
+  if (originalBase64.length <= CLIENT_BASE64_BUDGET && Math.max(w, h) <= DOWNSCALE_MAX_EDGE) {
     return {
-      base64: originalUrl.slice(originalUrl.indexOf(',') + 1),
+      base64: originalBase64,
       mediaType: file.type,
       previewUrl: originalUrl,
       width: w,
@@ -295,6 +299,11 @@ async function prepareImage(file: File): Promise<{
 async function handleFile(file: File) {
   if (!ACCEPTED.includes(file.type)) {
     errorKind.value = 'unsupported_type'
+    state.value = 'upload_error'
+    return
+  }
+  if (file.size > HARD_LIMIT_BYTES) {
+    errorKind.value = 'too_large'
     state.value = 'upload_error'
     return
   }
