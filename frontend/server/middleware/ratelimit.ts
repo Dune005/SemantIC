@@ -1,14 +1,23 @@
 // IP-Rate-Limit + Bypass-Check (Etappe 6, IMPLEMENTATION-PLAN §6.1/§6.2).
-// Reihenfolge: Pfad-Guard -> Bypass-Cookie -> IP-Limit (5/24h Sliding).
+// Reihenfolge: Pfad-Guard -> Groessen-Guard -> Bypass-Cookie -> IP-Limit (5/24h Sliding).
 // Nur POST /api/analyze wird limitiert; /api/bypass/redeem, GET und statische
 // Routen laufen frei durch (redeem hat einen eigenen Brute-Force-Bucket).
 
 import { getLimiters, isLocalDev } from '../utils/ratelimit'
 import { getBypassConfig, verifyBypassCookie, BYPASS_COOKIE_NAME } from '../utils/bypass'
+import { MAX_REQUEST_BYTES } from '../utils/validate'
 
 export default defineEventHandler(async (event) => {
   if (event.method !== 'POST') return
   if (getRequestURL(event).pathname !== '/api/analyze') return
+
+  // 0. Groessen-Guard VOR dem Quota-Verbrauch: ein zu grosser Request soll keinen
+  //    Analyse-Slot kosten. Best-effort ueber Content-Length (Browser-$fetch setzt
+  //    ihn immer; fehlt er, greift der verbindliche Check in analyze.post.ts).
+  const contentLength = Number(getHeader(event, 'content-length') || 0)
+  if (contentLength > MAX_REQUEST_BYTES) {
+    throw createError({ statusCode: 413, statusMessage: 'too_large' })
+  }
 
   // 1. Bypass-Cookie zuerst – gueltig => Limit ueberspringen.
   const bypassCfg = getBypassConfig()

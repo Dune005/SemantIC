@@ -565,11 +565,11 @@
       "upload": {
         "heading": "Check an image",
         "help": "Drop an AI-generated image or choose a file – we'll ask for the rest afterwards.",
-        "dropzoneAria": "Drag an image here or choose a file. JPEG, PNG or WebP, up to 3.5 megabytes.",
+        "dropzoneAria": "Drag an image here or choose a file. JPEG, PNG or WebP – large images are downscaled automatically.",
         "dropPrimary": "Drag an image here",
         "or": "or",
         "pick": "Choose file",
-        "formats": "JPEG · PNG · WebP · up to 3.5 MB",
+        "formats": "JPEG · PNG · WebP · downscaled automatically",
         "dragMsg": "Release to load the image"
       },
       "validating": {
@@ -667,7 +667,7 @@
         },
         "too_large": {
           "title": "Image too large",
-          "message": "This file exceeds the limit of 3.5 MB. We normally downscale larger images automatically – here that wasn't enough. Export the image a little smaller (or as JPEG) and try again."
+          "message": "This image is too large to analyze (limit: 30 MB). Export it a little smaller (or as JPEG) and try again."
         },
         "downscale_failed": {
           "title": "Image could not be downscaled",
