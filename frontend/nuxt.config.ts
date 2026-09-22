@@ -30,7 +30,9 @@ export default defineNuxtConfig({
     detectBrowserLanguage: {
       useCookie: true,
       cookieKey: 'i18n_locale',
-      redirectOn: 'root',
+      // 'all' statt 'root' (2026-09-15): Browsersprache auch beim Direktaufruf einer Unterseite
+      // erkennen (z. B. /studie aus der Ergebnis-Mail). Ein gesetzter Sprach-Cookie gewinnt weiterhin.
+      redirectOn: 'all',
       fallbackLocale: 'de',
       alwaysRedirect: false,
     },

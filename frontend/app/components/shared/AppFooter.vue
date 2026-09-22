@@ -60,6 +60,7 @@ function onRedeem() {
         <nav class="foot-links" :aria-label="$t('footer.linksAria')">
           <NuxtLink to="/how-it-works">{{ $t('footer.linkHowItWorks') }}</NuxtLink>
           <NuxtLink to="/error-guide">{{ $t('footer.linkErrorGuide') }}</NuxtLink>
+          <NuxtLink to="/studie">{{ $t('footer.linkStudie') }}</NuxtLink>
           <NuxtLink to="/privacy">{{ $t('footer.linkPrivacy') }}</NuxtLink>
         </nav>
       </div>
