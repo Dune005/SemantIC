@@ -32,7 +32,8 @@
     "linkHowItWorks": "How it works",
     "linkErrorGuide": "Typical image flaws",
     "linkPrivacy": "Privacy",
-    "copyright": "© 2026 Claudio Riz · FH Graubünden · Teaching project · Version 1.12"
+    "copyright": "© 2026 Claudio Riz · FH Graubünden · Teaching project · Version 1.12",
+    "linkStudie": "Study results"
   },
   "bypass": {
     "label": "Access code (demo)",
@@ -109,6 +110,50 @@
     },
     "tileSelect": {
       "required": "Required"
+    },
+    "studieCharts": {
+      "g1": {
+        "title": "All six images were AI-generated. About one in two was recognised.",
+        "aria": "All six images were AI-generated. About one in two was recognised: on average {pct} percent.",
+        "note": "55 people, 6 images each. There were no real photos in the study.",
+        "hit": "recognised as AI",
+        "rest": "rated as real or unsure",
+        "images": "{n} images"
+      },
+      "g2": {
+        "title": "Less credible, but on average not rejected.",
+        "aria": "Less credible, but on average not rejected: error-free images {coh}, images with an error {inc} out of 7 points, both above the scale midpoint of 4.",
+        "note": "Scale 1–7, means across 55 people. Six fixed images, not transferable to other images.",
+        "coherent": "error-free images",
+        "incoherent": "images with an error",
+        "min": "not credible at all",
+        "mid": "middle of the scale",
+        "max": "very credible"
+      },
+      "g3": {
+        "title": "Not every error stands out equally.",
+        "aria": "Not every error stands out equally: {a} of {aTotal} people named the lettering error in the café image, {b} of {bTotal} the watch error in the portrait.",
+        "note": "Only people who wrote a reason (33 and 22 of 55 respectively).",
+        "of": "{named} of {total} people",
+        "coffeeshop": "named the lettering error «TEE & COFPAE» in the café image",
+        "ceo": "named the impossible watch face in the portrait"
+      },
+      "g4": {
+        "title": "The correct image was chosen more often than chance. But most choices fell on the other images.",
+        "aria": "The correct image was chosen more often than chance: in {pct} percent of choices instead of {chance} percent under random choice. But most choices fell on the other images.",
+        "note": "385 choices by 55 people in 7 sets. In every set exactly one image was free of content errors.",
+        "correct": "image free of content errors",
+        "other": "other images",
+        "chance": "under random choice: {pct} %"
+      },
+      "g5": {
+        "title": "In 8 of 212 reasons for a distorted image, a stereotype was mentioned.",
+        "aria": "In {n} of {total} reasons for a distorted image, a stereotype was mentioned.",
+        "note": "Reasons, not people. Mentioning does not mean rejecting. What was not written was not necessarily overlooked.",
+        "of": "of {total}",
+        "withStereotype": "reasons mentioning a stereotype or social norm",
+        "rest": "other reasons for a distorted image"
+      }
     }
   },
   "seo": {
@@ -127,6 +172,10 @@
     },
     "analyze": {
       "title": "Check an image – SemantIC"
+    },
+    "studie": {
+      "title": "Looks good. But it's wrong. – Results of the study on AI images",
+      "description": "What the study on AI-generated images found: results for the participants of the online study."
     }
   },
   "pages": {
@@ -689,6 +738,247 @@
           "title": "Something went wrong",
           "message": "The analysis was interrupted unexpectedly. We couldn't clearly identify what happened. Try again. If it recurs, re-upload the image and start fresh."
         }
+      }
+    },
+    "studie": {
+      "head": {
+        "title": "Looks good. But it's wrong.",
+        "subtitle": "What the study on AI-generated images found",
+        "meta": "Results for the participants of the online study (April to June 2026)"
+      },
+      "s1": {
+        "index": "01",
+        "title": "What it was about",
+        "p1": "AI image generators now produce images that look like photos at first glance. Yet they often contain errors: a watch with an impossible face, a misspelled sign, an object that makes no physical sense. And they frequently show stereotypical depictions, for instance when «a leader» appears as a man in a suit.",
+        "p2": "The question of the thesis was: {question} In the thesis, this assumption is called the «masking effect»: the beautiful surface could conceal the flawed content.",
+        "p1b": "The impetus for this thesis came from a study by Mahner et al. (2025): deep neural networks and humans apparently process images with different priorities. Such networks weight visual properties such as shape and colour above all, whereas humans weight the meaning of the content. This has been shown for AI systems for image recognition. My assumption was that this visual preference also carries over to image generation: that image generators produce images that are aesthetically convincing but may be distorted in content or in social terms.",
+        "p2Question": "Does the visual preference in AI images lead us to overlook such errors and stereotypes, or simply accept them?",
+        "p3": "This spring you took part in the online study on this question. You rated six images and then chose a cover image from four options for each of seven fictional articles. In total, 55 participations were included in the analysis."
+      },
+      "s2": {
+        "index": "02",
+        "title": "The key findings in four points",
+        "pt1": {
+          "h3": "All images were AI-generated. About one in two was recognised.",
+          "p1": "Every one of the six images you rated came from an AI image generator. For the question «Is this image AI-generated?», the hit rate was 48 percent on average. In other words: about half of the images were not recognised as AI. Ticking «unsure» did not count as a hit.",
+          "p2": "Those who did not recognise an image as AI also found it considerably more credible. Whether one causes the other cannot be determined from the data."
+        },
+        "pt2": {
+          "h3": "Less credible, but on average not rejected.",
+          "p1": "Four of the six images contained a content error, two were error-free. Error-free here means: free of the content errors under study, in physics, anatomy or context. Such an image can still show a stereotypical depiction.",
+          "p2": "On a scale from 1 (not credible at all) to 7 (very credible), the images with errors scored lower than the error-free ones. On average they received 4.3 instead of 5.2 points. Taken together, however, they still lay above the middle of the scale. So an error cost points. But on average the images were not dismissed as not credible.",
+          "p3": "This comparison applies only to these six images. With other images it could turn out differently."
+        },
+        "pt3": {
+          "h3": "Not every error stands out equally.",
+          "p1": "For two images you could optionally explain your rating in your own words. A large difference emerged there:",
+          "items": [
+            "In the café image, the window lettering read «TEE & COFPAE» instead of «TEA & COFFEE». Of the 33 people who wrote a reason, 25 named this error.",
+            "In the portrait of a leader, the wristwatch had a physically impossible face. Of the 22 people who wrote a reason, only 4 named the error."
+          ],
+          "p2": "For these two images, the lettering error was thus named far more often than the watch error. Whether this is due to the type of error cannot be said with certainty from two images. In any case, the portrait received the best credibility ratings of all four images with errors. One person wrote that they had checked the ring, fingers and suit and found no obvious errors. This is what the masking effect could look like: the image seems coherent, and the error goes unnoticed.",
+          "p3": "The figures apply only to the people who wrote something. Those who wrote nothing may or may not have seen the error."
+        },
+        "pt4": {
+          "h3": "In the image choice, stereotypes were rarely mentioned.",
+          "p1": "In each of the seven choice sets, exactly one of the four images was free of such content errors. The other three showed a stereotypical depiction, contained a different error, or were deliberately designed against a stereotype. Under random choice, the error-free image would have won in a quarter of cases. In fact it was chosen in 39 percent of cases, i.e. more often than chance. But most choices fell on the other images, most of them distorted. It has to be said: 18 of the 28 images on offer were distorted, and one had to be chosen.",
+          "p2": "More interesting than the choice itself were the reasons, which were required for every choice. Most often, participants justified their choice by saying that an image looked «real» or «natural», that it matched the article title, or that it looked good. Of the 212 reasons given for a distorted image, only 8 mentioned a stereotype or a social norm at all. That does not mean nobody saw the stereotypes. But they were almost never mentioned."
+        }
+      },
+      "figureCeo": {
+        "alt": "Portrait of a person in a suit in an office with a city view. The wristwatch is marked with a circle.",
+        "caption": "The portrait looked convincing to most. The error sits in the detail: the watch face is physically impossible."
+      },
+      "s3": {
+        "index": "03",
+        "title": "A look behind the scenes: the image analysis",
+        "p1": "Before the online study, I examined 144 AI images one by one. They come from 12 image prompts given to three image generators (as of February 2026), four images per prompt and generator. For each image I recorded how realistic it looks and whether it contains errors or stereotypes.",
+        "p2": "More than half were «beautiful and wrong»: 77 of the 144 images looked realistic and still contained at least one error or stereotype. Exactly this combination is the precondition for a masking effect to occur at all. Realistic here does not mean glossy. The images were convincing in different ways, as a magazine photo, as a snapshot, as a film scene or as a reportage image. Precisely images that look like imperfect snapshots often appeared realistic in the analysis.",
+        "p3": "Stereotypes appeared above all where the prompt was vague. 40 of the 144 images showed a stereotypical depiction, 23 of them for brief prompts such as «a CEO». Where the prompt explicitly asked for a non-stereotypical depiction, the generators delivered it in 18 of 24 cases. The prompt itself was almost always fulfilled: 98 percent of the images implemented it completely. Errors and stereotypes still occurred."
+      },
+      "s4": {
+        "index": "04",
+        "title": "What does this mean?",
+        "p1": "The results point to a limited masking effect that depends on the individual image. Images with errors were rated lower, but on average not rejected. The watch error was rarely named, the lettering error often. And in the image choice, participants justified their decision above all by how real and fitting an image looked. Whether it plays into stereotypical role images hardly came up.",
+        "p1b": "The findings do not contradict this assumption: the images were visually convincing across all styles. But they do not prove the mechanism behind it.",
+        "p2": "For everyone who works with images, this means: that an AI image looks good says nothing about whether it is correct. Anyone using such images must check them for content: text in the image, hands, objects, reflections, and just as much the question of whom the image shows and how.",
+        "p3": "And in everyday life? First impressions are not to be trusted. Even those who look closely can miss an error, as the example of the watch shows."
+      },
+      "s5": {
+        "index": "05",
+        "title": "How the study was run and where its limits lie",
+        "items": [
+          "79 people started the study; 55 complete participations by people aged 18 to 65 were analysed.",
+          "Participants were recruited through personal networks and online communities. The results apply to this group, not to «the population».",
+          "All images shown were of high visual quality. So the study shows how high-quality AI images are rated, not what quality does compared with poor images. That the beautiful surface conceals the errors is therefore an interpretation, not proof.",
+          "In the cover image choice, an image had to be chosen even if none appealed. Some wrote as much in their reasons.",
+          "The images come from three generators as of February 2026. Newer models may behave differently."
+        ]
+      },
+      "s6": {
+        "index": "06",
+        "title": "The answer: which images were error-free?",
+        "toggle": "Show the answer",
+        "intro": "Error-free here means: free of the content errors under study. An error-free image can still show a stereotypical depiction.",
+        "part1Title": "The six rated images",
+        "part2Title": "The seven choice sets",
+        "setNotes": {
+          "set-01-ceo": "",
+          "set-02-nurse": "All four images show the care worker as a woman, including the error-free one.",
+          "set-03-emergency-room": "In several images the older woman sits in a wheelchair.",
+          "set-04-construction-worker": "The three other images were deliberately designed against the stereotype.",
+          "set-05-coffeeshop": "",
+          "set-06-glass": "",
+          "set-07-surgeon": ""
+        },
+        "errorFree": "error-free",
+        "pending": "[Sentence to follow]",
+        "sets": {
+          "set-01-ceo": "Decisions at the Top: Leadership in Focus",
+          "set-02-nurse": "Serving Patients: Care on the Ward",
+          "set-03-emergency-room": "When Every Second Counts: Everyday Life in the Emergency Room",
+          "set-04-construction-worker": "Where Building Happens: People on the Construction Site",
+          "set-05-coffeeshop": "More Than Coffee: Why Cafes Are Special Places",
+          "set-06-glass": "The Quiet Routine: Why Drinking Water Is Often Underrated",
+          "set-07-surgeon": "When Precision Matters: Surgery in the Operating Room"
+        },
+        "images": {
+          "fl-ceo-02": {
+            "alt": "Man in a dark suit standing in an office in front of windows with a city view.",
+            "text": "The face of the wristwatch is physically impossible."
+          },
+          "nb-coffeeshop-engineered-02": {
+            "alt": "Sunlit café with guests at tables, armchairs and a person at the counter.",
+            "text": "The window lettering reads «TEE & COFPAE» instead of «TEA & COFFEE»."
+          },
+          "fl-elderly-caregiver-engineered-01": {
+            "alt": "Person in scrubs leaning over a woman lying in a hospital bed, IV stand beside it.",
+            "text": "The patient's hand on her stomach would have to reach through the blanket."
+          },
+          "fl-busy-office-reality-04": {
+            "alt": "Laptop with charts and a coffee cup on a desk in an open-plan office.",
+            "text": "The headphones on the desk are assembled incorrectly."
+          },
+          "nb-elderly-caregiver-engineered-02": {
+            "alt": "Person in scrubs holding the hand of an elderly man in a hospital bed."
+          },
+          "nb-female-worker-counter-04": {
+            "alt": "Woman with hard hat and safety vest holding a wrench and pointing on a construction site."
+          },
+          "fl-ceo-04": {
+            "alt": "Man in suit and tie standing at a desk in front of windows with an evening city view.",
+            "text": "The proportions are wrong: the table is far too close, the person far too small."
+          },
+          "nb-ceo-01": {
+            "alt": "Woman in a blazer gesturing while speaking to four seated people in a meeting room.",
+            "text": "In the background, the folded fingers of one person are malformed."
+          },
+          "nb-ceo-04": {
+            "alt": "Woman with glasses and a tablet standing in a meeting room in front of windows with a city view."
+          },
+          "sd-ceo-04": {
+            "alt": "Man in suit and tie standing in front of a desk with a laptop and bookshelf.",
+            "text": "The surfaces of the laptop and the shelf are broken, and the composition looks unrealistic."
+          },
+          "fl-nurse-04": {
+            "alt": "Woman in light blue scrubs with a stethoscope in a hospital corridor.",
+            "text": "The name badge is illegibly constructed and the stethoscope is deformed."
+          },
+          "nb-nurse-01": {
+            "alt": "Woman in dark blue scrubs with stethoscope, coffee cup and tablet in a hospital corridor.",
+            "text": "The lettering on the name badge contains errors."
+          },
+          "nb-nurse-04": {
+            "alt": "Woman in blue scrubs operating a monitor next to a hospital bed."
+          },
+          "nb-nurse-02": {
+            "alt": "Woman in light blue scrubs with a stethoscope standing at a desk on a hospital ward.",
+            "text": "Table and floor merge into each other in the background."
+          },
+          "fl-emergencyroom-01": {
+            "alt": "Three people sitting in a hospital waiting area in front of a reception desk."
+          },
+          "nb-emergencyroom-01": {
+            "alt": "Emergency room waiting area with seated people, a wheelchair and a reception desk.",
+            "text": "The lamps are reflected incorrectly in the glass pane."
+          },
+          "nb-emergencyroom-03": {
+            "alt": "Emergency room waiting area with people on chairs, a wheelchair and a wait time display.",
+            "text": "The information board on the ceiling shows illegible characters."
+          },
+          "sd-emergencyroom-03": {
+            "alt": "Person in scrubs at a desk, with people waiting on chairs and in a wheelchair behind.",
+            "text": "One person has six fingers, limbs merge into each other, and devices have nonsensical shapes."
+          },
+          "fl-female-worker-counter-02": {
+            "alt": "Person with hard hat and safety vest holding a tablet and plans on a construction site.",
+            "text": "Clothing and styling do not fit a construction site: ordinary jeans, make-up."
+          },
+          "nb-female-worker-counter-01": {
+            "alt": "Woman with hard hat and safety vest pointing at a plan on a construction site with steel frame."
+          },
+          "nb-female-worker-counter-02": {
+            "alt": "Woman with white hard hat and safety vest standing on a construction site in front of an excavator.",
+            "text": "The woman looks like a model: jeans, heavy make-up, styled hair."
+          },
+          "sd-female-worker-counter-04": {
+            "alt": "Woman with hard hat, safety glasses and vest holding a clipboard beside steel beams on a construction site.",
+            "text": "The right hand has six fingers."
+          },
+          "fl-coffeeshop-01": {
+            "alt": "Interior of a café with a pastry counter, guests at tables and a person behind the bar.",
+            "text": "A laptop without a screen, a plant growing out of a cup, and the pastries are far too large."
+          },
+          "nb-coffeeshop-01": {
+            "alt": "Café with wooden tables, guests, a person at the espresso machine and a dog on the floor."
+          },
+          "nb-coffeeshop-04": {
+            "alt": "Café with a brick wall, guests at tables and a person behind the counter.",
+            "text": "The cups on the coffee machine merge slightly into each other."
+          },
+          "sd-coffeeshop-04": {
+            "alt": "Café with a cappuccino in the foreground, pastry counter and a person behind the bar.",
+            "text": "The pastries are far too large, and the menu shows illegible characters."
+          },
+          "fl-glass-03": {
+            "alt": "Glass of water on a wooden table in sunlight with a shadow."
+          },
+          "nb-glass-02": {
+            "alt": "Glass of water on a wooden table in front of a window with plants, in sunlight.",
+            "text": "The light comes from the wrong side, and the glass is too large for the table."
+          },
+          "nb-glass-03": {
+            "alt": "Glass of water and a lemon slice on a wooden table by a stone wall and window.",
+            "text": "In the middle of the table lies a shadow that should not be there."
+          },
+          "sd-glass-03": {
+            "alt": "Glass of water on a wooden table in sunlight, seen from above at an angle.",
+            "text": "The edge of the table is malformed."
+          },
+          "fl-surgeon-engineered-01": {
+            "alt": "Person in surgical gown with mask and visor working under operating lights.",
+            "text": "The instruments on the right merge into each other in places, and the light cones do not match the lamps."
+          },
+          "fl-surgeon-engineered-04": {
+            "alt": "Person in surgical gown and mask holding instruments over an operating table.",
+            "text": "The scissors in the surgeon's hands are incomplete."
+          },
+          "nb-surgeon-engineered-03": {
+            "alt": "Several people in surgical gowns and masks around an operating table under lights."
+          },
+          "sd-surgeon-engineered-02": {
+            "alt": "Person in surgical gown leaning over a man lying in a bed under an operating lamp.",
+            "text": "The light cones are askew, and the patient is conscious while the surgeon attaches something to his nose."
+          }
+        }
+      },
+      "s7": {
+        "index": "07",
+        "title": "Further reading",
+        "thesis": "Interested in the complete bachelor's thesis? Send me an email and I will gladly send it to you.",
+        "semantic": "SemantIC emerged from the thesis, a tool that checks AI images for exactly such content errors. This page belongs to that project.",
+        "contact": "Questions?",
+        "privacy": "Your email address was stored separately from your study answers and never linked to them. It is used only for this results information and will be deleted after sending."
       }
     }
   },

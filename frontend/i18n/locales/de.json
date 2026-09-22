@@ -32,7 +32,8 @@
     "linkHowItWorks": "Funktionsweise",
     "linkErrorGuide": "Typische Bildfehler",
     "linkPrivacy": "Datenschutz",
-    "copyright": "© 2026 Claudio Riz · FH Graubünden · Lehrprojekt · Version 1.12"
+    "copyright": "© 2026 Claudio Riz · FH Graubünden · Lehrprojekt · Version 1.12",
+    "linkStudie": "Ergebnisse der Studie"
   },
   "bypass": {
     "label": "Zugangscode (Demo)",
@@ -109,6 +110,50 @@
     },
     "tileSelect": {
       "required": "Pflicht"
+    },
+    "studieCharts": {
+      "g1": {
+        "title": "Alle sechs Bilder waren KI-generiert. Erkannt wurde etwa jedes zweite.",
+        "aria": "Alle sechs Bilder waren KI-generiert. Erkannt wurde etwa jedes zweite: im Schnitt {pct} Prozent.",
+        "note": "55 Personen, je 6 Bilder. Es gab keine echten Fotos in der Studie.",
+        "hit": "als KI erkannt",
+        "rest": "als echt eingestuft oder unsicher",
+        "images": "{n} Bilder"
+      },
+      "g2": {
+        "title": "Weniger glaubwürdig, aber im Schnitt nicht abgelehnt.",
+        "aria": "Weniger glaubwürdig, aber im Schnitt nicht abgelehnt: fehlerfreie Bilder {coh}, Bilder mit Fehler {inc} von 7 Punkten, beide über der Skalenmitte 4.",
+        "note": "Skala 1–7, Mittelwerte über 55 Personen. Sechs feste Bilder, nicht auf andere Bilder übertragbar.",
+        "coherent": "fehlerfreie Bilder",
+        "incoherent": "Bilder mit Fehler",
+        "min": "gar nicht glaubwürdig",
+        "mid": "Mitte der Skala",
+        "max": "sehr glaubwürdig"
+      },
+      "g3": {
+        "title": "Nicht jeder Fehler fällt gleich auf.",
+        "aria": "Nicht jeder Fehler fällt gleich auf: Den Schriftfehler im Café-Bild nannten {a} von {aTotal} Personen, den Uhrenfehler im Porträt {b} von {bTotal}.",
+        "note": "Nur Personen, die eine Begründung schrieben (33 bzw. 22 von 55).",
+        "of": "{named} von {total} Personen",
+        "coffeeshop": "nannten den Schriftfehler «TEE & COFPAE» im Café-Bild",
+        "ceo": "nannten das unmögliche Ziffernblatt der Armbanduhr im Porträt"
+      },
+      "g4": {
+        "title": "Das korrekte Bild wurde öfter gewählt als der Zufall. Die Mehrheit der Wahlen fiel aber auf die anderen Bilder.",
+        "aria": "Das korrekte Bild wurde öfter gewählt als der Zufall: in {pct} Prozent der Wahlen statt {chance} Prozent bei zufälliger Wahl. Die Mehrheit der Wahlen fiel aber auf die anderen Bilder.",
+        "note": "385 Wahlen von 55 Personen in 7 Sets. In jedem Set war genau ein Bild inhaltlich korrekt.",
+        "correct": "inhaltlich korrektes Bild",
+        "other": "übrige Bilder",
+        "chance": "bei zufälliger Wahl: {pct} %"
+      },
+      "g5": {
+        "title": "In 8 von 212 Begründungen für ein verzerrtes Bild kam ein Stereotyp zur Sprache.",
+        "aria": "In {n} von {total} Begründungen für ein verzerrtes Bild kam ein Stereotyp zur Sprache.",
+        "note": "Begründungen, nicht Personen. Erwähnen heisst nicht ablehnen. Was nicht geschrieben wurde, wurde nicht zwingend übersehen.",
+        "of": "von {total}",
+        "withStereotype": "Begründungen mit Stereotyp- oder Normbezug",
+        "rest": "übrige Begründungen für ein verzerrtes Bild"
+      }
     }
   },
   "seo": {
@@ -127,6 +172,10 @@
     },
     "analyze": {
       "title": "Bild prüfen – SemantIC"
+    },
+    "studie": {
+      "title": "Sieht gut aus. Stimmt aber nicht. – Ergebnisse der Studie zu KI-Bildern",
+      "description": "Was die Studie zu KI-generierten Bildern ergeben hat: Ergebnisse für die Teilnehmenden der Online-Studie."
     }
   },
   "pages": {
@@ -689,6 +738,247 @@
           "title": "Etwas ist schiefgelaufen",
           "message": "Die Analyse wurde unerwartet abgebrochen. Was genau passiert ist, konnten wir nicht eindeutig zuordnen. Versuch es noch einmal. Wenn es erneut auftritt, lad das Bild neu hoch und starte frisch."
         }
+      }
+    },
+    "studie": {
+      "head": {
+        "title": "Sieht gut aus. Stimmt aber nicht.",
+        "subtitle": "Was die Studie zu KI-generierten Bildern ergeben hat",
+        "meta": "Ergebnisse für die Teilnehmenden der Online-Studie (April bis Juni 2026)"
+      },
+      "s1": {
+        "index": "01",
+        "title": "Worum es ging",
+        "p1": "KI-Bildgeneratoren erzeugen heute Bilder, die auf den ersten Blick wie Fotos wirken. Trotzdem enthalten sie oft Fehler: eine Uhr mit unmöglichem Ziffernblatt, ein falsch geschriebener Schriftzug, ein Gegenstand, der physikalisch keinen Sinn ergibt. Und sie zeigen häufig stereotype Darstellungen, etwa wenn «eine Führungsperson» als Mann im Anzug erscheint.",
+        "p2": "Die Frage der Arbeit war: {question} In der Arbeit heisst diese Vermutung «Maskierungseffekt»: Die schöne Oberfläche könnte den fehlerhaften Inhalt verdecken.",
+        "p1b": "Den Anstoss zu dieser Arbeit gab eine Studie von Mahner et al. (2025): Tiefe neuronale Netze und Menschen verarbeiten Bilder offenbar nach unterschiedlichen Prioritäten. Solche Netze gewichten vor allem visuelle Eigenschaften wie Form und Farbe, Menschen dagegen die inhaltliche Bedeutung. Nachgewiesen ist das bei KI-Systemen zur Bilderkennung. Meine Annahme war, dass sich diese visuelle Bevorzugung auch in der Bilderzeugung niederschlägt: dass Bildgeneratoren Bilder hervorbringen, die ästhetisch überzeugen, dabei aber inhaltlich oder sozial verzerrt sein können.",
+        "p2Question": "Führt die visuelle Bevorzugung in KI-Bildern dazu, dass wir solche Fehler und Stereotype übersehen oder einfach hinnehmen?",
+        "p3": "Du hast im Frühling an der Online-Studie dazu teilgenommen. Du hast sechs Bilder bewertet und danach für sieben fiktive Artikel je ein Titelbild aus vier Vorschlägen gewählt. Insgesamt sind 55 Teilnahmen in die Auswertung eingeflossen."
+      },
+      "s2": {
+        "index": "02",
+        "title": "Das Wichtigste in vier Punkten",
+        "pt1": {
+          "h3": "Alle Bilder waren KI-generiert. Erkannt wurde etwa jedes zweite.",
+          "p1": "Jedes der sechs Bilder, die du bewertet hast, stammte aus einem KI-Bildgenerator. Bei der Frage «Ist dieses Bild KI-generiert?» lag die Trefferquote im Schnitt bei 48 Prozent. Anders gesagt: Etwa die Hälfte der Bilder wurde nicht als KI erkannt. Wer «unsicher» ankreuzte, zählte dabei nicht als Treffer.",
+          "p2": "Wer ein Bild nicht als KI erkannte, hielt es auch für deutlich glaubwürdiger. Ob das eine das andere auslöst, lässt sich aus den Daten nicht sagen."
+        },
+        "pt2": {
+          "h3": "Weniger glaubwürdig, aber im Schnitt nicht abgelehnt.",
+          "p1": "Vier der sechs Bilder enthielten einen inhaltlichen Fehler, zwei waren fehlerfrei. Fehlerfrei heisst hier: ohne die untersuchten inhaltlichen Fehler an Physik, Anatomie oder Zusammenhang. Eine stereotype Darstellung kann ein solches Bild trotzdem zeigen.",
+          "p2": "Auf einer Skala von 1 (gar nicht glaubwürdig) bis 7 (sehr glaubwürdig) schnitten die fehlerhaften Bilder schlechter ab als die fehlerfreien. Im Schnitt erhielten sie 4.3 statt 5.2 Punkte. Damit lagen sie zusammen aber immer noch über der Mitte der Skala. Ein Fehler gab also Abzug. Als unglaubwürdig verworfen wurden die Bilder im Schnitt aber nicht.",
+          "p3": "Dieser Vergleich gilt nur für diese sechs Bilder. Mit anderen Bildern könnte er anders ausfallen."
+        },
+        "pt3": {
+          "h3": "Nicht jeder Fehler fällt gleich auf.",
+          "p1": "Bei zwei Bildern konntest du deine Bewertung freiwillig mit eigenen Worten begründen. Dort zeigte sich ein grosser Unterschied:",
+          "items": [
+            "Beim Café-Bild stand in der Fensterbeschriftung «TEE & COFPAE» statt «TEA & COFFEE». Von den 33 Personen, die eine Begründung schrieben, nannten 25 diesen Fehler.",
+            "Beim Porträt einer Führungsperson trug die Armbanduhr ein physikalisch unmögliches Ziffernblatt. Von den 22 Personen, die eine Begründung schrieben, nannten den Fehler nur 4."
+          ],
+          "p2": "Bei diesen beiden Bildern wurde der Schriftfehler also viel häufiger genannt als der Uhrenfehler. Ob das an der Art des Fehlers liegt, lässt sich aus zwei Bildern nicht sicher sagen. Das Porträt bekam jedenfalls die besten Glaubwürdigkeitswerte aller vier fehlerhaften Bilder. Eine Person schrieb, sie habe Ring, Finger und Anzug geprüft und keine offensichtlichen Fehler gefunden. So könnte der Maskierungseffekt aussehen: Das Bild wirkt stimmig, und der Fehler bleibt unbemerkt.",
+          "p3": "Die Zahlen gelten nur für die Personen, die etwas geschrieben haben. Wer nichts schrieb, hat den Fehler vielleicht gesehen, vielleicht nicht."
+        },
+        "pt4": {
+          "h3": "Bei der Bildwahl wurden Stereotype kaum erwähnt.",
+          "p1": "In jedem der sieben Wahl-Sets war genau eines der vier Bilder ohne solche inhaltlichen Fehler. Die anderen drei zeigten eine stereotype Darstellung, enthielten einen anderen Fehler oder waren bewusst gegen ein Stereotyp gestaltet. Wäre zufällig gewählt worden, hätte das fehlerfreie Bild in einem Viertel der Fälle gewonnen. Tatsächlich wurde es in 39 Prozent der Fälle gewählt, also häufiger als der Zufall. Die Mehrheit der Wahlen fiel aber auf die anderen Bilder, die meisten davon verzerrt. Dazu muss man sagen: 18 der 28 angebotenen Bilder waren verzerrt, und eines musste man wählen.",
+          "p2": "Spannender als die Wahl selbst waren die Begründungen, die bei jeder Wahl verlangt wurden. Am häufigsten begründeten die Teilnehmenden ihre Wahl damit, dass ein Bild «echt» oder «natürlich» wirkte, dass es zum Artikeltitel passte oder dass es gut aussah. Von den 212 Begründungen für ein verzerrtes Bild sprachen nur 8 überhaupt ein Stereotyp oder eine gesellschaftliche Norm an. Das heisst nicht, dass niemand die Stereotype gesehen hat. Erwähnt wurden sie aber fast nie."
+        }
+      },
+      "figureCeo": {
+        "alt": "Porträt einer Person im Anzug in einem Büro mit Stadtblick. Die Armbanduhr am Handgelenk ist mit einem Kreis markiert.",
+        "caption": "Das Porträt wirkte auf die meisten überzeugend. Der Fehler sitzt im Detail: Das Ziffernblatt der Uhr ist physikalisch unmöglich."
+      },
+      "s3": {
+        "index": "03",
+        "title": "Ein Blick hinter die Kulissen: die Bildanalyse",
+        "p1": "Vor der Online-Studie habe ich 144 KI-Bilder einzeln untersucht. Sie stammen aus 12 Bildaufträgen an drei Bildgeneratoren (Stand Februar 2026), je vier Bilder pro Auftrag und Generator. Bei jedem Bild habe ich festgehalten, wie realistisch es wirkt und ob es Fehler oder Stereotype enthält.",
+        "p2": "Mehr als die Hälfte war «schön und falsch»: 77 der 144 Bilder wirkten realistisch und enthielten trotzdem mindestens einen Fehler oder ein Stereotyp. Genau diese Kombination ist die Voraussetzung dafür, dass ein Maskierungseffekt überhaupt auftreten kann. Realistisch heisst dabei nicht Hochglanz. Die Bilder überzeugten auf verschiedene Arten, als Magazinfoto, als Schnappschuss, als Filmszene oder als Reportagebild. Gerade Bilder, die wie unperfekte Schnappschüsse aussehen, wirkten in der Analyse oft realistisch.",
+        "p3": "Stereotype tauchten vor allem dort auf, wo der Auftrag vage war. 40 der 144 Bilder zeigten eine stereotype Darstellung, 23 davon bei knappen Aufträgen wie «a CEO». Verlangte der Auftrag ausdrücklich eine nicht-stereotype Darstellung, setzten die Generatoren das in 18 von 24 Fällen um. Den Auftrag selbst erfüllten die Generatoren fast immer: 98 Prozent der Bilder setzten ihn vollständig um. Fehler und Stereotype kamen trotzdem vor."
+      },
+      "s4": {
+        "index": "04",
+        "title": "Was heisst das?",
+        "p1": "Die Ergebnisse sprechen für einen begrenzten Maskierungseffekt, der vom einzelnen Bild abhängt. Fehlerhafte Bilder wurden schlechter bewertet, aber im Schnitt nicht abgelehnt. Der Uhrenfehler wurde selten genannt, der Schriftfehler oft. Und bei der Bildwahl begründeten die Teilnehmenden ihre Entscheidung vor allem damit, wie echt und passend ein Bild wirkte. Ob es stereotype Rollenbilder bedient, kam kaum zur Sprache.",
+        "p1b": "Die Befunde widersprechen dieser Annahme nicht: Die Bilder überzeugten visuell quer durch alle Stile. Den Mechanismus dahinter belegen sie aber nicht.",
+        "p2": "Für alle, die mit Bildern arbeiten, heisst das: Dass ein KI-Bild gut aussieht, sagt nichts darüber, ob es stimmt. Wer solche Bilder verwendet, muss sie inhaltlich prüfen: Text im Bild, Hände, Objekte, Spiegelungen, und genauso die Frage, wen das Bild wie zeigt.",
+        "p3": "Und im Alltag? Dem ersten Eindruck ist nicht zu trauen. Auch wer genau hinschaut, kann einen Fehler übersehen, wie das Beispiel mit der Uhr zeigt."
+      },
+      "s5": {
+        "index": "05",
+        "title": "Wie die Studie ablief und wo ihre Grenzen liegen",
+        "items": [
+          "79 Personen haben die Studie gestartet, 55 vollständige Teilnahmen zwischen 18 und 65 Jahren wurden ausgewertet.",
+          "Die Teilnehmenden wurden über das persönliche Umfeld und über Online-Communities rekrutiert. Die Ergebnisse gelten für diese Gruppe, nicht für «die Bevölkerung».",
+          "Alle gezeigten Bilder waren visuell hochwertig. Die Studie zeigt also, wie hochwertige KI-Bilder bewertet werden, nicht, was die Qualität im Vergleich zu schlechten Bildern bewirkt. Dass die schöne Oberfläche die Fehler verdeckt, ist deshalb eine Deutung, kein Beweis.",
+          "Bei der Titelbild-Wahl musste ein Bild gewählt werden, auch wenn keines gefiel. Einige haben das in ihren Begründungen auch so geschrieben.",
+          "Die Bilder stammen von drei Generatoren mit Stand Februar 2026. Neuere Modelle können sich anders verhalten."
+        ]
+      },
+      "s6": {
+        "index": "06",
+        "title": "Auflösung: Welche Bilder waren fehlerfrei?",
+        "toggle": "Auflösung anzeigen",
+        "intro": "Fehlerfrei heisst hier: ohne die untersuchten inhaltlichen Fehler. Ein fehlerfreies Bild kann trotzdem eine stereotype Darstellung zeigen.",
+        "part1Title": "Die sechs bewerteten Bilder",
+        "part2Title": "Die sieben Wahl-Sets",
+        "setNotes": {
+          "set-01-ceo": "",
+          "set-02-nurse": "Alle vier Bilder zeigen die Pflegeperson als Frau, auch das fehlerfreie.",
+          "set-03-emergency-room": "In mehreren Bildern sitzt die ältere Frau im Rollstuhl.",
+          "set-04-construction-worker": "Die drei anderen Bilder waren bewusst gegen das Stereotyp gestaltet.",
+          "set-05-coffeeshop": "",
+          "set-06-glass": "",
+          "set-07-surgeon": ""
+        },
+        "errorFree": "fehlerfrei",
+        "pending": "[Satz folgt]",
+        "sets": {
+          "set-01-ceo": "Entscheidungen an der Spitze: Unternehmensführung im Fokus",
+          "set-02-nurse": "Menschen in der Pflege: Ein Beruf mit Verantwortung",
+          "set-03-emergency-room": "Wenn jede Sekunde zählt: Alltag in der Notaufnahme",
+          "set-04-construction-worker": "Wo gebaut wird: Menschen auf der Baustelle",
+          "set-05-coffeeshop": "Mehr als nur Kaffee: Warum Cafés besondere Orte sind",
+          "set-06-glass": "Die stille Routine: Weshalb Wassertrinken oft unterschätzt wird",
+          "set-07-surgeon": "Wenn Präzision zählt: Chirurgie im Operationssaal"
+        },
+        "images": {
+          "fl-ceo-02": {
+            "alt": "Mann im dunklen Anzug steht in einem Büro vor Fenstern mit Stadtblick.",
+            "text": "Das Ziffernblatt der Armbanduhr ist physikalisch unmöglich."
+          },
+          "nb-coffeeshop-engineered-02": {
+            "alt": "Sonniges Café mit Gästen an Tischen, Sesseln und einer Person an der Theke.",
+            "text": "Die Fensterbeschriftung lautet «TEE & COFPAE» statt «TEA & COFFEE»."
+          },
+          "fl-elderly-caregiver-engineered-01": {
+            "alt": "Person in Pflegekleidung beugt sich über eine im Spitalbett liegende Frau, Infusionsständer daneben.",
+            "text": "Die Hand der Patientin auf dem Bauch müsste durch die Decke hindurchgreifen."
+          },
+          "fl-busy-office-reality-04": {
+            "alt": "Laptop mit Diagrammen und Kaffeetasse auf einem Schreibtisch in einem Grossraumbüro.",
+            "text": "Die Kopfhörer auf dem Schreibtisch sind falsch zusammengebaut."
+          },
+          "nb-elderly-caregiver-engineered-02": {
+            "alt": "Person in Pflegekleidung hält die Hand eines älteren Mannes im Spitalbett."
+          },
+          "nb-female-worker-counter-04": {
+            "alt": "Frau mit Helm und Warnweste hält einen Schraubenschlüssel und zeigt auf einer Baustelle."
+          },
+          "fl-ceo-04": {
+            "alt": "Mann in Anzug und Krawatte steht an einem Schreibtisch vor Fenstern mit Abendstadtblick.",
+            "text": "Die Grössenverhältnisse stimmen nicht: Der Tisch ist viel zu nah, die Person dafür zu klein."
+          },
+          "nb-ceo-01": {
+            "alt": "Frau im Blazer spricht gestikulierend vor vier sitzenden Personen in einem Sitzungszimmer.",
+            "text": "Im Hintergrund sind die verschränkten Finger einer Person fehlerhaft."
+          },
+          "nb-ceo-04": {
+            "alt": "Frau mit Brille und Tablet steht in einem Sitzungszimmer vor Fenstern mit Stadtblick."
+          },
+          "sd-ceo-04": {
+            "alt": "Mann in Anzug und Krawatte steht vor einem Schreibtisch mit Laptop und Bücherregal.",
+            "text": "Die Oberflächen von Laptop und Regal sind fehlerhaft, die Bildkomposition wirkt unrealistisch."
+          },
+          "fl-nurse-04": {
+            "alt": "Frau in hellblauer Pflegekleidung mit Stethoskop in einem Spitalkorridor.",
+            "text": "Das Namensschild ist unlesbar aufgebaut und das Stethoskop deformiert."
+          },
+          "nb-nurse-01": {
+            "alt": "Frau in dunkelblauer Pflegekleidung mit Stethoskop, Kaffeebecher und Tablet in einem Spitalkorridor.",
+            "text": "Die Schrift auf dem Namensschild enthält Fehler."
+          },
+          "nb-nurse-04": {
+            "alt": "Frau in blauer Pflegekleidung bedient ein Monitorgerät neben einem Spitalbett."
+          },
+          "nb-nurse-02": {
+            "alt": "Frau in hellblauer Pflegekleidung mit Stethoskop steht an einem Schalter in einer Spitalstation.",
+            "text": "Tisch und Boden verschmelzen im Hintergrund."
+          },
+          "fl-emergencyroom-01": {
+            "alt": "Drei Personen sitzen in einem Spitalwartebereich vor einem Empfangsschalter."
+          },
+          "nb-emergencyroom-01": {
+            "alt": "Wartebereich einer Notaufnahme mit sitzenden Personen, Rollstuhl und Empfangsschalter.",
+            "text": "Die Lampen spiegeln sich falsch in der Glasscheibe."
+          },
+          "nb-emergencyroom-03": {
+            "alt": "Wartebereich einer Notaufnahme mit Personen auf Stühlen, Rollstuhl und Wartezeit-Anzeige.",
+            "text": "Die Infotafel an der Decke zeigt unleserliche Zeichen."
+          },
+          "sd-emergencyroom-03": {
+            "alt": "Person in Pflegekleidung an einem Schreibtisch, dahinter Wartende auf Stühlen und im Rollstuhl.",
+            "text": "Eine Person hat sechs Finger, Gliedmassen verschmelzen, Geräte haben unsinnige Formen."
+          },
+          "fl-female-worker-counter-02": {
+            "alt": "Person mit Helm und Warnweste hält Tablet und Pläne auf einer Baustelle.",
+            "text": "Kleidung und Styling passen nicht zur Baustelle: normale Jeans, geschminkt."
+          },
+          "nb-female-worker-counter-01": {
+            "alt": "Frau mit Helm und Warnweste zeigt auf einen Plan auf einer Baustelle mit Stahlgerüst."
+          },
+          "nb-female-worker-counter-02": {
+            "alt": "Frau mit weissem Helm und Warnweste steht auf einer Baustelle vor einem Bagger.",
+            "text": "Die Frau wirkt wie ein Model: Jeans, starkes Make-up, frisierte Haare."
+          },
+          "sd-female-worker-counter-04": {
+            "alt": "Frau mit Helm, Schutzbrille und Warnweste hält ein Klemmbrett neben Stahlträgern auf einer Baustelle.",
+            "text": "Die rechte Hand hat sechs Finger."
+          },
+          "fl-coffeeshop-01": {
+            "alt": "Innenraum eines Cafés mit Gebäcktheke, Gästen an Tischen und einer Person hinter der Bar.",
+            "text": "Ein Laptop ohne Bildschirm, eine Pflanze wächst aus einer Tasse, und die Backwaren sind viel zu gross."
+          },
+          "nb-coffeeshop-01": {
+            "alt": "Café mit Holztischen, Gästen, einer Person an der Espressomaschine und einem Hund am Boden."
+          },
+          "nb-coffeeshop-04": {
+            "alt": "Café mit Backsteinwand, Gästen an Tischen und einer Person hinter der Theke.",
+            "text": "Die Tassen auf der Kaffeemaschine verschmelzen leicht ineinander."
+          },
+          "sd-coffeeshop-04": {
+            "alt": "Café mit Cappuccino im Vordergrund, Gebäcktheke und einer Person hinter der Bar.",
+            "text": "Das Gebäck ist viel zu gross, und die Menükarte zeigt unleserliche Zeichen."
+          },
+          "fl-glass-03": {
+            "alt": "Wasserglas auf einem Holztisch im Sonnenlicht mit Schatten."
+          },
+          "nb-glass-02": {
+            "alt": "Wasserglas auf einem Holztisch vor einem Fenster mit Pflanzen, im Sonnenlicht.",
+            "text": "Das Licht kommt von der falschen Seite, und das Glas ist zu gross für den Tisch."
+          },
+          "nb-glass-03": {
+            "alt": "Wasserglas und Zitronenscheibe auf einem Holztisch vor Steinwand und Fenster.",
+            "text": "Mitten auf dem Tisch liegt ein Schatten, der dort nicht sein dürfte."
+          },
+          "sd-glass-03": {
+            "alt": "Wasserglas auf einem Holztisch im Sonnenlicht, von schräg oben.",
+            "text": "Die Tischkante ist fehlerhaft."
+          },
+          "fl-surgeon-engineered-01": {
+            "alt": "Person in OP-Kleidung mit Maske und Visier arbeitet unter Operationslampen.",
+            "text": "Die Werkzeuge rechts im Bild verschmelzen teilweise, und die Lichtkegel passen nicht zu den Lampen."
+          },
+          "fl-surgeon-engineered-04": {
+            "alt": "Person in OP-Kleidung und Maske hält Instrumente über einem Operationstisch.",
+            "text": "Die Schere in den Händen des Chirurgen ist unvollständig."
+          },
+          "nb-surgeon-engineered-03": {
+            "alt": "Mehrere Personen in OP-Kleidung und Masken um einen Operationstisch unter Lampen."
+          },
+          "sd-surgeon-engineered-02": {
+            "alt": "Person in OP-Kleidung beugt sich über einen im Bett liegenden Mann unter einer Operationslampe.",
+            "text": "Die Lichtkegel sind schief, und der Patient ist bei Bewusstsein, während der Chirurg etwas an seiner Nase befestigt."
+          }
+        }
+      },
+      "s7": {
+        "index": "07",
+        "title": "Weiterführend",
+        "thesis": "Interessiert dich die vollständige Bachelorarbeit? Melde dich per Mail, ich schicke sie dir gern zu.",
+        "semantic": "Aus der Arbeit ist SemantIC entstanden, ein Werkzeug, das KI-Bilder auf genau solche inhaltlichen Fehler prüft. Diese Seite gehört zu diesem Projekt.",
+        "contact": "Fragen?",
+        "privacy": "Deine E-Mail-Adresse wurde getrennt von deinen Studienantworten gespeichert und nicht mit ihnen verknüpft. Sie wird nur für diese Ergebnisinformation verwendet und nach dem Versand gelöscht."
       }
     }
   },
