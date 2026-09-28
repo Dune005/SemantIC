@@ -2,7 +2,7 @@ import { generateObject, generateText, type LanguageModelUsage } from 'ai'
 import { google, type GoogleLanguageModelOptions } from '@ai-sdk/google'
 import { anthropic } from '@ai-sdk/anthropic'
 import { createOpenAI } from '@ai-sdk/openai'
-import { buildAnalysisSchema, type AnalysisOutput, type DeclaredIntent } from './schemas/analysis.js'
+import { buildAnalysisSchema, NORMATIVE_MASKING_ASPECTS, type AnalysisOutput, type DeclaredIntent } from './schemas/analysis.js'
 import { AestheticSchema, type AestheticOutput } from './schemas/aesthetic.js'
 import { buildAnalysisPrompt } from './prompts/analysis.js'
 import { buildAnalysisPromptEn } from './prompts/analysis.en.js'
@@ -200,6 +200,27 @@ function repairIntentAssessment(analysis: AnalysisOutput, requestedIntent: Decla
     ia.intent_alignment = 'not_assessable'
   }
   return report
+}
+
+// Das Schema begrenzt normative_masking.aspects auf 3 (als maxItems auch ans Modell
+// übergeben). Hält sich ein Modell nicht daran (gemini-3-flash-preview bei FL_CEO_04),
+// verwirft die Schema-Validierung die ganze Analyse, bevor repairNormativeMasking
+// greifen kann. Gezielter Eingriff nur für genau diesen Fall: auf die ersten 3 kürzen;
+// danach wird erneut gegen das volle Schema validiert, jede andere Verletzung bleibt
+// ein Fehler. Die Kürzung wird im Normative-Masking-Repair-Report ausgewiesen.
+export function truncateAspectsOverflow(text: string): { text: string; before: number } | null {
+  let parsed: any
+  try {
+    parsed = JSON.parse(text)
+  } catch {
+    return null
+  }
+  const aspects = parsed?.research_layer?.normative_masking?.aspects
+  if (!Array.isArray(aspects) || aspects.length <= 3) return null
+  // Ungültige Einträge nicht wegkürzen, sonst verschwände ein echter Schemafehler.
+  if (!aspects.every((x: unknown) => (NORMATIVE_MASKING_ASPECTS as readonly unknown[]).includes(x))) return null
+  parsed.research_layer.normative_masking.aspects = aspects.slice(0, 3)
+  return { text: JSON.stringify(parsed), before: aspects.length }
 }
 
 // Normative-Masking-Sanity: deterministische Repair-Regeln, parallel zur
@@ -568,7 +589,7 @@ export function reconcileDominantErrorType(
   return { before: current, after: normalized, active_types: [...activeTypes] }
 }
 
-const DEFAULT_MODEL = 'gemini-3-flash-preview'
+const DEFAULT_MODEL = 'gemini-3.6-flash'
 const DEFAULT_AESTHETIC_MODEL = 'anthropic:claude-sonnet-5'
 // Die Modell-Registry von @ai-sdk/anthropic (3.0.76) endet bei claude-opus-4-7;
 // neuere Modelle (Sonnet 5, Opus 5) gelten dort als unbekannt und bekommen den
@@ -1026,6 +1047,7 @@ export async function runSemanticAnalysis(
   })
   let analysisUsage: CallUsage | undefined
   let aestheticUsage: CallUsage | undefined
+  let aspectsOverflowBefore: number | undefined
 
   const analysisCall = (): Promise<AnalysisOutput> => {
     const startedAt = Date.now()
@@ -1054,7 +1076,14 @@ export async function runSemanticAnalysis(
           )
         }
         analysisUsage = toCallUsage(r.usage, startedAt)
-        return parseWithFallback(r.text, analysisSchema, 'Analysis')
+        try {
+          return parseWithFallback(r.text, analysisSchema, 'Analysis')
+        } catch (e) {
+          const fixed = truncateAspectsOverflow(extractJson(r.text))
+          if (!fixed) throw e
+          aspectsOverflowBefore = fixed.before
+          return parseWithFallback(fixed.text, analysisSchema, 'Analysis')
+        }
       })
     }
     return generateObject({
@@ -1062,6 +1091,12 @@ export async function runSemanticAnalysis(
       schema: analysisSchema,
       system: analysisPrompt,
       ...analysisGenerationSettings,
+      experimental_repairText: async ({ text }) => {
+        const fixed = truncateAspectsOverflow(text)
+        if (!fixed) return null
+        aspectsOverflowBefore = fixed.before
+        return fixed.text
+      },
       abortSignal: options?.signal,
       messages: [{
         role: 'user',
@@ -1194,6 +1229,9 @@ export async function runSemanticAnalysis(
   // Normative-Masking-Sanity (Plan: nach Intent-Repair, vor dominant_error_type-
   // Reconcile). Skopus hart auf research_layer.normative_masking begrenzt.
   const normRepair = repairNormativeMasking(analysis, outputLang)
+  if (aspectsOverflowBefore !== undefined) {
+    normRepair.aspects_truncated = { before: aspectsOverflowBefore, after: 3 }
+  }
   if (normRepair.verdict_normalized) {
     console.warn(
       `[Normative-Masking-Repair] verdict normalisiert: ${normRepair.verdict_normalized.before} → ${normRepair.verdict_normalized.after} (${normRepair.verdict_normalized.reason})`,

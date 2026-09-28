@@ -987,6 +987,7 @@
       "integrity": "Integrität",
       "aesthetic": "Ästhetik",
       "noVerdict": "kein Urteil",
+      "anatomyNote": "Falls Personen abgebildet sind: Anatomiefehler erkennt das Tool nicht zuverlässig. Hände, Gliedmassen und Körperhaltung vor der Publikation selbst prüfen – auch bei grünem Ergebnis.",
       "readingMode": "Leseart",
       "statusWord": "Status: {word}",
       "observation": "Beobachtung",
