@@ -61,6 +61,9 @@ const open = ref(false)
         <p class="la-lead">{{ lead }}</p>
         <div class="la-rule" aria-hidden="true" />
         <p class="la-meta">{{ metaText }}</p>
+        <!-- Modellunabhängiger Prüfauftrag: Anatomiefehler werden nicht zuverlässig erkannt
+             (Modelltest 2026-09-28) – daher immer sichtbar, nicht an den Anatomie-Flag gebunden. -->
+        <p class="la-note">{{ rt('report.common.anatomyNote') }}</p>
       </div>
 
       <div class="la-card__score">
@@ -251,6 +254,7 @@ const open = ref(false)
 .la-lead { max-width: 58ch; margin: 0; color: var(--ink-soft); font-size: 15.5px; line-height: 1.6; }
 .la-rule { height: 1px; margin: 18px 0 0; background: var(--line); }
 .la-meta { margin: 12px 0 0; color: var(--muted); font-family: var(--mono); font-size: 11px; letter-spacing: 0.03em; }
+.la-note { max-width: 58ch; margin: 10px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
 
 /* ── Integritaet ─────────────────────────────────────────────────────────── */
 .la-eyebrow {

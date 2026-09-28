@@ -987,6 +987,7 @@
       "integrity": "Integrity",
       "aesthetic": "Aesthetics",
       "noVerdict": "no verdict",
+      "anatomyNote": "If people are depicted: the tool does not reliably detect anatomical errors. Check hands, limbs and posture yourself before publication – even with a green result.",
       "readingMode": "Reading mode",
       "statusWord": "Status: {word}",
       "observation": "Observation",

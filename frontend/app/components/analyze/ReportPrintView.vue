@@ -287,6 +287,8 @@ const readingModeLogic = computed(() => vm.value.readingModeMaskingLogic?.trim()
           </span>
           <p class="pv-headline">{{ headlineMain }}<span v-if="headlineHasDot" class="accent">.</span></p>
           <p class="pv-rec">{{ vm.overallVerdict.recommendation }}</p>
+          <!-- Modellunabhängiger Anatomie-Prüfauftrag, wie in der Urteilskarte (CockpitVerdikt). -->
+          <p class="pv-note">{{ rt('report.common.anatomyNote') }}</p>
         </div>
         <div class="pv-score">
           <p class="pv-eyebrow">{{ rt('report.common.integrity') }}</p>
@@ -673,6 +675,13 @@ const readingModeLogic = computed(() => vm.value.readingModeMaskingLogic?.trim()
   font-size: 12px;
   line-height: 1.45;
   color: var(--ink-soft);
+  max-width: 58ch;
+}
+.pv-note {
+  margin-top: 6px;
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: var(--muted);
   max-width: 58ch;
 }
 .pv-eyebrow {

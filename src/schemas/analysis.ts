@@ -81,6 +81,16 @@ const BiasAxisSchema = z.object({
   codebook_mapping: z.array(z.string()),
 })
 
+// Auch von truncateAspectsOverflow (src/analyze.ts) genutzt: gekürzt wird nur, wenn alle
+// Einträge gültige Aspekte sind.
+export const NORMATIVE_MASKING_ASPECTS = [
+  'beauty_ideal',
+  'lifestyle_aspiration',
+  'status_signaling',
+  'gender_norm',
+  'success_norm',
+] as const
+
 export function buildAnalysisSchema(outputLang: OutputLang) {
   const langName = LANG_NAME[outputLang]
   const FindingSchema = buildFindingSchema(langName)
@@ -142,13 +152,7 @@ export function buildAnalysisSchema(outputLang: OutputLang) {
         'high = clear normative promise AND smooth attractive staging ' +
         'AND strong social norm carrier. Realism alone is never sufficient.',
       ),
-      aspects: z.array(z.enum([
-        'beauty_ideal',
-        'lifestyle_aspiration',
-        'status_signaling',
-        'gender_norm',
-        'success_norm',
-      ])).max(3).describe(
+      aspects: z.array(z.enum(NORMATIVE_MASKING_ASPECTS)).max(3).describe(
         'Which idealised pattern(s) the image propagates. Max 3. ' +
         'Empty array if verdict is not_applicable or low without specific carrier.',
       ),
