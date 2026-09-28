@@ -1,4 +1,4 @@
-import { generateObject, generateText } from 'ai'
+import { generateObject, generateText, type LanguageModelUsage } from 'ai'
 import { google, type GoogleLanguageModelOptions } from '@ai-sdk/google'
 import { anthropic } from '@ai-sdk/anthropic'
 import { createOpenAI } from '@ai-sdk/openai'
@@ -885,7 +885,18 @@ export interface SemanticAnalysisResult {
     }
     analysis_sampling?: SamplingSnapshot
     aesthetic_sampling?: SamplingSnapshot
+    // Token-Verbrauch + isolierte Latenz pro Call (Kosten-/Tempo-Vergleiche
+    // zwischen Modellen). outputTokens enthält Thinking-Tokens.
+    analysis_usage?: CallUsage
+    aesthetic_usage?: CallUsage
   }
+}
+
+interface CallUsage {
+  input_tokens?: number
+  output_tokens?: number
+  reasoning_tokens?: number
+  duration_ms: number
 }
 
 interface SamplingSnapshot {
@@ -1007,7 +1018,17 @@ export async function runSemanticAnalysis(
     }
   }
 
+  const toCallUsage = (usage: LanguageModelUsage, startedAt: number): CallUsage => ({
+    input_tokens: usage.inputTokens,
+    output_tokens: usage.outputTokens,
+    reasoning_tokens: usage.outputTokenDetails?.reasoningTokens,
+    duration_ms: Date.now() - startedAt,
+  })
+  let analysisUsage: CallUsage | undefined
+  let aestheticUsage: CallUsage | undefined
+
   const analysisCall = (): Promise<AnalysisOutput> => {
+    const startedAt = Date.now()
     const skeleton = promptLang === 'en' ? buildAnalysisJsonSkeletonEn(outputLangName) : ANALYSIS_JSON_SKELETON
     const suffix = promptLang === 'en' ? buildJsonSuffixEn(outputLangName) : JSON_SUFFIX
     if (analysisResolved.useTextFallback) {
@@ -1032,6 +1053,7 @@ export async function runSemanticAnalysis(
             `[Analysis] Output am Token-Limit abgeschnitten (maxOutputTokens=${ANALYSIS_TEXT_FALLBACK_MAX_OUTPUT_TOKENS}) — JSON-Parsing wird voraussichtlich scheitern.`,
           )
         }
+        analysisUsage = toCallUsage(r.usage, startedAt)
         return parseWithFallback(r.text, analysisSchema, 'Analysis')
       })
     }
@@ -1048,10 +1070,15 @@ export async function runSemanticAnalysis(
           { type: 'image', image: imageBuffer, mediaType: mediaType },
         ],
       }],
-    }).then(r => r.object)
+    }).then(r => {
+      analysisUsage = toCallUsage(r.usage, startedAt)
+      return r.object
+    })
   }
 
+
   const aestheticCall = (): Promise<AestheticOutput> => {
+    const startedAt = Date.now()
     if (aestheticResolved.useTextFallback) {
       return generateText({
         model: aestheticResolved.model,
@@ -1064,7 +1091,10 @@ export async function runSemanticAnalysis(
             { type: 'image', image: imageBuffer, mediaType: mediaType },
           ],
         }],
-      }).then(r => parseWithFallback(r.text, AestheticSchema, 'Aesthetic'))
+      }).then(r => {
+        aestheticUsage = toCallUsage(r.usage, startedAt)
+        return parseWithFallback(r.text, AestheticSchema, 'Aesthetic')
+      })
     }
     return generateObject({
       model: aestheticResolved.model,
@@ -1078,7 +1108,10 @@ export async function runSemanticAnalysis(
           { type: 'image', image: imageBuffer, mediaType: mediaType },
         ],
       }],
-    }).then(r => r.object)
+    }).then(r => {
+      aestheticUsage = toCallUsage(r.usage, startedAt)
+      return r.object
+    })
   }
 
   // CLIP-Text-Inputs vorbereiten: trim + nur non-empty in den Texts-Array.
@@ -1270,6 +1303,8 @@ export async function runSemanticAnalysis(
         : {}),
       analysis_sampling: analysisSampling,
       aesthetic_sampling: aestheticSampling,
+      ...(analysisUsage ? { analysis_usage: analysisUsage } : {}),
+      ...(aestheticUsage ? { aesthetic_usage: aestheticUsage } : {}),
     },
   }
 }
